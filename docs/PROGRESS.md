@@ -4,31 +4,33 @@
 
 | فاز | وضعیت | شاهد / مانده |
 |---|---|---|
-| ۰ — ایزوله‌سازی Git و ایمنی | کامل | branch `codex/full-system-audit` در clone مستقل؛ source و دیتابیس اصلی دست‌نخورده |
-| ۱ — کشف و ممیزی مخزن | کامل | inventory، route namespaceها، محدودیت‌های داده و baseline تازهٔ ۱۰۰ Python + ۱۳ Node؛ warningها شمرده و دسته‌بندی شدند |
-| ۲ — تحلیل PDF | کاملِ مستندات | نگاشت ۹۶/۹۶؛ ۳۲/۳۲ screen docs و stateهای PDF موجود؛ link/route coverage پاس؛ screenshot branch فعلی جداگانه باز است |
-| ۳ — مدل و قرارداد API | کامل | قراردادهای endpoint، ۳۲ صفحه، قواعد implementation و تصمیم‌ها در چهار سند ثبت شدند |
-| ۴ — layout، ورود و داشبورد | قبلاً پیاده؛ بازبینی مجدد لازم | تست‌های موجود سبزند؛ viewport/visual smoke این branch باقی است |
-| ۵ — ثبت‌نام و گردش آموزشی | پیادهٔ بخشی و تست‌شده | ثبت/حذف و دادهٔ صفحات؛ نتیجه‌های مستقل PDF و قواعد تأییدنشده باز هستند |
-| ۶ — مالی و سوابق | پیادهٔ بخشی | نمایش پرداخت و تسهیلات موجود؛ درگاه و چند مدل مالی غایب‌اند |
-| ۷ — زمان‌بندی و درخواست‌ها | پیادهٔ بخشی | read API زمان‌بندی و review API درخواست موجود؛ routeهای دامنه‌ای و submissionهای فاقد schema باز هستند |
-| ۸ — ارتباط و خدمات عمومی | پیادهٔ بخشی | فرم‌ها/selectorهای موجود؛ provider بیرونی و برخی workflowها مشخص نیستند |
-| ۹ — یکپارچگی API | پیادهٔ بخشی | page API و client تست‌شده؛ APIهای دامنه‌ای مستقل متعدد وجود ندارند |
-| ۱۰ — responsive و visual consistency | باز | CSS/viewport وجود دارد؛ screenshot هفت viewport هنوز ثبت نشده |
-| ۱۱ — تست و bug fixing | baseline کامل | ۱۰۰ Python و ۱۳ Node تست پاس؛ بعد از تغییرها باید تکرار شوند |
-| ۱۲ — مستندات و ارائه | در حال انجام | دو checkpoint audit/API ساخته شد؛ mapping و screen docs آمادهٔ commit؛ بستهٔ ۸ ارائه باقی است |
-| ۱۳ — regression نهایی | باز | پس از پیاده‌سازی/مستندات |
-| ۱۴ — Git و deliverables نهایی | باز | commitها و وضعیت نهایی هنوز ثبت نشده‌اند |
+| ۰ — ایزوله‌سازی Git و ایمنی | کامل | branch اختصاصی در clone؛ source و دیتابیس اصلی دست‌نخورده |
+| ۱ — کشف و ممیزی مخزن | کامل | baseline اولیهٔ ۱۰۰ Python + ۱۳ Node و inventory مستند |
+| ۲ — تحلیل PDF | کاملِ مستندات، visual جزئی | mapping ۹۶/۹۶، ۳۲ screen docs؛ ۷ viewport capture و ۴ مقایسهٔ نماینده، نه همهٔ routeها |
+| ۳ — مدل و قرارداد API | کاملِ مستندات | endpoint contracts، matrix، business rules و decisions |
+| ۴ — رفع defectهای بازتولیدشده | کامل برای دو defect مشاهده‌شده | shell تکراری صفحات مالی و border دوتایی search اصلاح؛ commit `8e796fe` |
+| ۵ — گردش ثبت‌نام و مرورگر | جزئی | login/dashboard/term/navigation/read/403/logout مرورگر PASS؛ browser write به‌علت نبود term/offer واجد شرایط اجرا نشد؛ service tests پاس‌اند |
+| ۶ — مالی و سوابق | جزئی | دادهٔ مالی موجود؛ gateway و برخی مدل‌ها/خروجی‌ها غایب‌اند |
+| ۷ — زمان‌بندی و درخواست‌ها | جزئی | read API و چند فرم/review موجود؛ namespaceها و lifecycleهای نامعلوم بازند |
+| ۸ — ارتباط و خدمات عمومی | جزئی | فرم‌های واقعی موجود؛ guide، Ticket lifecycle و provider ناقص‌اند |
+| ۹ — یکپارچگی API | جزئی | session/CSRF و page API موجود؛ API مستقل ۱۴ حوزه خالی است |
+| ۱۰ — responsive و visual consistency | جزئی | هفت viewport بدون document overflow؛ search تبلت اصلاح؛ pixel match سراسری ادعا نمی‌شود |
+| ۱۱ — تست و bug fixing | کامل برای checkout فعلی | ۱۰۱ Python + ۱۴ Node پاس؛ Django check و migration check پاس؛ ۲۰ warning datetime ثبت شد |
+| ۱۲ — مستندات و ارائه | کامل | ۷ سند ۱۰‌بخشی + master؛ PDF ۹۶/۹۶؛ ۱۰۶ فایل Markdown بررسی و ۰ لینک محلی شکسته |
+| ۱۳ — regression نهایی | کامل | suite کامل پس از نهایی‌شدن اسناد: ۱۰۱ Python، ۱۴ Node، check و migration check موفق |
+| ۱۴ — Git و deliverables | کامل در clone محلی | checkpoint نهایی مستندات ثبت شد؛ `git status --short --branch` پس از commit تمیز بود؛ push/merge/PR نشد |
 
 ## آخرین checkpoint
 
 - Base: `dbe34c558df41517fe262a13e4af90eb75d2937e`
-- branch: `codex/full-system-audit`
-- آخرین commit: `db6dae31652865f6789a9f19073552563e11e679`؛ شامل قراردادهای API، ماتریس، قواعد و تصمیم‌ها؛ checkpoint اولیه در commit قبلی است.
-- تست baseline تازه: ۱۰۰ Python + ۱۳ Node، همه پاس؛ Django check و migration check پاس؛ ۲۰ warning timezone از fixtureها در `TEST_REPORT.md` ثبت شد.
-- هیچ migration یا دستکاری دیتابیس واقعی انجام نشده.
-- مانع اجرایی: فایل رفتاری مرجع SDD موجود نیست؛ قوانین نامعلوم باید در گزارش جدا بمانند. TLS زمان سیستم مانع نصب dependency از PyPI شد؛ از venv موجود فقط برای اجرای تست استفاده شد.
+- Branch: `codex/full-system-audit`
+- آخرین commit کد: `8e796fe011053acc3417abf8cd0e85feb34e0593` (`fix: remove duplicate shell and responsive search border`)؛ checkpoint مستندات نهایی در `git log -1` است.
+- checkpointهای مستنداتی پیشین: `05b98eb` ممیزی آغازین، `db6dae3` قرارداد API، `228fb83` نگاشت PDF.
+- آخرین اجرای کامل: ۱۰۱ Python (۱۴۲٫۴۹۱ ثانیه) + ۱۴ Node؛ Django check و migration check پاک.
+- مرورگر Edge محلی: login/logout، dashboard، term `14051→14052`، enrollment continuation، دو offering برای `14051`، منع پروفایل دیگر با 403.
+- هر ۷ capture viewport پس از آخرین اصلاح CSS دوباره گرفته و در `C:\Users\repair\AppData\Local\Temp\2\amoozeshyar-final-visual-tdizJY` نگه‌داری شدند؛ به مخزن commit نشده‌اند.
+- هیچ migration یا دستکاری دیتابیس واقعی انجام نشد؛ رکورد حساب browser QA در clone پس از smoke حذف شد.
 
-## گام بعدی
+## ادامه
 
-گام بعد: checkpoint نگاشت/صفحه‌ها را commit کن؛ سپس browser visual smoke هفت viewport، رفع defectهای بازتولیدشده با TDD و در پایان presentation pack و regression.
+برای ادامهٔ توسعه و موارد مسدود، `NEXT_STEPS.md` را دنبال کن. ممیزی و checkpoint فعلی فقط در clone محلی‌اند؛ push/merge/PR انجام نشده است.

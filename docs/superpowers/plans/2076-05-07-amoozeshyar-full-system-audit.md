@@ -95,10 +95,10 @@
 - Consumes: Tasks 1–3 evidence and existing model/service contracts.
 - Produces: only test-backed fixes for reproducible user-facing defects; no new schema or external integration without source evidence.
 
-- [ ] For each confirmed defect, write a failing focused test first, run it to observe the failure, then implement the smallest safe fix.
-- [ ] Cover valid flow, invalid input, empty state, denied role/profile, and persistence for every touched workflow.
-- [ ] Do not treat unavailable provider-dependent actions as implemented; record them in `docs/NEXT_STEPS.md`.
-- [ ] Run focused tests, system checks, and migration checks before committing each coherent fix.
+- [x] For each confirmed defect, write a failing focused test first, run it to observe the failure, then implement the smallest safe fix (finance shell and responsive search border).
+- [x] No business workflow changed; focused rendering/CSS tests cover the touched behavior, and the existing suite covers persistence, invalid input, empty states, and profile permissions.
+- [x] Do not treat unavailable provider-dependent actions as implemented; record them in `docs/NEXT_STEPS.md`.
+- [x] Run focused tests, system checks, and migration checks before committing each coherent fix.
 
 ### Task 5: Responsive, accessibility, and browser integration verification
 
@@ -111,10 +111,11 @@
 - Consumes: existing login/dashboard/page API and the seven target viewport sizes in the spec.
 - Produces: reproducible browser evidence for navigation, form submission, error states, responsive layout, table overflow, and keyboard focus.
 
-- [ ] Exercise login, dashboard, representative read/write screens, profile/term switching, logout, and a denied request.
-- [ ] Inspect the seven required viewport sizes and compare representative screens with their PDF references.
-- [ ] If browser automation/runtime is unavailable, report that limitation and do not claim visual completion.
-- [ ] Run applicable Python and JavaScript suites and commit only after the actual outputs are recorded.
+- [x] Browser smoke: login, dashboard, read pages/API, term switching, continuation navigation, denied profile, and logout.
+- [ ] Browser write workflow: not run because the seeded active term has a closed registration window and the other term has no offerings; service persistence tests pass without fabricating a course/term.
+- [x] Inspect all seven viewport sizes and compare representative screens with PDF pages 2, 9, 53, and 63; document visual differences and partial scope.
+- [x] Edge/CDP runtime was available; Playwright was not installed and no dependency was added.
+- [x] Full Python/JavaScript suites, Django check, and migration check reran after the final report edits: Python 101/101, Node 14/14, both Django checks clean.
 
 ### Task 6: Team presentation pack and final regression
 
@@ -128,7 +129,7 @@
 - Consumes: completed screen docs, API matrix/contracts, verified test output, actual ownership manifests, and branch history.
 - Produces: seven Persian member presentations, one team presentation, final limitations, next steps, and a Git/verification handoff.
 
-- [ ] Include the ten required sections in every member document and cite only real screens, APIs, files, models, and test output.
-- [ ] Cross-check all required deliverables, screen files, links, and page numbers.
-- [ ] Run the full Python suite, Django system check, migration check, applicable JS tests, and `git diff --check`.
-- [ ] Record the final commit list and clean/dirty Git status; do not push, merge, or open a PR.
+- [x] Include the ten required sections in every member document and cite only real screens, APIs, files, models, and test output.
+- [x] Cross-check all required deliverables, screen files, links, and page numbers: seven member docs, master, 32/32 route docs, 96/96 PDF pages, 106 Markdown files and zero broken local links.
+- [x] Run the full Python suite, Django system check, migration check, applicable JS tests, and `git diff --check` after the final report is authored.
+- [x] Record the final commit list and clean Git status after the local documentation checkpoint; do not push, merge, or open a PR.

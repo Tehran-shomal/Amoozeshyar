@@ -13,9 +13,11 @@
 | D-07 | `selected-courses` و `evaluation-form` صفحهٔ واقعی‌اند اما در `HIDDEN_PAGE_SLUGS` از منوی اصلی پنهان‌اند. | navigation مالکیتی صریحاً همین دو slug را به‌عنوان مسیرهای از صفحهٔ والد معرفی کرده است. |
 | D-08 | baseline تست و هر migration/seed فقط در clone ایزوله و SQLite آزمون اجرا شود. | checkout اصلی و دیتابیس کاربر خارج از scope تغییر است؛ DB تستی خودکار پس از suite پاک می‌شود. |
 | D-09 | Git 2.56.0.windows.4 برای commit/ref نوشتن crash دارد؛ ref فقط با old-OID مورد انتظار در clone ممیزی تغییر کند. | commit checkpoint از Git plumbing (`hash-object` + `update-ref` با شرط old HEAD) ساخته و با log/status بررسی شد؛ source config/ref تغییر نمی‌کند. اگر این روش هم نامعتبر شود، تغییر ref متوقف می‌شود. |
-| D-10 | از screenshotهای مرجع موجود در temp برای PDF map استفاده شود، اما آن‌ها شاهد اجرای branch فعلی نیستند. | مرور contact-sheet مرجع انجام شده؛ screenshot تازهٔ هفت viewport جداگانه لازم است تا ادعای responsive/visual تأیید شود. |
+| D-10 | screenshot مرجع و capture جاری جدا ثبت شوند؛ captureهای جاری فقط شاهد viewportهای نماینده‌اند، نه تطبیق ۹۶ صفحه. | هفت viewport در Edge capture و صفحه‌های PDF ۲، ۹، ۵۳، ۶۳ با نمونهٔ جاری مرور شدند؛ جزئیات در `TEST_REPORT.md`. |
 | D-11 | warningهای datetime فعلی ثبت شوند و بدون منبع timezone fixtureها تغییر نکنند. | تغییر زمان seed ممکن است معنی داده را عوض کند؛ ممیزی فقط تعداد/فیلدها را گزارش می‌کند. |
 | D-12 | تا زمان دستیابی به رفتار مستند برای requirementهای ناشناخته، وضعیت به‌صورت gap/unknown مستند شود و screen/API «کامل» برچسب نخورد. | معیار تکمیل شامل UI، navigation، API، persistence، validation، permission، error، test و documentation است؛ ظاهر به‌تنهایی کافی نیست. |
+| D-13 | `finance.html` قطعهٔ قابل include است و نباید `portal_base.html` را دوباره extend کند. | render دوبارهٔ shell در هر سه route مالی با regression test بازتولید شد؛ حذف inheritance از fragment باعث یک shell می‌شود. |
+| D-14 | border search table فقط روی wrapper باشد؛ input داخلی در responsive rule قاب دوم نسازد. | screenshot attendance در 768px و computed style قاب دوگانه را نشان داد؛ Node regression test RED/GREEN و capture پس از fix تأیید کرد. |
 
 ## تصمیم‌های نیازمند مالک محصول
 

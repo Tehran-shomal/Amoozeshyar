@@ -1,26 +1,26 @@
 # نگاشت canonical صفحات Amoozeshyar.pdf
 
-منبع: `Amoozeshyar.pdf`، ۹۶ صفحه. هر شمارهٔ PDF دقیقاً یک ردیف دارد؛ حالت‌های crop، منو، modal و نتیجه به route والد یا «بازنمایی‌نشده» نگاشت شده‌اند. «مقایسهٔ قبلی» به screenshotهای تاریخی ۱۴۴۰×۹۰۰ اشاره می‌کند، نه capture تازه از branch ممیزی. بنابراین هیچ statusی به معنی تطبیق پیکسلی یا پذیرش responsive فعلی نیست.
+منبع: `Amoozeshyar.pdf`، ۹۶ صفحه. هر شمارهٔ PDF دقیقاً یک ردیف دارد؛ حالت‌های crop، منو، modal و نتیجه به route والد یا «بازنمایی‌نشده» نگاشت شده‌اند. captureهای فعلی فقط هفت صفحه/viewport نماینده‌اند و به معنی پوشش بصری همهٔ ۹۶ صفحه نیستند. «مقایسهٔ قبلی» به screenshotهای تاریخی ۱۴۴۰×۹۰۰ اشاره می‌کند. هیچ statusی به معنی تطبیق پیکسلی یا پذیرش کامل responsive نیست.
 
 وضعیت‌ها: **route موجود**، **جزء مشترک**، **state بخشی**، **بازنمایی‌نشده**. شرح implementation هر route در [docs/screens](screens/README.md) و API در [API_CONTRACTS.md](API_CONTRACTS.md) است.
 
 | PDF | route/جزء و موضوع تصویر | وضعیت در checkout و شاهد |
 |---:|---|---|
 | 1 | ورود `/login/` | route موجود؛ مقایسهٔ قبلی ثبت شده، capture تازه باز است. |
-| 2 | داشبورد `/` | route موجود؛ دادهٔ DB-backed؛ capture تازه باز است. |
-| 3 | انتخاب نیمسال | جزء مشترک header؛ component، route مستقل ندارد. |
+| 2 | داشبورد `/` | route موجود؛ دادهٔ DB-backed؛ capture فعلی 1920×1080 و browser smoke دارد؛ با PDF از نظر ترکیب/محتوا متفاوت است. |
+| 3 | انتخاب نیمسال | جزء مشترک header؛ route مستقل ندارد؛ dialog و تغییر query در browser smoke دیده شد. |
 | 4 | گروه منوی ثبت‌نام/انتخاب واحد | metadata/sidebar مشترک؛ مقایسهٔ برش PDF قبلی است. |
 | 5 | گروه منوی وضعیت مالی | metadata/sidebar مشترک؛ مقایسهٔ برش PDF قبلی است. |
 | 6 | گروه منوی درخواست‌ها/مجوزها | metadata/sidebar مشترک؛ مقایسهٔ برش PDF قبلی است. |
 | 7 | گروه منوی خدمات دانشجویی | metadata/sidebar مشترک؛ مقایسهٔ برش PDF قبلی است. |
 | 8 | گروه منوی استادان | metadata/sidebar مشترک؛ تطبیق یک‌به‌یک برش با sidebar کامل تأیید نشده. |
-| 9 | دروس انتخاب‌شده | `/portal/selected-courses/`؛ route موجود، وضعیت‌های جزئی کامل نیست. |
+| 9 | دروس انتخاب‌شده | `/portal/selected-courses/`؛ captureهای فعلی 1536×864 و 390×844؛ route موجود، جمع‌بندی PDF و چند state جزئی موجود نیست. |
 | 10 | state دروس انتخاب‌شده/تعداد متفاوت | route والد موجود؛ دادهٔ تصویری خاص این صفحه بازنمایی‌نشده. |
 | 11 | state دروس انتخاب‌شده/جدول متفاوت | route والد موجود؛ fixture معادل این state تأیید نشده. |
 | 12 | state دروس انتخاب‌شده/جمع واحد متفاوت | route والد موجود؛ state داده‌ای مستقل بازنمایی‌نشده. |
 | 13 | state دروس انتخاب‌شده/جمع مالی | route والد موجود؛ محاسبهٔ PDF-specific بدون منبع داده اضافه نشده. |
-| 14 | حضور و غیاب `/portal/attendance/` | route موجود؛ جدول DB-backed، مقایسهٔ قبلی؛ write کارمندی ندارد. |
-| 15 | تقویم آموزشی `/portal/calendar/` | route موجود، ولی selector فقط تاریخ‌های Term را می‌دهد؛ grid/event PDF ناقص. |
+| 14 | حضور و غیاب `/portal/attendance/` | route موجود؛ جدول DB-backed، capture 768×1024 پس از رفع قاب دوگانهٔ search؛ write کارمندی ندارد. |
+| 15 | تقویم آموزشی `/portal/calendar/` | route موجود، capture 1024×768؛ selector فقط تاریخ‌های Term را می‌دهد؛ grid/event PDF ناقص. |
 | 16 | اطلاعیه استادان `/portal/announcements/` | route موجود؛ selector مشترک Notification؛ مقایسهٔ قبلی. |
 | 17 | فرم ارزشیابی `/portal/evaluation-form/` | route موجود؛ form همان survey؛ مقایسهٔ قبلی. |
 | 18 | مرکز اعلان‌ها `/portal/notifications/` | route موجود؛ list و mark-read؛ مقایسهٔ قبلی. |
@@ -57,8 +57,8 @@
 | 49 | مقیاس پاسخ ارزشیابی | کنترل‌های ۱–۵ در route فرم هستند؛ crop مستقل/طراحی دقیق پیاده و ثبت نشده. |
 | 50 | toggle اعلان | فیلد در `/portal/settings/` است؛ crop مستقل وجود ندارد. |
 | 51 | انتخاب زبان | فیلد در `/portal/settings/` است؛ crop مستقل وجود ندارد. |
-| 52 | شروع انتخاب واحد `/portal/enrollment/` | route و دادهٔ پرونده/term موجود؛ render test؛ screenshot تازه باز. |
-| 53 | حذف و اضافه `/portal/add-drop/` | route و حذف واقعی موجود؛ success state مستقل PDF نیست. |
+| 52 | شروع انتخاب واحد `/portal/enrollment/` | route و دادهٔ پرونده/term موجود؛ render و browser navigation smoke؛ screenshot مستقل ذخیره نشده. |
+| 53 | حذف و اضافه `/portal/add-drop/` | route و حذف واقعی موجود؛ capture 1366×768؛ success state مستقل PDF نیست. |
 | 54 | حذف اضطراری `/portal/emergency-drop/` | route موجود؛ همان service حذف و بررسی هرکدام از دو window. |
 | 55 | آخرین وضعیت ثبت‌نام `/portal/registration-status/` | route موجود؛ render smoke؛ visual review قبلی ناتمام. |
 | 56 | نتیجهٔ موفق حذف/اضافه | result URL/view مستقل ندارد؛ state بازنمایی‌نشده. |
@@ -68,7 +68,7 @@
 | 60 | اعتراض نمره `/portal/grade-appeal/` | route/form موجود؛ قواعد مهلت/مدرک در source نیست؛ visual review قبلی ناتمام. |
 | 61 | فعالیت آموزشی `/portal/academic-activities/` | selector/template اختصاصی و render test؛ screenshot تازه باز. |
 | 62 | کارنامه `/portal/transcript/` | route موجود؛ نمره‌های DB؛ visual review قبلی ناتمام. |
-| 63 | پرداخت‌ها `/portal/payments/` | template/selector مالی موجود؛ موفق‌ها از failed جدا؛ screenshot تازه باز. |
+| 63 | پرداخت‌ها `/portal/payments/` | template/selector مالی موجود؛ capture 1280×720 پس از fix؛ تست می‌سنجد shell فقط یک بار render شود؛ موفق‌ها از failed جدا هستند. |
 | 64 | پرداخت امن `/portal/secure-payment/` | route موجود؛ نبود gateway صریح؛ تراکنش/موفقیت شبیه‌سازی نمی‌شود. |
 | 65 | تسهیلات `/portal/financial-aid/` | فرم مدل موجود؛ مبلغ/حساب/پیوست PDF در schema نیست. |
 | 66 | شهریه `/portal/tuition/` | aggregate پرداخت‌های موفق موجود؛ line item نوع شهریه مدل نشده. |
@@ -105,4 +105,4 @@
 
 ## اختلاف inventory تصویر و محدودیت بازبینی
 
-سند قبلی `docs/portal-pdf-comparison.md` ۵۸ حالت رابط ثبت‌شده را گزارش می‌کند و پوشهٔ موقت ۷۵ screenshot دارد؛ تعریف این دو شمارش یکسان نیست. ۹۶ تصویر مرجع PDF در contact sheet مرور شدند، اما screenshot تازهٔ checkout فعلی در viewportهای `1920×1080`, `1536×864`, `1366×768`, `1280×720`, `1024×768`, `768×1024`, `390×844` در این checkpoint ثبت نشده است. پس وضعیت responsive/visual برای همهٔ صفحات «تأیید نهایی» نیست.
+سند قبلی `docs/portal-pdf-comparison.md` ۵۸ حالت رابط ثبت‌شده را گزارش می‌کند و پوشهٔ موقت ۷۵ screenshot دارد؛ تعریف این دو شمارش یکسان نیست. ۹۶ تصویر مرجع PDF در contact sheet مرور و صفحه‌های ۲، ۹، ۵۳ و ۶۳ با capture فعلی به‌طور نماینده مقایسه شدند. هفت viewport هدف capture شدند و در هیچ‌کدام document-level horizontal overflow دیده نشد. این بررسی، pixel matching یا مرور جداگانهٔ تمام routeها/stateها نیست؛ محدودیت و فایل‌های موقت در `docs/TEST_REPORT.md` ثبت‌اند.
