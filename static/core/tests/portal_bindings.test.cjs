@@ -25,3 +25,15 @@ test("registration and drop flows call the APIs with database record IDs", () =>
     assert.match(drop, /data-confirm-drop/);
     assert.doesNotMatch(drop, /window\.confirm/);
 });
+
+test("responsive table search keeps a single border around the control", () => {
+    const portalCss = fs.readFileSync(path.join(__dirname, "../portal.css"), "utf8");
+    const responsiveCss = fs.readFileSync(path.join(__dirname, "../responsive.css"), "utf8");
+    const wrapper = portalCss.match(/\.table-search\s*\{([^}]+)\}/);
+    const input = responsiveCss.match(/\.table-search\s+input\s*\{([^}]+)\}/);
+
+    assert.ok(wrapper, "table search wrapper must remain visibly framed");
+    assert.ok(input, "responsive table search input rule must exist");
+    assert.match(wrapper[1], /\bborder\s*:/);
+    assert.doesNotMatch(input[1], /\bborder(?:-\w+)?\s*:/);
+});

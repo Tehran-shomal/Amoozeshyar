@@ -20,7 +20,7 @@ html, body { width: 100%; min-height: 100%; margin: 0; overflow-x: hidden; }
 .errorlist { color: #a51f38; padding-inline-start: 20px; }
 .empty-state { text-align: center; padding: 25px; color: #687891; }
 .panel-heading { flex-wrap: wrap; gap: 10px; }
-.table-search input { width: min(100%, 230px); padding: 8px; border: 1px solid #dbe3f0; border-radius: 8px; font: inherit; }
+.table-search input { width: min(100%, 230px); padding: 8px; font: inherit; }
 .sidebar-footer-links .logout-form { margin: 0; }
 .sidebar-footer-links .logout-form button { display: flex; align-items: center; gap: 7px; min-height: 29px; width: 100%; padding: 0; border: 0; color: #e1e9f8; background: transparent; text-align: right; font: inherit; cursor: pointer; }
 .login-page {

@@ -137,6 +137,15 @@ class LiveFrontendTests(TestCase):
         self.assertNotIn("PRIVATE-1", html)
         self.assertEqual(self.client.get("/api/portal/pages/payments/?student_code=S1").status_code, 403)
 
+    def test_finance_pages_render_inside_one_portal_shell(self):
+        self.client.force_login(self.users[0])
+
+        for slug in ("payments", "secure-payment", "tuition"):
+            with self.subTest(slug=slug):
+                response = self.client.get(f"/api/portal/pages/{slug}/")
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()["html"].count('class="portal-shell"'), 1)
+
     def test_request_submission_assigns_owner_and_pending_on_server(self):
         self.client.force_login(self.users[0])
         response = self.client.post("/portal/requests/", {
