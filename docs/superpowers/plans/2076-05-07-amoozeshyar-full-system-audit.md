@@ -80,10 +80,10 @@
 - Consumes: PDF reference pages 1–96 and the Task 2 screen/API matrix.
 - Produces: one explicit mapping for each PDF page and one technical record per real route/component, including represented/unrepresented modal and result states.
 
-- [ ] Cover PDF pages 1 through 96 with no missing page number.
-- [ ] For every real screen document reference, owner, URL, purpose, inputs, read/write API, data schema, controls, validation, errors, navigation, rules, tests, and dependencies.
-- [ ] Reuse the existing route for repeated PDF states where appropriate; mark independent result states as unrepresented when no safe backend behavior exists.
-- [ ] Commit after page-number and route-coverage checks pass.
+- [x] Cover PDF pages 1 through 96 with no missing page number.
+- [x] For every real screen document reference, owner, URL, purpose, inputs, read/write API, data schema, controls, validation, errors, navigation, rules, tests, and dependencies; shared invariants are linked to the API contract and matrix.
+- [x] Reuse the existing route for repeated PDF states where appropriate; mark independent result states as unrepresented when no safe backend behavior exists.
+- [x] Commit after page-number and route-coverage checks pass.
 
 ### Task 4: Screen-backed implementation gap closure
 

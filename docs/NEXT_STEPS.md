@@ -2,8 +2,8 @@
 
 این فهرست بر اساس شاهدهای ممیزی مرتب شده است؛ موردی که به رفتار/مجوز نامعلوم وابسته است، تا دریافت منبع رفتاری به‌عنوان کار تأییدنشده می‌ماند.
 
-1. کنترل نهایی و commit قراردادهای API، ماتریس صفحه، business rules و decisions.
-2. کنترل route coverage و PDF page numbers؛ commit mapping canonical و یک screen doc برای هر route/component/state واقعی.
+1. قراردادهای API، ماتریس، business rules و decisions در checkpoint `db6dae3` ثبت شده‌اند.
+2. نگاشت ۹۶ صفحه و route docs با coverage/link check پاس آماده است؛ commit checkpoint مستندات صفحه‌ها باقی است.
 3. اجرای browser visual smoke از همین clone و capture در هفت viewport؛ تا پایان آن ادعای تطبیق responsive/visual نکن.
 4. برای هر defect بازتولیدشده، تست قرمز بنویس و سپس کمینهٔ fix؛ پس از آن Python/JS tests را تکرار کن.
 5. warningهای naive datetime را با منبع timezone بازبینی کن؛ زمان fixtureها را بدون منبع معتبر تبدیل نکن.
