@@ -62,18 +62,18 @@
 - Consumes: Django URL/view/service/form implementations and the 32 registered portal page slugs plus login, dashboard, and shared term picker.
 - Produces: exact method/path/auth/CSRF/payload/status/error contracts and an explicit confirmed-vs-assumed-vs-unknown rule catalog.
 
-- [ ] Map every implemented endpoint to its view/service and tests.
-- [ ] Map all portal screens to owner, template, selector/models, read API, write API, validation, and permissions.
-- [ ] Mark feature namespaces with empty URLs and forms lacking an authoritative workflow as gaps.
-- [ ] Verify each documented claim against code and tests; correct conflicts in the docs, not by guessing new behavior.
-- [ ] Commit after endpoint and screen coverage checks pass.
+- [x] Map every implemented endpoint to its view/service and tests.
+- [x] Map all portal screens to owner, template, selector/models, read API, write API, validation, and permissions.
+- [x] Mark feature namespaces with empty URLs and forms lacking an authoritative workflow as gaps.
+- [x] Verify each documented claim against code and tests; correct conflicts in the docs, not by guessing new behavior.
+- [x] Commit after endpoint and screen coverage checks pass.
 
 ### Task 3: Complete 96-page PDF mapping and screen-level records
 
 **Files:**
 - Create: `docs/PDF_PAGE_MAPPING.md`
 - Create: `docs/screens/README.md`
-- Create: `docs/screens/<one-file-per-real-screen>.md`
+- Create: `docs/screens/README.md`, `login.md`, `dashboard.md`, `term-picker.md`, `navigation.md`, one `<slug>.md` for each of the 32 entries in `apps/core/frontend/registry.py`, and five PDF-state docs: `course-selection-dialog.md`, `course-group-dialog.md`, `drop-confirmation.md`, `emergency-drop-confirmation.md`, and `operation-results.md`.
 - Modify: `docs/portal-pdf-comparison.md` only to link to the canonical mapping if needed
 
 **Interfaces:**
