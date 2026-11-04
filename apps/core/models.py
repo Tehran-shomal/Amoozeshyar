@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models.fields.related import _OnDeleteOptions
-
+from .constants import TicketCreatorRoleChoices, TicketStatusChoices
+from django.utils import timezone
 
 # شخص (جایگزین User پیش‌فرض جنگو)
 class Person(AbstractUser):
@@ -432,31 +433,83 @@ class Attendance(models.Model):  # مدل ثبت اطلاعات حضور و غی
 
 # تیکت
 class Ticket(models.Model):
-    creator_person_id = models.ForeignKey('Person', on_delete=models.CASCADE, related_name='created_tickets')
-    creator_role = models.CharField(max_length=20)
-    category_id = models.ForeignKey('TicketCategory', on_delete=models.CASCADE)
-    subject = models.CharField(max_length=200)
-    content = models.TextField()
-    status = models.CharField(max_length=20)
-    assigned_to_person_id = models.ForeignKey('Person', on_delete=models.CASCADE, related_name='assigned_tickets')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    creator = models.ForeignKey(
+        'Person', on_delete=models.CASCADE,
+        related_name='created_tickets', verbose_name='سازنده',
+    )
+    creator_role = models.CharField(
+        max_length=20, choices=TicketCreatorRoleChoices.choices,
+        verbose_name='نقش سازنده',
+    )
+    category = models.ForeignKey(
+        'TicketCategory', on_delete=models.CASCADE,
+        related_name='tickets', verbose_name='دسته‌بندی',
+    )
+    subject = models.CharField(max_length=200, verbose_name='موضوع')
+    content = models.CharField(max_length=1000, verbose_name='متن تیکت')
+    status = models.CharField(
+        max_length=20, choices=TicketStatusChoices.choices,
+        default=TicketStatusChoices.OPEN, verbose_name='وضعیت',
+    )
+    assigned_to = models.ForeignKey(
+        'Person', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='assigned_tickets', verbose_name='مسئول پاسخگویی',
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاریخ ثبت')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='تاریخ آخرین به‌روزرسانی')
 
+    class Meta:
+        verbose_name = 'تیکت'
+        verbose_name_plural = 'تیکت‌ها'
+        ordering = ['-created_at']
 
-# دسته بندی تیکت ها
-class TicketCategory(models.Model):
-    pass
+    def __str__(self):
+        return self.subject
 
+    @property
+    def is_closed(self):
+        return self.status == TicketStatusChoices.CLOSED
+
+    @property
+    def is_assigned(self):
+        return self.assigned_to_id is not None
 
 # برگزاری کلاس مجازی
 class OnlineClass(models.Model):
-    teacher_id = models.ForeignKey('Teacher', on_delete=models.CASCADE)
-    offering_id = models.ForeignKey('CourseOffering', on_delete=models.CASCADE)
-    start_at = models.DateTimeField()
-    end_at = models.DateTimeField()
-    title = models.CharField(max_length=200)
-    meeting_link = models.URLField()
+    teacher = models.ForeignKey(
+        'Teacher', on_delete=models.CASCADE,
+        related_name='online_classes', verbose_name='استاد',
+    )
+    offering = models.ForeignKey(
+        'CourseOffering', on_delete=models.CASCADE,
+        related_name='online_classes', verbose_name='ارائه درس',
+    )
+    start_at = models.DateTimeField(verbose_name='تاریخ و ساعت شروع')
+    end_at = models.DateTimeField(verbose_name='تاریخ و ساعت پایان')
+    title = models.CharField(max_length=200, verbose_name='عنوان جلسه')
+    meeting_link = models.URLField(verbose_name='لینک جلسه')
 
+    class Meta:
+        verbose_name = 'کلاس مجازی'
+        verbose_name_plural = 'کلاس‌های مجازی'
+        ordering = ['start_at']
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(end_at__gt=models.F('start_at')),
+                name='online_class_end_after_start',
+            ),
+        ]
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def duration(self):
+        return self.end_at - self.start_at
+
+    @property
+    def is_ongoing(self):
+        return self.start_at <= timezone.now() <= self.end_at
 
 # رسید شهریه
 class TuitionReceipt(models.Model):
