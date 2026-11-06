@@ -68,8 +68,73 @@ class Student(models.Model):
 # درس
 class Lesson(models.Model):
 
-    pass
+    lesson_code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name='کد درس'
+    )
 
+    title = models.CharField(
+        max_length=200,
+        verbose_name='عنوان درس'
+    )
+
+    practical_units = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name='واحد عملی'
+    )
+
+    theory_units = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name='واحد نظری'
+    )
+
+    lesson_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('general', 'عمومی'),
+            ('basic', 'پایه'),
+            ('specialized', 'تخصصی'),
+            ('elective', 'اختیاری'),
+        ],
+        verbose_name='نوع درس'
+    )
+
+    department = models.ForeignKey(
+        'Department',
+        on_delete=models.PROTECT,
+        related_name='lessons',
+        verbose_name='گروه آموزشی'
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='فعال'
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='تاریخ ثبت'
+    )
+
+    def __str__(self):
+        return f'{self.lesson_code} - {self.title}'
+
+    class Meta:
+        verbose_name = 'درس'
+        verbose_name_plural = 'دروس'
+
+        ordering = ['title']
+
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(practical_units__gt=0) |
+                    models.Q(theory_units__gt=0)
+                ),
+                name='lesson_has_units'
+            ),
+        ]
 
 # ترم
 class Term(models.Model):
@@ -89,8 +154,75 @@ class Term(models.Model):
 
 
 # پرداخت
+
 class Payment(models.Model):
-    pass
+
+    STATUS_CHOICES = [
+        ('pending', 'در انتظار پرداخت'),
+        ('successful', 'موفق'),
+        ('failed', 'ناموفق'),
+        ('refunded', 'بازپرداخت شده'),
+    ]
+
+    term = models.ForeignKey(
+        'Term',
+        on_delete=models.PROTECT,
+        related_name='payments',
+        verbose_name='نیمسال تحصیلی'
+    )
+
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name='مبلغ پرداخت'
+    )
+
+    payment_date = models.DateTimeField(
+        verbose_name='تاریخ پرداخت'
+    )
+
+    tracking_code = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='کد پیگیری'
+    )
+
+    student = models.ForeignKey(
+        'Student',
+        on_delete=models.PROTECT,
+        related_name='payments',
+        verbose_name='دانشجو'
+    )
+
+    status = models.CharField(
+        max_length=30,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='وضعیت پرداخت'
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='تاریخ ثبت'
+    )
+
+    def __str__(self):
+        return f'{self.tracking_code} - {self.amount}'
+
+    class Meta:
+
+        verbose_name = 'پرداخت'
+        verbose_name_plural = 'پرداخت‌ها'
+
+        ordering = ['-created_at']
+
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name='payment_amount_must_be_positive'
+            ),
+        ]
+
 
 
 # امتحان
@@ -323,7 +455,146 @@ class LessonGroupMember(models.Model):
 
 # ارائه درس در ترم
 class CourseOffering(models.Model):
-    pass
+
+    DAY_CHOICES = [
+        ('saturday', 'شنبه'),
+        ('sunday', 'یکشنبه'),
+        ('monday', 'دوشنبه'),
+        ('tuesday', 'سه‌شنبه'),
+        ('wednesday', 'چهارشنبه'),
+        ('thursday', 'پنجشنبه'),
+        ('friday', 'جمعه'),
+    ]
+
+    lesson = models.ForeignKey(
+        'Lesson',
+        on_delete=models.PROTECT,
+        related_name='course_offerings',
+        verbose_name='درس'
+    )
+
+    term = models.ForeignKey(
+        'Term',
+        on_delete=models.PROTECT,
+        related_name='course_offerings',
+        verbose_name='نیمسال تحصیلی'
+    )
+
+    teacher = models.ForeignKey(
+        'Teacher',
+        on_delete=models.PROTECT,
+        related_name='course_offerings',
+        verbose_name='استاد'
+    )
+
+    capacity = models.PositiveIntegerField(
+        verbose_name='ظرفیت کلاس'
+    )
+
+    remaining_capacity = models.PositiveIntegerField(
+        verbose_name='ظرفیت باقی‌مانده'
+    )
+
+    day_of_week = models.CharField(
+        max_length=20,
+        choices=DAY_CHOICES,
+        verbose_name='روز هفته'
+    )
+
+    start_time = models.TimeField(
+        verbose_name='ساعت شروع'
+    )
+
+    end_time = models.TimeField(
+        verbose_name='ساعت پایان'
+    )
+
+    classroom = models.ForeignKey(
+        'Classroom',
+        on_delete=models.PROTECT,
+        related_name='course_offerings',
+        verbose_name='کلاس'
+    )
+
+    exam_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='تاریخ امتحان'
+    )
+
+    exam_time = models.TimeField(
+        null=True,
+        blank=True,
+        verbose_name='ساعت امتحان'
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='وضعیت فعال بودن ارائه'
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='تاریخ ثبت'
+    )
+
+    @property
+    def duration_minutes(self):
+        start = (
+            self.start_time.hour * 60
+            + self.start_time.minute
+        )
+
+        end = (
+            self.end_time.hour * 60
+            + self.end_time.minute
+        )
+
+        return end - start
+
+    def __str__(self):
+        return self.lesson.title
+
+    class Meta:
+        verbose_name = 'ارائه درس'
+        verbose_name_plural = 'ارائه‌های درس'
+
+        ordering = ['start_time']
+
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(capacity__gt=0),
+                name='offering_capacity_positive'
+            ),
+
+            models.CheckConstraint(
+                condition=models.Q(
+                    remaining_capacity__lte=models.F('capacity')
+                ),
+                name='remaining_capacity_valid'
+            ),
+
+            models.CheckConstraint(
+                condition=models.Q(
+                    end_time__gt=models.F('start_time')
+                ),
+                name='offering_end_time_valid'
+            ),
+
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        exam_date__isnull=True,
+                        exam_time__isnull=True
+                    ) |
+                    models.Q(
+                        exam_date__isnull=False,
+                        exam_time__isnull=False
+                    )
+                ),
+                name='exam_date_time_consistent'
+            ),
+        ]
 
 
 # انتخاب واحد
