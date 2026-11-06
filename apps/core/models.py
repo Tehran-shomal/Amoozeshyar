@@ -516,34 +516,55 @@ class TuitionReceipt(models.Model):
 
     tuition_receipt_key = models.AutoField(
         primary_key=True,
-        db_column="TuitionReceiptKey"
+        db_column="TuitionReceiptKey",
+        verbose_name="شناسه رسید شهریه"
     )
+
     receipt_serial_code = models.CharField(
         max_length=50,
         unique=True,
-        db_column="ReceiptSerialCode"
+        null=False,
+        blank=False,
+        db_column="ReceiptSerialCode",
+        verbose_name="شماره سریال رسید"
     )
+
     receipt_payment_link = models.ForeignKey(
         "core.Payment",
         on_delete=models.PROTECT,
         related_name="tuition_receipts",
-        db_column="ReceiptPaymentLinkId"
+        null=False,
+        blank=False,
+        db_column="ReceiptPaymentLinkId",
+        verbose_name="پرداخت مربوط به رسید"
     )
+
     receipt_issued_on = models.DateTimeField(
         auto_now_add=True,
-        db_column="ReceiptIssuedOn"
+        null=False,
+        blank=True,
+        db_column="ReceiptIssuedOn",
+        verbose_name="تاریخ صدور رسید"
     )
+
     receipt_document_uri = models.CharField(
         max_length=500,
+        null=False,
         blank=True,
-        db_column="ReceiptDocumentUri"
+        db_column="ReceiptDocumentUri",
+        verbose_name="آدرس فایل رسید"
     )
 
     class Meta:
         db_table = "TuitionReceipt"
+        verbose_name = "رسید پرداخت شهریه"
+        verbose_name_plural = "رسیدهای پرداخت شهریه"
+        ordering = ["-receipt_issued_on"]
 
     def __str__(self):
-        return self.receipt_serial_code
+        return f"رسید شماره {self.receipt_serial_code}"
+
+
 
 
 
@@ -551,44 +572,67 @@ class TuitionReceipt(models.Model):
 
 # درخواست بازپرداخت وجه
 class RefundRequest(models.Model):
-    REFUND_STATUS_CHOICES = [
-        ("pending", "در انتظار بررسی"),
-        ("approved", "تأیید شده"),
-        ("rejected", "رد شده"),
-        ("paid", "بازپرداخت انجام شده"),
-    ]
 
     refund_case_key = models.AutoField(
         primary_key=True,
-        db_column="RefundCaseKey"
+        db_column="RefundCaseKey",
+        verbose_name="شناسه درخواست استرداد"
     )
+
     refund_payment_link = models.ForeignKey(
         "core.Payment",
         on_delete=models.PROTECT,
         related_name="refund_requests",
-        db_column="RefundPaymentLinkId"
+        null=False,
+        blank=False,
+        db_column="RefundPaymentLinkId",
+        verbose_name="پرداخت مربوط به درخواست"
     )
+
     refund_value_requested = models.DecimalField(
         max_digits=15,
         decimal_places=2,
-        db_column="RefundValueRequested"
+        null=False,
+        blank=False,
+        db_column="RefundValueRequested",
+        verbose_name="مبلغ درخواستی بازپرداخت"
     )
+
     refund_justification_text = models.TextField(
-        db_column="RefundJustificationText"
+        null=False,
+        blank=False,
+        db_column="RefundJustificationText",
+        verbose_name="دلیل درخواست استرداد"
     )
+
     refund_review_state = models.CharField(
         max_length=20,
-        choices=REFUND_STATUS_CHOICES,
-        default="pending",
-        db_column="RefundReviewState"
+        choices=RequestReviewStatusChoices.choices,
+        default=RequestReviewStatusChoices.PENDING,
+        null=False,
+        blank=False,
+        db_column="RefundReviewState",
+        verbose_name="وضعیت بررسی درخواست"
     )
 
     class Meta:
         db_table = "RefundRequest"
+        verbose_name = "درخواست استرداد وجه"
+        verbose_name_plural = "درخواست‌های استرداد وجه"
+        ordering = ["-refund_case_key"]
+
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(refund_value_requested__gt=0),
+                name="refund_value_must_be_positive"
+            )
+        ]
 
     def __str__(self):
-        return f"درخواست بازپرداخت {self.refund_case_key}"
+        return f"درخواست استرداد شماره {self.refund_case_key}"
 
+
+   
 
 
 
@@ -630,51 +674,61 @@ class Book(models.Model):
 
 # درخواست خدمات دانشجویی
 class StudentServiceRequest(models.Model):
-    REQUEST_KIND_CHOICES = [
-        ("installment", "تقسیط بدهی"),
-        ("withdrawal", "انصراف از تحصیل"),
-    ]
-
-    REQUEST_STATUS_CHOICES = [
-        ("pending", "در انتظار بررسی"),
-        ("approved", "تأیید شده"),
-        ("rejected", "رد شده"),
-    ]
-
+    
     student_service_case_key = models.AutoField(
         primary_key=True,
-        db_column="StudentServiceCaseKey"
+        db_column="StudentServiceCaseKey",
+        verbose_name="شناسه درخواست خدمات دانشجویی"
     )
+
     service_requester = models.ForeignKey(
         "core.Student",
         on_delete=models.PROTECT,
         related_name="service_requests",
-        db_column="ServiceRequesterLinkId"
+        null=False,
+        blank=False,
+        db_column="ServiceRequesterLinkId",
+        verbose_name="دانشجوی درخواست‌دهنده"
     )
+
     service_request_kind = models.CharField(
-        max_length=20,
-        choices=REQUEST_KIND_CHOICES,
-        db_column="ServiceRequestKind"
+        max_length=30,
+        choices=ServiceRequestTypeChoices.choices,
+        null=False,
+        blank=False,
+        db_column="ServiceRequestKind",
+        verbose_name="نوع درخواست خدمات"
     )
+
     service_request_data = models.TextField(
+        null=False,
         blank=True,
-        db_column="ServiceRequestData"
+        db_column="ServiceRequestData",
+        verbose_name="اطلاعات تکمیلی درخواست"
     )
+
     service_decision_state = models.CharField(
         max_length=20,
-        choices=REQUEST_STATUS_CHOICES,
-        default="pending",
-        db_column="ServiceDecisionState"
+        choices=RequestReviewStatusChoices.choices,
+        default=RequestReviewStatusChoices.PENDING,
+        null=False,
+        blank=False,
+        db_column="ServiceDecisionState",
+        verbose_name="وضعیت تصمیم‌گیری درخواست"
     )
 
     class Meta:
         db_table = "StudentServiceRequest"
+        verbose_name = "درخواست خدمات دانشجویی"
+        verbose_name_plural = "درخواست‌های خدمات دانشجویی"
+        ordering = ["-student_service_case_key"]
 
     def __str__(self):
         return (
-            f"درخواست {self.student_service_case_key} - "
+            f"درخواست شماره {self.student_service_case_key} - "
             f"{self.get_service_request_kind_display()}"
         )
+
 
 
 
