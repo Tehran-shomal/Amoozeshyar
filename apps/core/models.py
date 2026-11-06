@@ -49,30 +49,36 @@ class ParkingPasses(models.Model):
 
 # نقش
 class Role(models.Model):
-    
-    # شناسه یکتا 
-     role_id = models.AutoField(primary_key=True, verbose_name="شناسه نقش")
-    
-    # نام نقش (مثلاً: مدیر سیستم، استاد، دانشجو)
-role_name = models.CharField(max_length=100, unique=True, verbose_name="نام نقش")
-    
-    # کد نقش (برای استفاده در سیستم؛ مثلاً ADMIN, TEACHER, STUDENT)
-role_code = models.CharField(max_length=50, unique=True, verbose_name="کد نقش")
-    
-    # توضیحات (اختیاری)
-description = models.TextField(blank=True, null=True, verbose_name="توضیحات")
-    
-    # وضعیت (آیا این نقش در حال حاضر فعال است؟)
-is_active = models.BooleanField(default=True, verbose_name="وضعیت فعال بودن")
-    
-    # تاریخ ایجاد (به صورت خودکار زمان ثبت را ذخیره می‌کند)
-created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
 
-def __str__(self):
+    # نام نقش
+    role_name = models.CharField(
+        max_length=100,
+        verbose_name="عنوان نقش"
+    )
+
+    # توضیحات نقش
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="توضیح"
+    )
+
+    # تاریخ ایجاد نقش
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="تاریخ ثبت"
+    )
+
+    # وضعیت فعال بودن نقش
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="وضعیت فعال"
+    )
+
+    def __str__(self):
         return self.role_name
 
-class Meta:
-        # برای اینکه در پنل ادمین اسمش به فارسی نمایش داده شود
+    class Meta:
         verbose_name = "نقش"
         verbose_name_plural = "نقش‌ها"
     
@@ -100,34 +106,60 @@ class Field(models.Model):
 
 # پیش‌نیاز/هم‌نیاز
 class Prerequisite(models.Model):
-    
-    # 1. درس اصلی که دانشجو می‌خواد برداره (مثلاً ریاضی ۲)
+
+    # شناسه یکتای پیش‌نیاز
+    prereq_id = models.AutoField(
+        primary_key=True,
+        db_column='PrereqID',
+        verbose_name="شناسه پیش‌نیاز"
+    )
+
+    # درس اصلی
     lesson = models.ForeignKey(
-        Lesson, 
-        on_delete=models.CASCADE, 
-        related_name='prerequisites', 
+        Lesson,
+        on_delete=models.CASCADE,
+        related_name='prerequisites',
+        db_column='LessonID',
         verbose_name="درس اصلی"
     )
-    
-    # 2. درسی که باید از قبل پاس شده باشه (مثلاً ریاضی ۱)
+
+    # درس پیش‌نیاز یا هم‌نیاز
     prerequisite_lesson = models.ForeignKey(
-        Lesson, 
-        on_delete=models.CASCADE, 
-        related_name='is_prerequisite_for', 
-        verbose_name="درس پیش‌نیاز"
+        Lesson,
+        on_delete=models.CASCADE,
+        related_name='is_prerequisite_for',
+        db_column='PrereqLessonID',
+        verbose_name="درس پیش‌نیاز یا هم‌نیاز"
     )
-    
-    # 3. آیا دانشجو باید حتماً نمره قبولی (حداقل ۱۰) آورده باشه؟ (پیش‌فرض بله)
-    is_mandatory = models.BooleanField(default=True, verbose_name="اجباری بودن")
+
+    # نوع رابطه
+    prerequisite_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('prerequisite', 'پیش‌نیاز'),
+            ('corequisite', 'هم‌نیاز'),
+        ],
+        db_column='Type',
+        verbose_name="نوع رابطه"
+    )
+
+    # تاریخ ثبت
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_column='CreatedAt',
+        verbose_name="تاریخ ثبت"
+    )
 
     def __str__(self):
-        return f"{self.prerequisite_lesson} پیش‌نیاز برای {self.lesson}"
+        return f"{self.prerequisite_lesson} - {self.lesson}"
 
     class Meta:
-        verbose_name = "پیش‌نیاز"
-        verbose_name_plural = "پیش‌نیازها"
-        # این خط خیلی مهمه: جلوی ثبت تکراری رو می‌گیره (مثلاً نمی‌شه دو بار گفت ریاضی ۱ پیش‌نیاز ریاضی ۲ است)
-        unique_together = ('lesson', 'prerequisite_lesson')
+        verbose_name = "پیش‌نیاز و هم‌نیاز"
+        verbose_name_plural = "پیش‌نیازها و هم‌نیازها"
+
+        unique_together = (
+            ('lesson', 'prerequisite_lesson'),
+        )
     
 
 
@@ -148,60 +180,73 @@ class CourseOffering(models.Model):
 
 # انتخاب واحد
 class Enrollment(models.Model):
-    
-    # تعریف گزینه‌های ثابت برای وضعیت درس (برای اینکه دیتای اشتباه ثبت نشه)
+
+    # وضعیت‌های ثبت‌نام
     STATUS_CHOICES = (
-        ('REGISTERED', 'در حال تحصیل (ثبت‌نام شده)'),
+
+        ('REGISTERED', 'ثبت‌نام شده'),
         ('PASSED', 'پاس شده'),
         ('FAILED', 'افتاده'),
         ('DROPPED', 'حذف شده'),
+)
+    
+    
+
+    # نوع ثبت‌نام
+    TYPE_CHOICES = (
+        ('NORMAL', 'عادی'),
+        ('GUEST', 'مهمان'),
     )
 
-    # 1. اتصال به جدول دانشجو
+    # شناسه ثبت‌نام
+    EnrollmentId = models.AutoField(
+        primary_key=True,
+        verbose_name="شناسه ثبت‌نام"
+    )
+
+    # ارتباط با دانشجو
     student = models.ForeignKey(
-        'Student', 
-        on_delete=models.CASCADE, 
-        related_name='enrollments', 
+        'Student',
+        on_delete=models.CASCADE,
+        related_name='enrollments',
         verbose_name="دانشجو"
     )
-    
-    # 2. اتصال به جدول درس
-    lesson = models.ForeignKey(
-        Lesson, 
-        on_delete=models.CASCADE, 
-        related_name='enrollments', 
-        verbose_name="درس"
+
+    # تاریخ ثبت‌نام
+    enrollment_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="تاریخ ثبت‌نام"
     )
-    
-    # 3. ترم تحصیلی (مثلاً 14031 یا 14032)
-    semester = models.CharField(max_length=20, verbose_name="ترم تحصیلی")
-    
-    # 4. نوع ثبت‌نام (از روی عکسی که فرستادی - مثلاً با آزمون، بدون آزمون)
-    enrollment_type = models.CharField(max_length=50, verbose_name="نوع ثبت‌نام")
-    
-    # 5. وضعیت درس در آن ترم
+
+    # وضعیت ثبت‌نام
     status = models.CharField(
-        max_length=20, 
-        choices=STATUS_CHOICES, 
-        default='REGISTERED', 
-        verbose_name="وضعیت"
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='REGISTERED',
+        verbose_name="وضعیت ثبت‌نام"
     )
-    
-    # 6. تاریخ ثبت‌نام (خودکار پر میشه)
-    enrollment_date = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت‌نام")
-    
-    # 7. تاریخ حذف (اگر درس رو حذف کرد)
-    drop_date = models.DateField(null=True, blank=True, verbose_name="تاریخ حذف")
+
+    # نوع ثبت‌نام
+    enrollment_type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default='NORMAL',
+        verbose_name="نوع ثبت‌نام"
+    )
+
+    # تاریخ حذف
+    drop_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="تاریخ حذف"
+    )
 
     def __str__(self):
-        return f"{self.student} - {self.lesson} ({self.semester})"
+        return f"{self.student} - {self.get_status_display()}"
 
     class Meta:
         verbose_name = "انتخاب واحد"
         verbose_name_plural = "انتخاب واحدها"
-        # نکته طلایی: یک دانشجو توی یک ترم نمی‌تونه یک درس رو دو بار انتخاب کنه!
-        unique_together = ('student', 'lesson', 'semester')
-    
 
 
 # نمره
