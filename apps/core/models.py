@@ -34,16 +34,42 @@ class Payment(models.Model):
 
 # امتحان
 class Exam(models.Model):
-    offering = models.ForeignKey('CourseOffering', on_delete=models.CASCADE)
-    exam_date = models.DateField()
+    offering = models.ForeignKey(
+        'CourseOffering',
+        on_delete=models.CASCADE,
+        verbose_name='ارائه درس'
+    )
+
+    exam_date = models.DateField(
+        verbose_name='تاریخ آزمون'
+    )
+
     exam_type = models.CharField(
         max_length=20,
         choices=[
-            ('midterm', 'میان‌ترم'),
-            ('final', 'پایان‌ترم'),
-            ('virtual', 'مجازی'),
+            ('میان‌ترم', 'میان‌ترم'),
+            ('پایان‌ترم', 'پایان‌ترم'),
         ],
+        verbose_name='نوع آزمون'
     )
+
+    class Meta:
+        verbose_name = 'امتحان'
+        verbose_name_plural = 'امتحانات'
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    exam_type__in=['میان‌ترم', 'پایان‌ترم']
+                ),
+                name='valid_exam_type'
+            ),
+        ]
+
+    def __str__(self):
+        return f'امتحان {self.get_exam_type_display()} - ارائه {self.offering_id}'
+
+
+
 
 
 # گروه کلاسی
@@ -88,10 +114,38 @@ class Prerequisite(models.Model):
 
 # کلاس/مکان
 class Classroom(models.Model):
-    building_name = models.TextField()
-    room_number = models.TextField()
-    capacity = models.IntegerField()
-    classroom_type = models.TextField()
+    building_name = models.CharField(
+        max_length=100,
+        verbose_name='نام ساختمان'
+    )
+
+    room_number = models.CharField(
+        max_length=20,
+        verbose_name='شماره اتاق'
+    )
+
+    capacity = models.PositiveIntegerField(
+        verbose_name='ظرفیت کلاس'
+    )
+
+    classroom_type = models.CharField(
+        max_length=50,
+        verbose_name='نوع کلاس'
+    )
+
+    class Meta:
+        verbose_name = 'کلاس'
+        verbose_name_plural = 'کلاس‌ها'
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(capacity__gt=0),
+                name='classroom_capacity_positive'
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.building_name} - اتاق {self.room_number}'
+
 
 
 # اعضای گروه کلاسی
@@ -116,17 +170,48 @@ class Grade(models.Model):
 
 # اعتراض به نمره
 class GradeAppeal(models.Model):
-    enrollment = models.ForeignKey('Enrollment', on_delete=models.CASCADE)
-    appeal_reason = models.TextField()
-    appeal_date = models.DateTimeField()
+    enrollment = models.ForeignKey(
+        'Enrollment',
+        on_delete=models.CASCADE,
+        verbose_name='ثبت‌نام مربوطه'
+    )
+
+    appeal_reason = models.TextField(
+        verbose_name='دلیل اعتراض'
+    )
+
+    appeal_date = models.DateTimeField(
+        verbose_name='تاریخ ثبت اعتراض'
+    )
+
     appeal_status = models.CharField(
         max_length=30,
         choices=[
-            ('pending', 'در انتظار بررسی'),
-            ('approved', 'تأیید'),
-            ('rejected', 'رد'),
+            ('در انتظار بررسی', 'در انتظار بررسی'),
+            ('تأیید', 'تأیید'),
+            ('رد', 'رد'),
         ],
+        verbose_name='وضعیت رسیدگی'
     )
+
+    class Meta:
+        verbose_name = 'اعتراض به نمره'
+        verbose_name_plural = 'اعتراض‌های به نمره'
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    appeal_status__in=[
+                        'در انتظار بررسی',
+                        'تأیید',
+                        'رد',
+                    ]
+                ),
+                name='valid_appeal_status'
+            ),
+        ]
+
+    def __str__(self):
+        return f'اعتراض شماره {self.id} - {self.get_appeal_status_display()}'
 
 
 # حضور و غیاب
