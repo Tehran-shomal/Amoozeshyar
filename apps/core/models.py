@@ -208,7 +208,6 @@ class Payment(models.Model):
 
     def __str__(self):
         return f'{self.tracking_code} - {self.amount}'
-
     class Meta:
 
         verbose_name = 'پرداخت'
@@ -556,12 +555,15 @@ class CourseOffering(models.Model):
         return self.lesson.title
 
     class Meta:
-        verbose_name = 'ارائه درس'
-        verbose_name_plural = 'ارائه‌های درس'
+     
+     verbose_name = 'ارائه درس'
+    verbose_name_plural = 'ارائه‌های درس'
+    ordering = ['start_time']
 
-        ordering = ['start_time']
-
-        constraints = [
+    unique_together = [
+        ('teacher', 'day_of_week', 'start_time', 'term'),
+    ]
+    constraints = [
             models.CheckConstraint(
                 condition=models.Q(capacity__gt=0),
                 name='offering_capacity_positive'
