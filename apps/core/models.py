@@ -264,8 +264,73 @@ class Student(models.Model):
 # درس
 class Lesson(models.Model):
 
-    pass
+    lesson_code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name='کد درس'
+    )
 
+    title = models.CharField(
+        max_length=200,
+        verbose_name='عنوان درس'
+    )
+
+    practical_units = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name='واحد عملی'
+    )
+
+    theory_units = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name='واحد نظری'
+    )
+
+    lesson_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('general', 'عمومی'),
+            ('basic', 'پایه'),
+            ('specialized', 'تخصصی'),
+            ('elective', 'اختیاری'),
+        ],
+        verbose_name='نوع درس'
+    )
+
+    department = models.ForeignKey(
+        'Department',
+        on_delete=models.PROTECT,
+        related_name='lessons',
+        verbose_name='گروه آموزشی'
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='فعال'
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='تاریخ ثبت'
+    )
+
+    def __str__(self):
+        return f'{self.lesson_code} - {self.title}'
+
+    class Meta:
+        verbose_name = 'درس'
+        verbose_name_plural = 'دروس'
+
+        ordering = ['title']
+
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(practical_units__gt=0) |
+                    models.Q(theory_units__gt=0)
+                ),
+                name='lesson_has_units'
+            ),
+        ]
 
 # ترم
 class Student(models.Model):
@@ -522,8 +587,74 @@ class Term(models.Model):
 
 
 # پرداخت
+
 class Payment(models.Model):
-    pass
+
+    STATUS_CHOICES = [
+        ('pending', 'در انتظار پرداخت'),
+        ('successful', 'موفق'),
+        ('failed', 'ناموفق'),
+        ('refunded', 'بازپرداخت شده'),
+    ]
+
+    term = models.ForeignKey(
+        'Term',
+        on_delete=models.PROTECT,
+        related_name='payments',
+        verbose_name='نیمسال تحصیلی'
+    )
+
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name='مبلغ پرداخت'
+    )
+
+    payment_date = models.DateTimeField(
+        verbose_name='تاریخ پرداخت'
+    )
+
+    tracking_code = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name='کد پیگیری'
+    )
+
+    student = models.ForeignKey(
+        'Student',
+        on_delete=models.PROTECT,
+        related_name='payments',
+        verbose_name='دانشجو'
+    )
+
+    status = models.CharField(
+        max_length=30,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name='وضعیت پرداخت'
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='تاریخ ثبت'
+    )
+
+    def __str__(self):
+        return f'{self.tracking_code} - {self.amount}'
+    class Meta:
+
+        verbose_name = 'پرداخت'
+        verbose_name_plural = 'پرداخت‌ها'
+
+        ordering = ['-created_at']
+
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(amount__gt=0),
+                name='payment_amount_must_be_positive'
+            ),
+        ]
+
 
 
 # امتحان
@@ -581,34 +712,38 @@ class ParkingPasses(models.Model):
 # نقش
 class Role(models.Model):
 
-    # شناسه یکتا
-    role_id = models.AutoField(primary_key=True, verbose_name="شناسه نقش")
+    # نام نقش
+    role_name = models.CharField(
+        max_length=100,
+        verbose_name="عنوان نقش"
+    )
 
+    # توضیحات نقش
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="توضیح"
+    )
 
-# نام نقش (مثلاً: مدیر سیستم، استاد، دانشجو)
-role_name = models.CharField(max_length=100, unique=True, verbose_name="نام نقش")
+    # تاریخ ایجاد نقش
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="تاریخ ثبت"
+    )
 
-# کد نقش (برای استفاده در سیستم؛ مثلاً ADMIN, TEACHER, STUDENT)
-role_code = models.CharField(max_length=50, unique=True, verbose_name="کد نقش")
+    # وضعیت فعال بودن نقش
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="وضعیت فعال"
+    )
 
-# توضیحات (اختیاری)
-description = models.TextField(blank=True, null=True, verbose_name="توضیحات")
+    def __str__(self):
+        return self.role_name
 
-# وضعیت (آیا این نقش در حال حاضر فعال است؟)
-is_active = models.BooleanField(default=True, verbose_name="وضعیت فعال بودن")
-
-# تاریخ ایجاد (به صورت خودکار زمان ثبت را ذخیره می‌کند)
-created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
-
-
-def __str__(self):
-    return self.role_name
-
-
-class Meta:
-    # برای اینکه در پنل ادمین اسمش به فارسی نمایش داده شود
-    verbose_name = "نقش"
-    verbose_name_plural = "نقش‌ها"
+    class Meta:
+        verbose_name = "نقش"
+        verbose_name_plural = "نقش‌ها"
+    
 
 
 # حساب کاربری
@@ -705,33 +840,60 @@ class Field(models.Model):
 # پیش‌نیاز/هم‌نیاز
 class Prerequisite(models.Model):
 
-    # 1. درس اصلی که دانشجو می‌خواد برداره (مثلاً ریاضی ۲)
+    # شناسه یکتای پیش‌نیاز
+    prereq_id = models.AutoField(
+        primary_key=True,
+        db_column='PrereqID',
+        verbose_name="شناسه پیش‌نیاز"
+    )
+
+    # درس اصلی
     lesson = models.ForeignKey(
         Lesson,
         on_delete=models.CASCADE,
-        related_name="prerequisites",
-        verbose_name="درس اصلی",
+        related_name='prerequisites',
+        db_column='LessonID',
+        verbose_name="درس اصلی"
     )
 
-    # 2. درسی که باید از قبل پاس شده باشه (مثلاً ریاضی ۱)
+    # درس پیش‌نیاز یا هم‌نیاز
     prerequisite_lesson = models.ForeignKey(
         Lesson,
         on_delete=models.CASCADE,
-        related_name="is_prerequisite_for",
-        verbose_name="درس پیش‌نیاز",
+        related_name='is_prerequisite_for',
+        db_column='PrereqLessonID',
+        verbose_name="درس پیش‌نیاز یا هم‌نیاز"
     )
 
-    # 3. آیا دانشجو باید حتماً نمره قبولی (حداقل ۱۰) آورده باشه؟ (پیش‌فرض بله)
-    is_mandatory = models.BooleanField(default=True, verbose_name="اجباری بودن")
+    # نوع رابطه
+    prerequisite_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('prerequisite', 'پیش‌نیاز'),
+            ('corequisite', 'هم‌نیاز'),
+        ],
+        db_column='Type',
+        verbose_name="نوع رابطه"
+    )
+
+    # تاریخ ثبت
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_column='CreatedAt',
+        verbose_name="تاریخ ثبت"
+    )
 
     def __str__(self):
-        return f"{self.prerequisite_lesson} پیش‌نیاز برای {self.lesson}"
+        return f"{self.prerequisite_lesson} - {self.lesson}"
 
     class Meta:
-        verbose_name = "پیش‌نیاز"
-        verbose_name_plural = "پیش‌نیازها"
-        # این خط خیلی مهمه: جلوی ثبت تکراری رو می‌گیره (مثلاً نمی‌شه دو بار گفت ریاضی ۱ پیش‌نیاز ریاضی ۲ است)
-        unique_together = ("lesson", "prerequisite_lesson")
+        verbose_name = "پیش‌نیاز و هم‌نیاز"
+        verbose_name_plural = "پیش‌نیازها و هم‌نیازها"
+
+        unique_together = (
+            ('lesson', 'prerequisite_lesson'),
+        )
+    
 
 
 # کلاس/مکان
@@ -749,57 +911,216 @@ class LessonGroupMember(models.Model):
 
 # ارائه درس در ترم
 class CourseOffering(models.Model):
-    pass
+
+    DAY_CHOICES = [
+        ('saturday', 'شنبه'),
+        ('sunday', 'یکشنبه'),
+        ('monday', 'دوشنبه'),
+        ('tuesday', 'سه‌شنبه'),
+        ('wednesday', 'چهارشنبه'),
+        ('thursday', 'پنجشنبه'),
+        ('friday', 'جمعه'),
+    ]
+
+    lesson = models.ForeignKey(
+        'Lesson',
+        on_delete=models.PROTECT,
+        related_name='course_offerings',
+        verbose_name='درس'
+    )
+
+    term = models.ForeignKey(
+        'Term',
+        on_delete=models.PROTECT,
+        related_name='course_offerings',
+        verbose_name='نیمسال تحصیلی'
+    )
+
+    teacher = models.ForeignKey(
+        'Teacher',
+        on_delete=models.PROTECT,
+        related_name='course_offerings',
+        verbose_name='استاد'
+    )
+
+    capacity = models.PositiveIntegerField(
+        verbose_name='ظرفیت کلاس'
+    )
+
+    remaining_capacity = models.PositiveIntegerField(
+        verbose_name='ظرفیت باقی‌مانده'
+    )
+
+    day_of_week = models.CharField(
+        max_length=20,
+        choices=DAY_CHOICES,
+        verbose_name='روز هفته'
+    )
+
+    start_time = models.TimeField(
+        verbose_name='ساعت شروع'
+    )
+
+    end_time = models.TimeField(
+        verbose_name='ساعت پایان'
+    )
+
+    classroom = models.ForeignKey(
+        'Classroom',
+        on_delete=models.PROTECT,
+        related_name='course_offerings',
+        verbose_name='کلاس'
+    )
+
+    exam_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='تاریخ امتحان'
+    )
+
+    exam_time = models.TimeField(
+        null=True,
+        blank=True,
+        verbose_name='ساعت امتحان'
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='وضعیت فعال بودن ارائه'
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='تاریخ ثبت'
+    )
+
+    @property
+    def duration_minutes(self):
+        start = (
+            self.start_time.hour * 60
+            + self.start_time.minute
+        )
+
+        end = (
+            self.end_time.hour * 60
+            + self.end_time.minute
+        )
+
+        return end - start
+
+    def __str__(self):
+        return self.lesson.title
+
+    class Meta:
+     
+     verbose_name = 'ارائه درس'
+    verbose_name_plural = 'ارائه‌های درس'
+    ordering = ['start_time']
+
+    unique_together = [
+        ('teacher', 'day_of_week', 'start_time', 'term'),
+    ]
+    constraints = [
+            models.CheckConstraint(
+                condition=models.Q(capacity__gt=0),
+                name='offering_capacity_positive'
+            ),
+
+            models.CheckConstraint(
+                condition=models.Q(
+                    remaining_capacity__lte=models.F('capacity')
+                ),
+                name='remaining_capacity_valid'
+            ),
+
+            models.CheckConstraint(
+                condition=models.Q(
+                    end_time__gt=models.F('start_time')
+                ),
+                name='offering_end_time_valid'
+            ),
+
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        exam_date__isnull=True,
+                        exam_time__isnull=True
+                    ) |
+                    models.Q(
+                        exam_date__isnull=False,
+                        exam_time__isnull=False
+                    )
+                ),
+                name='exam_date_time_consistent'
+            ),
+        ]
 
 
 # انتخاب واحد
 class Enrollment(models.Model):
 
-    # تعریف گزینه‌های ثابت برای وضعیت درس (برای اینکه دیتای اشتباه ثبت نشه)
+    # وضعیت‌های ثبت‌نام
     STATUS_CHOICES = (
-        ("REGISTERED", "در حال تحصیل (ثبت‌نام شده)"),
-        ("PASSED", "پاس شده"),
-        ("FAILED", "افتاده"),
-        ("DROPPED", "حذف شده"),
+
+        ('REGISTERED', 'ثبت‌نام شده'),
+        ('PASSED', 'پاس شده'),
+        ('FAILED', 'افتاده'),
+        ('DROPPED', 'حذف شده'),
+)
+    
+    
+
+    # نوع ثبت‌نام
+    TYPE_CHOICES = (
+        ('NORMAL', 'عادی'),
+        ('GUEST', 'مهمان'),
     )
 
-    # 1. اتصال به جدول دانشجو
+    # شناسه ثبت‌نام
+    EnrollmentId = models.AutoField(
+        primary_key=True,
+        verbose_name="شناسه ثبت‌نام"
+    )
+
+    # ارتباط با دانشجو
     student = models.ForeignKey(
-        "Student",
+        'Student',
         on_delete=models.CASCADE,
-        related_name="enrollments",
-        verbose_name="دانشجو",
+        related_name='enrollments',
+        verbose_name="دانشجو"
     )
 
-    # 2. اتصال به جدول درس
-    lesson = models.ForeignKey(
-        Lesson, on_delete=models.CASCADE, related_name="enrollments", verbose_name="درس"
+    # تاریخ ثبت‌نام
+    enrollment_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="تاریخ ثبت‌نام"
     )
 
-    # 3. ترم تحصیلی (مثلاً 14031 یا 14032)
-    semester = models.CharField(max_length=20, verbose_name="ترم تحصیلی")
-
-    # 4. نوع ثبت‌نام (از روی عکسی که فرستادی - مثلاً با آزمون، بدون آزمون)
-    enrollment_type = models.CharField(max_length=50, verbose_name="نوع ثبت‌نام")
-
-    # 5. وضعیت درس در آن ترم
+    # وضعیت ثبت‌نام
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default="REGISTERED",
-        verbose_name="وضعیت",
+        default='REGISTERED',
+        verbose_name="وضعیت ثبت‌نام"
     )
 
-    # 6. تاریخ ثبت‌نام (خودکار پر میشه)
-    enrollment_date = models.DateTimeField(
-        auto_now_add=True, verbose_name="تاریخ ثبت‌نام"
+    # نوع ثبت‌نام
+    enrollment_type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default='NORMAL',
+        verbose_name="نوع ثبت‌نام"
     )
 
-    # 7. تاریخ حذف (اگر درس رو حذف کرد)
-    drop_date = models.DateField(null=True, blank=True, verbose_name="تاریخ حذف")
+    # تاریخ حذف
+    drop_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="تاریخ حذف"
+    )
 
     def __str__(self):
-        return f"{self.student} - {self.lesson} ({self.semester})"
+        return f"{self.student} - {self.get_status_display()}"
 
     class Meta:
         verbose_name = "انتخاب واحد"
@@ -959,63 +1280,118 @@ class OnlineClass(models.Model):
 class TuitionReceipt(models.Model):
 
     tuition_receipt_key = models.AutoField(
-        primary_key=True, db_column="TuitionReceiptKey"
+        primary_key=True,
+        db_column="TuitionReceiptKey",
+        verbose_name="شناسه رسید شهریه"
     )
+
     receipt_serial_code = models.CharField(
-        max_length=50, unique=True, db_column="ReceiptSerialCode"
+        max_length=50,
+        unique=True,
+        null=False,
+        blank=False,
+        db_column="ReceiptSerialCode",
+        verbose_name="شماره سریال رسید"
     )
+
     receipt_payment_link = models.ForeignKey(
         "core.Payment",
         on_delete=models.PROTECT,
         related_name="tuition_receipts",
+        null=False,
+        blank=False,
         db_column="ReceiptPaymentLinkId",
+        verbose_name="پرداخت مربوط به رسید"
     )
+
     receipt_issued_on = models.DateTimeField(
-        auto_now_add=True, db_column="ReceiptIssuedOn"
+        auto_now_add=True,
+        null=False,
+        blank=True,
+        db_column="ReceiptIssuedOn",
+        verbose_name="تاریخ صدور رسید"
     )
+
     receipt_document_uri = models.CharField(
-        max_length=500, blank=True, db_column="ReceiptDocumentUri"
+        max_length=500,
+        null=False,
+        blank=True,
+        db_column="ReceiptDocumentUri",
+        verbose_name="آدرس فایل رسید"
     )
 
     class Meta:
         db_table = "TuitionReceipt"
+        verbose_name = "رسید پرداخت شهریه"
+        verbose_name_plural = "رسیدهای پرداخت شهریه"
+        ordering = ["-receipt_issued_on"]
 
     def __str__(self):
-        return self.receipt_serial_code
+        return f"رسید شماره {self.receipt_serial_code}"
+
+
 
 
 # درخواست بازپرداخت وجه
 class RefundRequest(models.Model):
-    REFUND_STATUS_CHOICES = [
-        ("pending", "در انتظار بررسی"),
-        ("approved", "تأیید شده"),
-        ("rejected", "رد شده"),
-        ("paid", "بازپرداخت انجام شده"),
-    ]
 
-    refund_case_key = models.AutoField(primary_key=True, db_column="RefundCaseKey")
+    refund_case_key = models.AutoField(
+        primary_key=True,
+        db_column="RefundCaseKey",
+        verbose_name="شناسه درخواست استرداد"
+    )
+
     refund_payment_link = models.ForeignKey(
         "core.Payment",
         on_delete=models.PROTECT,
         related_name="refund_requests",
+        null=False,
+        blank=False,
         db_column="RefundPaymentLinkId",
+        verbose_name="پرداخت مربوط به درخواست"
     )
+
     refund_value_requested = models.DecimalField(
-        max_digits=15, decimal_places=2, db_column="RefundValueRequested"
+        max_digits=15,
+        decimal_places=2,
+        null=False,
+        blank=False,
+        db_column="RefundValueRequested",
+        verbose_name="مبلغ درخواستی بازپرداخت"
     )
-    refund_justification_text = models.TextField(db_column="RefundJustificationText")
+
+    refund_justification_text = models.TextField(
+        null=False,
+        blank=False,
+        db_column="RefundJustificationText",
+        verbose_name="دلیل درخواست استرداد"
+    )
+
     refund_review_state = models.CharField(
         max_length=20,
-        choices=REFUND_STATUS_CHOICES,
-        default="pending",
+        choices=RequestReviewStatusChoices.choices,
+        default=RequestReviewStatusChoices.PENDING,
+        null=False,
+        blank=False,
         db_column="RefundReviewState",
+        verbose_name="وضعیت بررسی درخواست"
     )
 
     class Meta:
         db_table = "RefundRequest"
+        verbose_name = "درخواست استرداد وجه"
+        verbose_name_plural = "درخواست‌های استرداد وجه"
+        ordering = ["-refund_case_key"]
+
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(refund_value_requested__gt=0),
+                name="refund_value_must_be_positive"
+            )
+        ]
 
     def __str__(self):
-        return f"درخواست بازپرداخت {self.refund_case_key}"
+        return f"درخواست استرداد شماره {self.refund_case_key}"
 
 
 # اعلان
@@ -1055,43 +1431,58 @@ class Book(models.Model):
 
 # درخواست خدمات دانشجویی
 class StudentServiceRequest(models.Model):
-    REQUEST_KIND_CHOICES = [
-        ("installment", "تقسیط بدهی"),
-        ("withdrawal", "انصراف از تحصیل"),
-    ]
-
-    REQUEST_STATUS_CHOICES = [
-        ("pending", "در انتظار بررسی"),
-        ("approved", "تأیید شده"),
-        ("rejected", "رد شده"),
-    ]
-
+    
     student_service_case_key = models.AutoField(
-        primary_key=True, db_column="StudentServiceCaseKey"
+        primary_key=True,
+        db_column="StudentServiceCaseKey",
+        verbose_name="شناسه درخواست خدمات دانشجویی"
     )
+
     service_requester = models.ForeignKey(
         "core.Student",
         on_delete=models.PROTECT,
         related_name="service_requests",
+        null=False,
+        blank=False,
         db_column="ServiceRequesterLinkId",
+        verbose_name="دانشجوی درخواست‌دهنده"
     )
+
     service_request_kind = models.CharField(
-        max_length=20, choices=REQUEST_KIND_CHOICES, db_column="ServiceRequestKind"
+        max_length=30,
+        choices=ServiceRequestTypeChoices.choices,
+        null=False,
+        blank=False,
+        db_column="ServiceRequestKind",
+        verbose_name="نوع درخواست خدمات"
     )
-    service_request_data = models.TextField(blank=True, db_column="ServiceRequestData")
+
+    service_request_data = models.TextField(
+        null=False,
+        blank=True,
+        db_column="ServiceRequestData",
+        verbose_name="اطلاعات تکمیلی درخواست"
+    )
+
     service_decision_state = models.CharField(
         max_length=20,
-        choices=REQUEST_STATUS_CHOICES,
-        default="pending",
+        choices=RequestReviewStatusChoices.choices,
+        default=RequestReviewStatusChoices.PENDING,
+        null=False,
+        blank=False,
         db_column="ServiceDecisionState",
+        verbose_name="وضعیت تصمیم‌گیری درخواست"
     )
 
     class Meta:
         db_table = "StudentServiceRequest"
+        verbose_name = "درخواست خدمات دانشجویی"
+        verbose_name_plural = "درخواست‌های خدمات دانشجویی"
+        ordering = ["-student_service_case_key"]
 
     def __str__(self):
         return (
-            f"درخواست {self.student_service_case_key} - "
+            f"درخواست شماره {self.student_service_case_key} - "
             f"{self.get_service_request_kind_display()}"
         )
 
