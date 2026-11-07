@@ -1,4 +1,9 @@
 from django.db import models
+from .constants import (
+    ProposalStatusChoices,
+    CounselingStatusChoices,
+    ScholarshipStatusChoices,
+)
 from django.contrib.auth.models import AbstractUser
 
 
@@ -296,11 +301,6 @@ class StudentServiceRequest(models.Model):
 
 # درخواست بورسیه
 class ScholarshipApplication(models.Model):
-    SCHOLARSHIP_STATUS_CHOICES = [
-        ("pending", "در انتظار بررسی"),
-        ("approved", "تأیید شده"),
-        ("rejected", "رد شده"),
-    ]
 
     scholarship_application_key = models.AutoField(
         primary_key=True,
@@ -325,8 +325,8 @@ class ScholarshipApplication(models.Model):
 
     scholarship_status = models.CharField(
         max_length=20,
-        choices=SCHOLARSHIP_STATUS_CHOICES,
-        default="pending",
+        choices=ScholarshipStatusChoices.choices,
+        default=ScholarshipStatusChoices.PENDING,
         db_column="ScholarshipStatus"
     )
 
@@ -344,11 +344,6 @@ class ScholarshipApplication(models.Model):
 
 # جلسات مشاوره
 class CounselingAppointment(models.Model):
-    COUNSELING_STATUS_CHOICES = [
-        ("pending", "در انتظار برگزاری"),
-        ("completed", "برگزار شده"),
-        ("cancelled", "لغو شده"),
-    ]
 
     counseling_appointment_key = models.AutoField(
         primary_key=True,
@@ -385,8 +380,8 @@ class CounselingAppointment(models.Model):
 
     counseling_status = models.CharField(
         max_length=20,
-        choices=COUNSELING_STATUS_CHOICES,
-        default="pending",
+        choices=CounselingStatusChoices.choices,
+        default=CounselingStatusChoices.PENDING,
         db_column="CounselingStatus"
     )
 
@@ -395,14 +390,10 @@ class CounselingAppointment(models.Model):
 
     def __str__(self):
         return f"جلسه مشاوره {self.counseling_appointment_key}"
+    
 
 # پروپوزال
 class Proposal(models.Model):
-    PROPOSAL_STATUS_CHOICES = [
-        ("pending", "در انتظار بررسی"),
-        ("approved", "تأیید شده"),
-        ("rejected", "رد شده"),
-    ]
 
     proposal_case_key = models.AutoField(
         primary_key=True,
@@ -432,8 +423,8 @@ class Proposal(models.Model):
 
     proposal_status = models.CharField(
         max_length=20,
-        choices=PROPOSAL_STATUS_CHOICES,
-        default="pending",
+        choices=ProposalStatusChoices.choices,
+        default=ProposalStatusChoices.PENDING,
         db_column="ProposalStatus"
     )
 
