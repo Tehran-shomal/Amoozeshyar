@@ -8,59 +8,69 @@ from django.utils import timezone
 
 from django.db.models.fields.related import _OnDeleteOptions
 from .constants import TicketCreatorRoleChoices, TicketStatusChoices
-from django.utils import timezone
 from .constants import (
     AcademicRankChoices,
     AdmissionTypeChoices,
     EducationalLevelChoices,
     GenderChoices,
+    LanguageChoices,
     SemesterChoices,
+    StudentAcademicRules,
     StudentStatusChoices,
 )
 
 
 # شخص (جایگزین User پیش‌فرض جنگو)
 class Person(AbstractUser):
-    LANGUAGE_CHOICES = [
-        ("fa", "فارسی"),
-        ("en", "انگلیسی"),
-    ]
-
-    # بازتعریف برای اجباری شدن و verbose_name فارسی
-    first_name = models.CharField(verbose_name="نام", max_length=100)
-    last_name = models.CharField(verbose_name="نام خانوادگی", max_length=100)
-    email = models.EmailField(verbose_name="ایمیل", max_length=254, unique=True)
-
+    first_name = models.CharField(verbose_name="نام", max_length=100, blank=False)
+    last_name = models.CharField(
+        verbose_name="نام خانوادگی", max_length=100, blank=False
+    )
+    email = models.EmailField(
+        verbose_name="ایمیل", max_length=254, unique=True, blank=False
+    )
     national_id = models.CharField(
         verbose_name="کد ملی",
         max_length=10,
         unique=True,
+        blank=False,
         validators=[RegexValidator(r"^\d{10}$", "کد ملی باید دقیقاً ۱۰ رقم باشد.")],
     )
-    birth_date = models.DateField(verbose_name="تاریخ تولد")
+    birth_date = models.DateField(verbose_name="تاریخ تولد", blank=False)
     gender = models.CharField(
-        verbose_name="جنسیت", max_length=6, choices=GenderChoices.choices
+        verbose_name="جنسیت",
+        max_length=6,
+        choices=GenderChoices.choices,
+        blank=False,
     )
-    address = models.CharField(verbose_name="آدرس", max_length=200, blank=True)
-
+    address = models.CharField(
+        verbose_name="آدرس", max_length=200, blank=True, default=""
+    )
     profile_image_path = models.CharField(
         verbose_name="مسیر تصویر پروفایل",
         max_length=255,
         blank=True,
+        default="",
         help_text="برای صدور کارت دانشجویی دیجیتال",
     )
     preferred_language = models.CharField(
         verbose_name="زبان ترجیحی",
         max_length=2,
-        choices=LANGUAGE_CHOICES,
-        default="fa",
+        choices=LanguageChoices.choices,
+        default=LanguageChoices.PERSIAN,
+        blank=False,
         help_text="پشتیبانی از فارسی و راست‌چین (NFUP01)",
     )
     is_notification_enabled = models.BooleanField(
-        verbose_name="دریافت اعلان فعال", default=True, help_text="FUOP05"
+        verbose_name="دریافت اعلان فعال",
+        default=True,
+        help_text="FUOP05",
     )
     birth_place = models.CharField(
-        verbose_name="محل تولد", max_length=100, help_text="برای مدارک رسمی (04FUFP)"
+        verbose_name="محل تولد",
+        max_length=100,
+        blank=False,
+        help_text="برای مدارک رسمی (04FUFP)",
     )
     updated_at = models.DateTimeField(verbose_name="تاریخ آخرین ویرایش", auto_now=True)
 
@@ -71,22 +81,19 @@ class Person(AbstractUser):
         verbose_name = "شخص"
         verbose_name_plural = "اشخاص"
         ordering = ["last_name", "first_name"]
-        # جلوگیری از ثبت تکراری یک نفر (علاوه بر یکتا بودن کد ملی)
-        unique_together = [
-            ("first_name", "last_name", "birth_date", "birth_place"),
-        ]
+        unique_together = [("first_name", "last_name", "birth_date", "birth_place")]
 
     def __str__(self):
         return self.full_name
 
     @property
     def full_name(self):
-        """نام کامل (محاسباتی)"""
+        """نام کامل شخص؛ فیلدی محاسباتی و ذخیره‌نشده در دیتابیس."""
         return f"{self.first_name} {self.last_name}"
 
     @property
     def age(self):
-        """سن بر اساس تاریخ تولد (محاسباتی)"""
+        """سن شخص بر اساس تاریخ تولد."""
         today = date.today()
         had_birthday = (today.month, today.day) >= (
             self.birth_date.month,
@@ -97,7 +104,6 @@ class Person(AbstractUser):
 
 # استاد
 class Teacher(models.Model):
-
     person = models.OneToOneField(
         Person,
         on_delete=models.CASCADE,
@@ -105,7 +111,11 @@ class Teacher(models.Model):
         verbose_name="شخص",
     )
     teacher_code = models.CharField(
-        verbose_name="کد استاد", max_length=20, unique=True, help_text="مثال: T-1001"
+        verbose_name="کد استاد",
+        max_length=20,
+        unique=True,
+        blank=False,
+        help_text="مثال: T-1001",
     )
     department = models.ForeignKey(
         "Department",
@@ -114,9 +124,12 @@ class Teacher(models.Model):
         verbose_name="گروه آموزشی",
     )
     academic_rank = models.CharField(
-        verbose_name="مرتبه علمی", max_length=20, choices=AcademicRankChoices.choices
+        verbose_name="مرتبه علمی",
+        max_length=20,
+        choices=AcademicRankChoices.choices,
+        blank=False,
     )
-    hire_date = models.DateField(verbose_name="تاریخ استخدام")
+    hire_date = models.DateField(verbose_name="تاریخ استخدام", blank=False)
 
     class Meta:
         db_table = "Teacher"
@@ -129,7 +142,7 @@ class Teacher(models.Model):
 
     @property
     def years_of_service(self):
-        """سابقه همکاری با دانشگاه به سال (محاسباتی)"""
+        """سابقه همکاری کامل استاد با دانشگاه بر حسب سال."""
         today = date.today()
         years = today.year - self.hire_date.year
         if (today.month, today.day) < (self.hire_date.month, self.hire_date.day):
@@ -139,37 +152,23 @@ class Teacher(models.Model):
 
 # دانشجو
 class Student(models.Model):
-    LEVEL_CHOICES = [
-        ("associate", "کاردانی"),
-        ("bachelor", "کارشناسی"),
-        ("master", "ارشد"),
-        ("phd", "دکتری"),
-    ]
-    STATUS_CHOICES = [
-        ("active", "فعال"),
-        ("leave", "مرخصی"),
-        ("probation", "مشروط"),
-        ("graduated", "فارغ‌التحصیل"),
-        ("withdrawn", "انصراف"),
-    ]
-
-    MAX_TERMS = {"associate": 6, "bachelor": 8, "master": 4, "phd": 8}
-    PROBATION_GPA = 12
-
     person = models.ForeignKey(
         Person,
         on_delete=models.PROTECT,
         related_name="student_records",
         verbose_name="شخص",
-        id=models.BigAutoField(primary_key=True),
     )
-
-    person = models.OneToOneField(
-        Person, on_delete=models.CASCADE, related_name="student"
+    student_code = models.CharField(
+        verbose_name="شماره دانشجویی",
+        max_length=20,
+        unique=True,
+        blank=False,
     )
-    student_code = models.CharField("شماره دانشجویی", max_length=20, unique=True)
     educational_level = models.CharField(
-        "مقطع تحصیلی", max_length=10, choices=LEVEL_CHOICES
+        verbose_name="مقطع تحصیلی",
+        max_length=10,
+        choices=EducationalLevelChoices.choices,
+        blank=False,
     )
     field = models.ForeignKey(
         "Field",
@@ -177,45 +176,57 @@ class Student(models.Model):
         related_name="students",
         verbose_name="رشته تحصیلی",
     )
-    application_date = models.DateField("تاریخ شروع تحصیل")
+    application_date = models.DateField(verbose_name="تاریخ شروع تحصیل", blank=False)
     status = models.CharField(
-        "وضعیت تحصیلی", max_length=10, choices=STATUS_CHOICES, default="active"
+        verbose_name="وضعیت تحصیلی",
+        max_length=10,
+        choices=StudentStatusChoices.choices,
+        default=StudentStatusChoices.ACTIVE,
+        blank=False,
     )
     admission_type = models.CharField(
-        "نوع پذیرش", max_length=100, help_text="مثلا با آزمون، با معدل"
+        verbose_name="نوع پذیرش",
+        max_length=20,
+        choices=AdmissionTypeChoices.choices,
+        blank=False,
     )
-
     previous_term_gpa = models.DecimalField(
-        "معدل ترم قبل",
+        verbose_name="معدل ترم قبل",
         max_digits=4,
         decimal_places=2,
         null=True,
         blank=True,
         validators=[MinValueValidator(0), MaxValueValidator(20)],
-        help_text="کنترل حداقل و حداکثر واحد (FUFD04)؛ برای ترم اول خالی است",
+        help_text="مبنای تعیین سقف واحد (FUFD04)؛ برای ترم اول خالی است",
     )
     total_gpa = models.DecimalField(
-        "معدل کل",
+        verbose_name="معدل کل",
         max_digits=4,
         decimal_places=2,
         null=True,
         blank=True,
         validators=[MinValueValidator(0), MaxValueValidator(20)],
-        help_text="نمایش وضعیت تحصیلی و مشروطی",
+        help_text="برای نمایش وضعیت تحصیلی و مشروطی",
     )
     passed_units = models.PositiveIntegerField(
-        "تعداد واحد گذرانده‌شده", default=0, help_text="حذف اضطراری (FUFP04)"
+        verbose_name="تعداد واحد گذرانده‌شده",
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="اطلاعات آموزشی موردنیاز برای حذف اضطراری (FUFP04)",
     )
     tuition_debt = models.DecimalField(
-        "مبلغ بدهی شهریه",
+        verbose_name="مبلغ بدهی شهریه",
         max_digits=12,
         decimal_places=0,
         default=0,
         validators=[MinValueValidator(0)],
-        help_text="مسدودسازی انتخاب واحد (FUFD05)؛ باید رمزنگاری شود (NFSP)",
+        help_text="مسدودسازی انتخاب واحد در صورت بدهی (FUFD05)",
     )
     completed_terms = models.PositiveSmallIntegerField(
-        "تعداد ترم‌های گذرانده‌شده", default=0, help_text="هشدار سنوات (25FUOP)"
+        verbose_name="تعداد ترم‌های گذرانده‌شده",
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="برای محاسبه سنوات باقی‌مانده (25FUOP)",
     )
 
     class Meta:
@@ -223,7 +234,6 @@ class Student(models.Model):
         verbose_name = "دانشجو"
         verbose_name_plural = "دانشجویان"
         ordering = ["student_code"]
-        # یک شخص در یک مقطع نمی‌تواند دو پرونده دانشجویی داشته باشد
         unique_together = [("person", "educational_level")]
 
     def __str__(self):
@@ -231,34 +241,36 @@ class Student(models.Model):
 
     @property
     def is_on_probation(self):
-        """مشروط بودن (معدل کل کمتر از ۱۲)"""
-        return self.total_gpa is not None and self.total_gpa < self.PROBATION_GPA
+        """مشروط بودن دانشجو بر اساس معدل کل کمتر از ۱۲."""
+        if self.total_gpa is None:
+            return False
+        return self.total_gpa < StudentAcademicRules.PROBATION_GPA
 
     @property
     def can_register_courses(self):
-        """بدهی شهریه انتخاب واحد را مسدود می‌کند (FUFD05)"""
+        """در صورت نداشتن بدهی شهریه، از نظر مالی مجاز به انتخاب واحد است."""
         return self.tuition_debt == 0
 
     @property
     def max_allowed_units(self):
-        """سقف واحد مجاز بر اساس معدل ترم قبل (FUFD04) - ضوابط نمونه"""
+        """سقف واحد مجاز بر اساس معدل ترم قبل؛ اعداد طبق ضوابط نمونه پروژه‌اند."""
+        rules = StudentAcademicRules
         gpa = self.previous_term_gpa
-        if gpa is None or gpa >= 17:
-            return 24
-        if gpa >= self.PROBATION_GPA:
-            return 20
-        return 14
+        if gpa is None:
+            return rules.MAX_UNITS_UNKNOWN_GPA
+        if gpa >= rules.HIGH_GPA:
+            return rules.MAX_UNITS_HIGH_GPA
+        if gpa >= rules.PROBATION_GPA:
+            return rules.MAX_UNITS_NORMAL
+        return rules.MAX_UNITS_PROBATION
 
     @property
     def remaining_terms(self):
-        """ترم‌های باقی‌مانده تا سقف سنوات مقطع (25FUOP)"""
-        return max(self.MAX_TERMS[self.educational_level] - self.completed_terms, 0)
-
-    student_code = models.CharField(max_length=20)
-
-    educational_level = models.CharField(max_length=30)
-
-    application_date = models.DateField(auto_now_add=True)
+        """تعداد ترم باقی‌مانده تا سقف سنوات مجاز مقطع."""
+        max_terms = StudentAcademicRules.MAX_TERMS.get(self.educational_level)
+        if max_terms is None:
+            return 0
+        return max(max_terms - self.completed_terms, 0)
 
 
 # درس
@@ -334,121 +346,129 @@ class Lesson(models.Model):
 
 # ترم
 class Student(models.Model):
-
-    MAX_TERMS = {
-        EducationalLevelChoices.ASSOCIATE: 6,
-        EducationalLevelChoices.BACHELOR: 8,
-        EducationalLevelChoices.MASTER: 4,
-        EducationalLevelChoices.PHD: 8,
-    }
-    PROBATION_GPA = 12
-    HIGH_GPA = 17
-    MAX_UNITS_HIGH_GPA = 24
-    MAX_UNITS_NORMAL = 20
-    MAX_UNITS_PROBATION = 14
-
-    person = models.ForeignKey(
-        Person,
-        on_delete=models.PROTECT,
-        related_name="student_records",
-        verbose_name="شخص",
+    term_code = models.CharField(
+        verbose_name="کد ترم",
+        max_length=20,
+        unique=True,
+        blank=False,
+        help_text="کد یکتای ترم، مثال: 14051",
     )
-    student_code = models.CharField(
-        verbose_name="شماره دانشجویی", max_length=20, unique=True
-    )
-    educational_level = models.CharField(
-        verbose_name="مقطع تحصیلی",
+    semester = models.CharField(
+        verbose_name="نیمسال",
         max_length=10,
-        choices=EducationalLevelChoices.choices,
+        choices=SemesterChoices.choices,
+        blank=False,
     )
-    field = models.ForeignKey(
-        "Field",
-        on_delete=models.PROTECT,
-        related_name="students",
-        verbose_name="رشته تحصیلی",
+    academic_year = models.CharField(
+        verbose_name="سال تحصیلی",
+        max_length=9,
+        blank=False,
+        validators=[
+            RegexValidator(
+                r"^\d{4}-\d{4}$",
+                "فرمت سال تحصیلی باید مثل 1405-1406 باشد.",
+            )
+        ],
+        help_text="مثال: 1405-1406",
     )
-    application_date = models.DateField(verbose_name="تاریخ شروع تحصیل")
-    status = models.CharField(
-        verbose_name="وضعیت تحصیلی",
-        max_length=10,
-        choices=StudentStatusChoices.choices,
-        default=StudentStatusChoices.ACTIVE,
+    start_date = models.DateField(
+        verbose_name="تاریخ شروع ترم",
+        blank=False,
+        help_text="تاریخ شروع کلاس‌های ترم",
     )
-    admission_type = models.CharField(
-        verbose_name="نوع پذیرش", max_length=20, choices=AdmissionTypeChoices.choices
+    end_date = models.DateField(
+        verbose_name="تاریخ پایان ترم",
+        blank=False,
+        help_text="تاریخ پایان کلاس‌های ترم",
     )
-
-    previous_term_gpa = models.DecimalField(
-        verbose_name="معدل ترم قبل",
-        max_digits=4,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        validators=[MinValueValidator(0), MaxValueValidator(20)],
-        help_text="کنترل حداقل و حداکثر واحد (FUFD04)؛ برای ترم اول خالی است",
+    registration_start = models.DateTimeField(
+        verbose_name="شروع انتخاب واحد",
+        blank=False,
+        help_text="بازه انتخاب واحد توسط مدیر تعریف می‌شود (FUID03)",
     )
-    total_gpa = models.DecimalField(
-        verbose_name="معدل کل",
-        max_digits=4,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        validators=[MinValueValidator(0), MaxValueValidator(20)],
-        help_text="نمایش وضعیت تحصیلی و مشروطی",
+    registration_end = models.DateTimeField(
+        verbose_name="پایان انتخاب واحد", blank=False, help_text="FUID03"
     )
-    passed_units = models.PositiveIntegerField(
-        verbose_name="تعداد واحد گذرانده‌شده",
-        default=0,
-        help_text="حذف اضطراری (FUFP04)",
+    add_drop_start = models.DateTimeField(
+        verbose_name="شروع حذف و اضافه", blank=False, help_text="FUID03"
     )
-    tuition_debt = models.DecimalField(
-        verbose_name="مبلغ بدهی شهریه",
-        max_digits=12,
-        decimal_places=0,
-        default=0,
-        validators=[MinValueValidator(0)],
-        help_text="مسدودسازی انتخاب واحد (FUFD05)؛ باید رمزنگاری شود (NFSP)",
+    add_drop_end = models.DateTimeField(
+        verbose_name="پایان حذف و اضافه", blank=False, help_text="FUID03"
     )
-    completed_terms = models.PositiveSmallIntegerField(
-        verbose_name="تعداد ترم‌های گذرانده‌شده",
-        default=0,
-        help_text="هشدار سنوات (25FUOP)",
+    emergency_drop_start = models.DateTimeField(
+        verbose_name="شروع حذف اضطراری",
+        blank=False,
+        help_text="بعد از پایان حذف و اضافه شروع می‌شود (FUFP04)",
+    )
+    emergency_drop_end = models.DateTimeField(
+        verbose_name="پایان حذف اضطراری", blank=False, help_text="FUFP04"
+    )
+    is_active = models.BooleanField(
+        verbose_name="فعال",
+        default=False,
+        help_text="فقط یک ترم می‌تواند هم‌زمان فعال باشد",
     )
 
     class Meta:
-        db_table = "Student"
-        verbose_name = "دانشجو"
-        verbose_name_plural = "دانشجویان"
-        ordering = ["student_code"]
-        unique_together = [("person", "educational_level")]
+        db_table = "Term"
+        verbose_name = "ترم"
+        verbose_name_plural = "ترم‌ها"
+        ordering = ["-start_date"]
+        unique_together = [("semester", "academic_year")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["is_active"],
+                condition=models.Q(is_active=True),
+                name="only_one_active_term",
+            ),
+        ]
 
     def __str__(self):
-        return f"{self.student_code} - {self.person.full_name}"
+        return f"{self.get_semester_display()} {self.academic_year}"
+
+    def clean(self):
+        """اعتبارسنجی ترتیب تاریخ‌های ترم و بازه‌های آموزشی."""
+        super().clean()
+        pairs = [
+            (self.start_date, self.end_date, "تاریخ پایان ترم"),
+            (self.registration_start, self.registration_end, "پایان انتخاب واحد"),
+            (self.add_drop_start, self.add_drop_end, "پایان حذف و اضافه"),
+            (self.emergency_drop_start, self.emergency_drop_end, "پایان حذف اضطراری"),
+        ]
+        for start, end, label in pairs:
+            if start is not None and end is not None and end <= start:
+                raise ValidationError(
+                    {"__all__": f"{label} باید بعد از زمان شروع باشد."}
+                )
+
+        if (
+            self.emergency_drop_start is not None
+            and self.add_drop_end is not None
+            and self.emergency_drop_start <= self.add_drop_end
+        ):
+            raise ValidationError(
+                {
+                    "emergency_drop_start": "حذف اضطراری باید بعد از پایان حذف و اضافه شروع شود."
+                }
+            )
 
     @property
-    def is_on_probation(self):
-        """مشروط بودن (معدل کل کمتر از ۱۲)"""
-        return self.total_gpa is not None and self.total_gpa < self.PROBATION_GPA
+    def is_registration_open(self):
+        """آیا در حال حاضر بازه انتخاب واحد فعال است؟"""
+        now = timezone.now()
+        return self.registration_start <= now <= self.registration_end
 
     @property
-    def can_register_courses(self):
-        """بدهی شهریه انتخاب واحد را مسدود می‌کند (FUFD05)"""
-        return self.tuition_debt == 0
+    def is_add_drop_open(self):
+        """آیا در حال حاضر بازه حذف و اضافه فعال است؟"""
+        now = timezone.now()
+        return self.add_drop_start <= now <= self.add_drop_end
 
     @property
-    def max_allowed_units(self):
-        """سقف واحد مجاز بر اساس معدل ترم قبل (FUFD04) - ضوابط نمونه"""
-        gpa = self.previous_term_gpa
-        if gpa is None or gpa >= self.HIGH_GPA:
-            return self.MAX_UNITS_HIGH_GPA
-        if gpa >= self.PROBATION_GPA:
-            return self.MAX_UNITS_NORMAL
-        return self.MAX_UNITS_PROBATION
-
-    @property
-    def remaining_terms(self):
-        """ترم‌های باقی‌مانده تا سقف سنوات مقطع (25FUOP)"""
-        return max(self.MAX_TERMS[self.educational_level] - self.completed_terms, 0)
+    def is_emergency_drop_open(self):
+        """آیا در حال حاضر بازه حذف اضطراری فعال است؟"""
+        now = timezone.now()
+        return self.emergency_drop_start <= now <= self.emergency_drop_end
 
 
 # درس
