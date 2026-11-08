@@ -1,5 +1,6 @@
 from django.db import models
 
+
 # ==========================================
 # 1. Person & UserAccount & Role
 # ==========================================
@@ -244,11 +245,17 @@ class ThesisReviewStatusChoices(models.TextChoices):
 
 
 class CounselingStatusChoices(models.TextChoices):
-    SCHEDULED = "scheduled", "برنامه‌ریزی شده"
-    COMPLETED = "completed", "انجام شده"
-    CANCELLED = "cancelled", "لغو شده"
-    REJECTED = "rejected", "رد شده"
+    PENDING = 'pending', 'در انتظار برگزاری'
+    SCHEDULED = 'scheduled', 'برنامه‌ریزی شده'
+    COMPLETED = 'completed', 'انجام شده'
+    CANCELLED = 'cancelled', 'لغو شده'
+    REJECTED = 'rejected', 'رد شده'
 
+
+class ScholarshipStatusChoices(models.TextChoices):
+    PENDING = 'pending', 'در انتظار بررسی'
+    APPROVED = 'approved', 'تأیید شده'
+    REJECTED = 'rejected', 'رد شده'
 
 # ==========================================
 # 12. Graduation, ChangeLog, Library, Parking, Dormitory
