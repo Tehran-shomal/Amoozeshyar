@@ -1664,9 +1664,8 @@ class Proposal(models.Model):
     def __str__(self):
         return self.proposal_title
 
-
-# درخواست مهمانی دروس
 class TransferRequest(models.Model):
+
     REVIEW_STATUS_CHOICES = [
         ("pending", "در انتظار بررسی"),
         ("approved", "تأیید شده"),
@@ -1676,7 +1675,7 @@ class TransferRequest(models.Model):
     transfer_id = models.AutoField(
         primary_key=True,
         db_column="TransferId",
-        verbose_name="شناسه درخواست",
+        verbose_name="شناسه درخواست"
     )
 
     student = models.ForeignKey(
@@ -1684,13 +1683,13 @@ class TransferRequest(models.Model):
         on_delete=models.PROTECT,
         related_name="transfer_requests",
         db_column="StudentId",
-        verbose_name="دانشجو",
+        verbose_name="دانشجو"
     )
 
     destination_university = models.CharField(
         max_length=255,
         db_column="DestinationUniversity",
-        verbose_name="نام دانشگاه مقصد",
+        verbose_name="نام دانشگاه مقصد"
     )
 
     review_status = models.CharField(
@@ -1698,29 +1697,41 @@ class TransferRequest(models.Model):
         choices=REVIEW_STATUS_CHOICES,
         default="pending",
         db_column="ReviewStatus",
-        verbose_name="وضعیت بررسی",
+        verbose_name="وضعیت بررسی"
     )
 
     course_compatibility_result = models.TextField(
         blank=True,
+        default="",
         db_column="CourseCompatibilityResult",
-        verbose_name="نتیجه بررسی دروس",
+        verbose_name="نتیجه بررسی دروس"
     )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_column="CreatedAt",
+        verbose_name="تاریخ ثبت درخواست"
+    )
+
+    @property
+    def is_approved(self):
+        return self.review_status == "approved"
 
     class Meta:
         db_table = "TransferRequest"
-        verbose_name = "درخواست مهمانی دروس"
+        verbose_name = "درخواست مهمانی درس"
         verbose_name_plural = "درخواست‌های مهمانی دروس"
+        ordering = ["-transfer_id"]
 
     def __str__(self):
         return (
             f"درخواست مهمانی {self.transfer_id} - "
+            f"{self.student} - "
             f"{self.get_review_status_display()}"
         )
 
-
-# بررسی شرایط فارغ‌التحصیلی
 class GraduationAudit(models.Model):
+
     GRADUATION_STATUS_CHOICES = [
         ("eligible", "واجد شرایط"),
         ("not_eligible", "فاقد شرایط"),
@@ -1730,7 +1741,7 @@ class GraduationAudit(models.Model):
     audit_id = models.AutoField(
         primary_key=True,
         db_column="AuditId",
-        verbose_name="شناسه بررسی",
+        verbose_name="شناسه بررسی"
     )
 
     student = models.ForeignKey(
@@ -1738,7 +1749,7 @@ class GraduationAudit(models.Model):
         on_delete=models.PROTECT,
         related_name="graduation_audits",
         db_column="StudentId",
-        verbose_name="دانشجو",
+        verbose_name="دانشجو"
     )
 
     curriculum = models.ForeignKey(
@@ -1746,13 +1757,13 @@ class GraduationAudit(models.Model):
         on_delete=models.PROTECT,
         related_name="graduation_audits",
         db_column="CurriculumId",
-        verbose_name="چارت درسی",
+        verbose_name="چارت درسی"
     )
 
     remaining_units = models.PositiveIntegerField(
         default=0,
         db_column="RemainingUnits",
-        verbose_name="تعداد واحد باقی‌مانده",
+        verbose_name="تعداد واحد باقی‌مانده"
     )
 
     graduation_status = models.CharField(
@@ -1760,23 +1771,42 @@ class GraduationAudit(models.Model):
         choices=GRADUATION_STATUS_CHOICES,
         default="under_review",
         db_column="GraduationStatus",
-        verbose_name="وضعیت فارغ‌التحصیلی",
+        verbose_name="وضعیت فارغ‌التحصیلی"
     )
+
+    audit_date = models.DateTimeField(
+        auto_now_add=True,
+        db_column="AuditDate",
+        verbose_name="تاریخ بررسی"
+    )
+
+    @property
+    def is_graduation_eligible(self):
+        return (
+            self.remaining_units == 0
+            and self.graduation_status == "eligible"
+        )
 
     class Meta:
         db_table = "GraduationAudit"
         verbose_name = "بررسی فارغ‌التحصیلی"
         verbose_name_plural = "بررسی‌های فارغ‌التحصیلی"
+        ordering = ["-audit_date"]
+
+        unique_together = [
+            ("student", "curriculum")
+        ]
 
     def __str__(self):
         return (
             f"بررسی فارغ‌التحصیلی {self.audit_id} - "
+            f"{self.student} - "
             f"{self.get_graduation_status_display()}"
         )
 
 
-# تاریخچه تغییرات آموزشی
 class EducationalChangeLog(models.Model):
+
     CHANGE_TYPE_CHOICES = [
         ("grade_change", "تغییر نمره"),
         ("course_deletion", "حذف درس"),
@@ -1786,7 +1816,7 @@ class EducationalChangeLog(models.Model):
     log_id = models.AutoField(
         primary_key=True,
         db_column="LogId",
-        verbose_name="شناسه تاریخچه",
+        verbose_name="شناسه تاریخچه"
     )
 
     student = models.ForeignKey(
@@ -1794,14 +1824,14 @@ class EducationalChangeLog(models.Model):
         on_delete=models.PROTECT,
         related_name="educational_change_logs",
         db_column="StudentId",
-        verbose_name="دانشجو",
+        verbose_name="دانشجو"
     )
 
     change_type = models.CharField(
         max_length=30,
         choices=CHANGE_TYPE_CHOICES,
         db_column="ChangeType",
-        verbose_name="نوع تغییر",
+        verbose_name="نوع تغییر"
     )
 
     changed_by = models.ForeignKey(
@@ -1809,24 +1839,38 @@ class EducationalChangeLog(models.Model):
         on_delete=models.PROTECT,
         related_name="educational_change_logs",
         db_column="ChangedBy",
-        verbose_name="کاربر ثبت‌کننده",
+        verbose_name="کاربر ثبت‌کننده"
     )
 
     changed_at = models.DateTimeField(
         auto_now_add=True,
         db_column="ChangedAt",
-        verbose_name="تاریخ و ساعت تغییر",
+        verbose_name="تاریخ و ساعت تغییر"
     )
+
+    description = models.TextField(
+        blank=True,
+        default="",
+        db_column="Description",
+        verbose_name="توضیحات تغییر"
+    )
+
+    @property
+    def change_type_label(self):
+        return self.get_change_type_display()
 
     class Meta:
         db_table = "EducationalChangeLog"
-        verbose_name = "تاریخچه تغییرات آموزشی"
+        verbose_name = "تاریخچه تغییر آموزشی"
         verbose_name_plural = "تاریخچه تغییرات آموزشی"
         ordering = ["-changed_at"]
 
     def __str__(self):
-        return f"تغییر آموزشی {self.log_id} - " f"{self.get_change_type_display()}"
-
+        return (
+            f"تغییر آموزشی {self.log_id} - "
+            f"{self.student} - "
+            f"{self.get_change_type_display()}"
+        )
 
 # ==========================================
 # جدول Curriculum (چارت درسی)
