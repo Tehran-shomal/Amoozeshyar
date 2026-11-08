@@ -693,41 +693,71 @@ class Exam(models.Model):
 
 # گروه کلاسی
 class LessonGroups(models.Model):
-    id = models.BigIntegerField(primary_key=True)
+    id = models.BigIntegerField(primary_key = True, verbose_name = "آیدی")
 
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length = 50, blank = False, null = False, verbose_name = "نام گروه")
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add = True, verbose_name = "تاریخ ساخت")
 
     created_by = models.ForeignKey(
-        Person, on_delete=models.CASCADE, related_name="lesson_groups"
+        Person, 
+        on_delete = models.CASCADE, 
+        related_name = "lesson_groups", 
+        verbose_name = "سازنده گروه"
     )
 
-    members = models.ManyToManyField(Person, related_name="lesson_groups")
+    members = models.ManyToManyField(
+        Person, 
+        related_name = "lesson_groups", 
+        verbose_name = "اعضا"
+    )
 
     teacher = models.ForeignKey(
-        Teacher, on_delete=models.DO_NOTHING, related_name="lesson_groups"
+        Teacher, 
+        on_delete = models.DO_NOTHING, 
+        related_name = "lesson_groups", 
+        verbose_name = "استاد"
     )
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default = True, verbose_name = "وضعیت")
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "گروه کلاسی",
+        verbose_name_plural = "گروه های کلاسی"
 
 
 # مجوزهای پارکینگ
 class ParkingPasses(models.Model):
-    id = models.BigAutoField(primary_key=True)
+    id = models.BigAutoField(primary_key = True, verbose_name = "آیدی")
 
-    parking_pass_code = models.CharField(max_length=50)
+    parking_pass_code = models.CharField(max_length = 50, unique = True, null = False, verbose_name = "کد مجوز پارکینگ")
 
-    aquisition_date = models.DateField(auto_now_add=True)
+    aquisition_date = models.DateField(auto_now_add=True, verbose_name = "تاریخ اخذ")
 
-    expiration_date = models.DateField
+    expiration_date = models.DateField(null = False, blank = False, verbose_name = "تاریخ انقضا")
 
-    charge = models.BigIntegerField
+    charge = models.BigIntegerField(null = False, default = 0, blank = False, verbose_name = "شارژ")
 
     owner = models.OneToOneField(
-        Person, on_delete=models.CASCADE, related_name="parking_pass"
+        Person, 
+        on_delete = models.CASCADE, 
+        related_name = "parking_pass",
+        verbose_name = "مالک"
     )
 
+    @property
+    def remaining_days(self):
+        return (self.aquisition_date - self.expiration_date).days
+
+    def __str__(self):
+        return self.parking_pass_code
+
+    class Meta:
+        verbose_name = "مجوز پارکینگ",
+        verbose_name_plural = "مجوزهای پارکینگ"
 
 # نقش
 class Role(models.Model):
