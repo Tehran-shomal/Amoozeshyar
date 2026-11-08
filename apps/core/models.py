@@ -2024,3 +2024,220 @@ class ThesisProgressReport(models.Model):
 
     def __str__(self):
         return f"گزارش پیشرفت پایان‌نامه {self.report_id}"
+
+#نوتیفیکیشن 
+class Notification(models.Model):
+    NOTIFICATION_TYPE_CHOICES = [
+        ("GRADE", "نمره"),
+        ("ANNOUNCEMENT", "اطلاعیه"),
+        ("CLASS_CHANGE", "تغییر کلاس"),
+        ("SYSTEM", "سیستمی"),
+    ]
+    # notification_id=models.AutoField(primary_key=True,vebose_name="شناسه اعلان")
+    user = models.ForeignKey(
+        "UserAccount",
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        verbose_name="کاربر دریافت‌کننده",
+    )
+    title = models.CharField(
+        max_length=255,
+        verbose_name="عنوان اعلان",
+    )
+    message = models.TextField(
+        verbose_name="متن اعلان",
+    )
+    related_exam = models.ForeignKey(
+        "Exam",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="notifications",
+        verbose_name="امتحان مرتبط",
+    )
+    notification_type = models.CharField(
+        max_length=30,
+        choices=NOTIFICATION_TYPE_CHOICES,
+        verbose_name="نوع اعلان",
+    )
+    sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="زمان ارسال",
+    )
+    is_read = models.BooleanField(
+        default=False,
+        verbose_name="خوانده شده",
+    )
+    read_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="زمان خوانده شدن",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="زمان ایجاد رکورد",
+    )
+
+    class Meta:
+        verbose_name = "اعلان"
+        verbose_name_plural = "اعلان‌ها"
+
+    def __str__(self):
+        return f"{self.get_notification_type_display()}: {self.title}"
+
+#نظرسنجی اساتید
+class TeacherSurvey(models.Model):
+    RATING_CHOICES = [
+        (1, "۱"),
+        (2, "۲"),
+        (3, "۳"),
+        (4, "۴"),
+        (5, "۵"),
+    ]
+    # survey_id = models.AutoField(primary_key=True,verbose_name="شناسه نظرسنجی")
+    
+    enrollment = models.ForeignKey(
+        "Enrollment",
+        on_delete=models.CASCADE,
+        related_name="teacher_surveys",
+        verbose_name="ثبت‌نام",
+    )
+    overall_rating = models.PositiveSmallIntegerField(
+        choices=RATING_CHOICES,
+        verbose_name="امتیاز کلی",
+    )
+    teaching_quality = models.PositiveSmallIntegerField(
+        choices=RATING_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="کیفیت تدریس",
+    )
+    submitted_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="زمان ثبت نظرسنجی",
+    )
+    behavior = models.PositiveSmallIntegerField(
+        choices=RATING_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="رفتار استاد",
+    )
+    comment = models.TextField(
+        blank=True,
+        verbose_name="نظر دانشجو",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="زمان ایجاد رکورد",
+    )
+
+    class Meta:
+        verbose_name = "نظرسنجی استاد و درس"
+        verbose_name_plural = "نظرسنجی‌های استاد و درس"
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(overall_rating__gte=1, overall_rating__lte=5),
+                name="ts_rating_1_5",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(teaching_quality__isnull=True)
+                    | models.Q(teaching_quality__gte=1, teaching_quality__lte=5)
+                ),
+                name="ts_quality_1_5",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(behavior__isnull=True)
+                    | models.Q(behavior__gte=1, behavior__lte=5)
+                ),
+                name="ts_behavior_1_5",
+            ),
+        ]
+
+    def __str__(self):
+        return f"نظرسنجی با امتیاز {self.overall_rating} از ۵"
+
+#کاراموزی
+class Internship(models.Model):
+    REQUEST_TYPE_CHOICES = [
+        ("INTERNSHIP_LETTER", "نامه کارآموزی"),
+        ("INTRODUCTION_LETTER", "معرفی‌نامه"),
+    ]
+
+    STATUS_CHOICES = [
+        ("PENDING", "در انتظار"),
+        ("APPROVED", "تأیید شده"),
+        ("REJECTED", "رد شده"),
+        ("ISSUED", "صادر شده"),
+    ]
+    # internship_id=models.AutoField(primary_key=True,verbose_name="شناسه کاراموزی")
+    student = models.ForeignKey(
+        "Student",
+        on_delete=models.CASCADE,
+        related_name="internship_records",
+        verbose_name="دانشجو",
+    )
+    request_type = models.CharField(
+        max_length=30,
+        choices=REQUEST_TYPE_CHOICES,
+        verbose_name="نوع درخواست",
+    )
+    company_name = models.CharField(
+        max_length=255,
+        verbose_name="نام شرکت یا سازمان",
+    )
+    intern_start_date = models.DateField(
+        verbose_name="تاریخ شروع کارآموزی",
+    )
+    duration_hours = models.PositiveIntegerField(
+        verbose_name="مدت کارآموزی به ساعت",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="PENDING",
+        verbose_name="وضعیت درخواست",
+    )
+    reviewed_by = models.ForeignKey(
+        "UserAccount",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_internship_requests",
+        verbose_name="بررسی‌کننده",
+    )
+    reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="زمان بررسی",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="زمان ایجاد درخواست",
+    )
+
+    class Meta:
+        verbose_name = "درخواست کارآموزی"
+        verbose_name_plural = "درخواست‌های کارآموزی"
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    request_type__in=[
+                        "INTERNSHIP_LETTER",
+                        "INTRODUCTION_LETTER",
+                    ]
+                ),
+                name="intern_type_valid",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    status__in=["PENDING", "APPROVED", "REJECTED", "ISSUED"]
+                ),
+                name="intern_status_valid",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.get_request_type_display()} - {self.company_name}"
