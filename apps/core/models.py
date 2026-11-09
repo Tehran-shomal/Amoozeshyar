@@ -1,27 +1,16 @@
+from .constants import Constants    
 from django.db import models
-from .constants import (
-    ProposalStatusChoices,
-    CounselingStatusChoices,
-    ScholarshipStatusChoices,
-)
+from datetime import date #این خط کم بود اضافه کردم
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
-from django.db import models
+#from django.db import models 
+#خط بالا دوبار تکرار شده که کامنت کردم
 from django.utils import timezone
-
-from django.db.models.fields.related import _OnDeleteOptions
+#from django.db.models.fields.related import _OnDeleteOptions
+#این خط که کامنت کردم دستور قدیمیه و دیگه توی نسخه های جدید به آن نیازی نیست و وجود آن باعث خطا میشود
 from .constants import TicketCreatorRoleChoices, TicketStatusChoices
-from .constants import (
-    AcademicRankChoices,
-    AdmissionTypeChoices,
-    EducationalLevelChoices,
-    GenderChoices,
-    LanguageChoices,
-    SemesterChoices,
-    StudentAcademicRules,
-    StudentStatusChoices,
-)
+
 
 
 # شخص (جایگزین User پیش‌فرض جنگو)
@@ -65,6 +54,16 @@ class Person(AbstractUser):
         blank=False,
         help_text="پشتیبانی از فارسی و راست‌چین (NFUP01)",
     )
+    """   باید به این شکل از ثابت ها استفاده شود
+    preferred_language = models.CharField(
+    verbose_name="زبان ترجیحی",
+    max_length=2,
+    default=Constants.LANGUAGE_PERSIAN,  # ← استفاده از ثابت
+    blank=False,
+    help_text="پشتیبانی از فارسی و راست‌چین ",
+    )
+    
+    """
     is_notification_enabled = models.BooleanField(
         verbose_name="دریافت اعلان فعال",
         default=True,
@@ -1841,77 +1840,112 @@ class EducationalChangeLog(models.Model):
 # جدول Curriculum (چارت درسی)
 # ==========================================
 class Curriculum(models.Model):
-    curriculum_id = models.AutoField(primary_key=True)
-    field = models.ForeignKey(
-        "Field", on_delete=models.CASCADE, verbose_name="رشته تحصیلی"
-    )
-    lesson = models.ForeignKey("Lesson", on_delete=models.CASCADE, verbose_name="درس")
-    requirement_type = models.CharField(max_length=20, verbose_name="نوع درس در چارت")
+    curriculum_id = models.AutoField(primary_key=True, verbose_name="شناسه چارت")
+    field = models.ForeignKey("Field",on_delete=models.CASCADE,related_name="curriculums",verbose_name="رشته تحصیلی")
+    lesson = models.ForeignKey("Lesson",on_delete=models.CASCADE,related_name="curriculums",verbose_name="درس")
+    requirement_type = models.CharField(max_length=20,default=Constants.REQUIREMENT_MANDATORY,verbose_name="نوع درس در چارت")
     recommended_term = models.IntegerField(verbose_name="ترم پیشنهادی")
     calculated_units = models.IntegerField(verbose_name="تعداد واحد قابل محاسبه")
     is_active = models.BooleanField(default=True, verbose_name="فعال")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت")
 
     class Meta:
         db_table = "Curriculum"
         verbose_name = "چارت درسی"
         verbose_name_plural = "چارت‌های درسی"
+        ordering = ["field", "recommended_term"]
+        unique_together = [("field", "lesson")]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(requirement_type__in=[
+                    Constants.REQUIREMENT_MANDATORY,
+                    Constants.REQUIREMENT_ELECTIVE,
+                    Constants.REQUIREMENT_BASIC,
+                ]),
+                name="curriculum_requirement_type_valid"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.field.field_name} - ترم {self.recommended_term} - {self.lesson.title}"
 
 
 # ==========================================
 # جدول Communication (ارتباطات و مکاتبات)
 # ==========================================
 class Communication(models.Model):
-    communication_id = models.AutoField(primary_key=True)
-    sender = models.ForeignKey(
-        "UserAccount",
-        on_delete=models.CASCADE,
-        related_name="sent_messages",
-        verbose_name="فرستنده",
-    )
-    receiver = models.ForeignKey(
-        "UserAccount",
-        on_delete=models.CASCADE,
-        related_name="received_messages",
-        verbose_name="گیرنده",
-    )
+    communication_id = models.AutoField(primary_key=True, verbose_name="شناسه مکاتبه")
+    sender = models.ForeignKey("UserAccount",on_delete=models.CASCADE,related_name="sent_messages",verbose_name="فرستنده" )
+    receiver = models.ForeignKey("UserAccount",on_delete=models.CASCADE,related_name="received_messages",verbose_name="گیرنده")
     subject = models.CharField(max_length=255, verbose_name="موضوع")
     message_body = models.TextField(verbose_name="متن پیام")
-    communication_type = models.CharField(max_length=30, verbose_name="نوع مکاتبه")
-    status = models.CharField(max_length=20, verbose_name="وضعیت")
-    sent_at = models.DateTimeField(verbose_name="تاریخ ارسال")
+    communication_type = models.CharField(max_length=30,default=Constants.COMMUNICATION_OFFICIAL,verbose_name="نوع مکاتبه")
+    status = models.CharField(max_length=20,default=Constants.COMMUNICATION_UNREAD,verbose_name="وضعیت")
+    sent_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ارسال")
+    is_read = models.BooleanField(default=False, verbose_name="خوانده شده")
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name="تاریخ خوانده شدن")
 
     class Meta:
         db_table = "Communication"
         verbose_name = "مکاتبه"
         verbose_name_plural = "مکاتبات"
+        ordering = ["-sent_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(communication_type__in=[
+                    Constants.COMMUNICATION_OFFICIAL,
+                    Constants.COMMUNICATION_INFORMAL,
+                    Constants.COMMUNICATION_REQUEST,
+                    Constants.COMMUNICATION_ANNOUNCEMENT,
+                ]),
+                name="communication_type_valid"
+            ),
+            models.CheckConstraint(
+                condition=models.Q(status__in=[
+                    Constants.COMMUNICATION_UNREAD,
+                    Constants.COMMUNICATION_READ,
+                    Constants.COMMUNICATION_REPLIED,
+                ]),
+                name="communication_status_valid"
+            ),
+        ]
 
+    def __str__(self):
+        return f"{self.sender} -> {self.receiver}: {self.subject}"
 
 # ==========================================
 # جدول SystemSetting (تنظیمات پویای سیستم)
 # ==========================================
 class SystemSetting(models.Model):
-    setting_id = models.AutoField(primary_key=True)
-    setting_key = models.CharField(
-        max_length=100, unique=True, verbose_name="کلید تنظیم"
-    )
+    setting_id = models.AutoField(primary_key=True, verbose_name="شناسه تنظیم")
+    setting_key = models.CharField(max_length=100,unique=True,verbose_name="کلید تنظیم")
     setting_value = models.CharField(max_length=255, verbose_name="مقدار تنظیم")
-    data_type = models.CharField(max_length=20, verbose_name="نوع داده")
+    data_type = models.CharField(max_length=20,default=Constants.DATA_TYPE_STRING,verbose_name="نوع داده")
     description = models.TextField(null=True, blank=True, verbose_name="توضیحات")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین به‌روزرسانی")
-    updated_by = models.ForeignKey(
-        "UserAccount",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name="به‌روزرسانی‌کننده",
-    )
+    updated_by = models.ForeignKey("UserAccount",on_delete=models.SET_NULL,null=True,blank=True,verbose_name="به‌روزرسانی‌کننده")
 
     class Meta:
         db_table = "SystemSetting"
         verbose_name = "تنظیمات سیستم"
         verbose_name_plural = "تنظیمات سیستم"
+        ordering = ["setting_key"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(data_type__in=[
+                    Constants.DATA_TYPE_INTEGER,
+                    Constants.DATA_TYPE_DECIMAL,
+                    Constants.DATA_TYPE_STRING,
+                    Constants.DATA_TYPE_BOOLEAN,
+                    Constants.DATA_TYPE_DATE,
+                ]),
+                name="system_setting_data_type_valid"
+            ),
+        ]
 
-
+    def __str__(self):
+        return f"{self.setting_key} = {self.setting_value}"
+    
 class CreditTransferRequest(models.Model):
     STATUS_CHOICES = [
         ("pending", "در انتظار بررسی"),
