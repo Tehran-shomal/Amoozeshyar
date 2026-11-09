@@ -475,11 +475,6 @@ class Student(models.Model):
         return self.emergency_drop_start <= now <= self.emergency_drop_end
 
 
-# درس
-class Lesson(models.Model):
-    pass
-
-
 # ترم
 class Term(models.Model):
 
@@ -804,11 +799,6 @@ class Role(models.Model):
 class UserAccount(
     models.Model
 ):  # مدل حساب کاربری؛ Django از آن جدول پایگاه داده می‌سازد
-
-    user_id = models.AutoField(
-        primary_key=True,  # شناسهٔ اصلی و یکتای هر حساب؛ خودکار افزایش می‌یابد
-        verbose_name="شناسه حساب کاربری",  # نام قابل‌نمایش فیلد در پنل مدیریت
-    )
 
     person = models.ForeignKey(
         "Person",  # هر حساب به یک شخص از مدل Person متصل است
@@ -1446,21 +1436,6 @@ class RefundRequest(models.Model):
 
     def __str__(self):
         return f"درخواست استرداد شماره {self.refund_case_key}"
-
-
-# اعلان
-class Notification(models.Model):
-    pass
-
-
-# نظرسنجی از معلم
-class TeacherSurvey(models.Model):
-    pass
-
-
-# کارآموزی
-class Internship(models.Model):
-    pass
 
 
 # امانت کتابخانه
