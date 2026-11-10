@@ -2550,23 +2550,26 @@ class Internship(models.Model):
     class Meta:
         verbose_name = "درخواست کارآموزی"
         verbose_name_plural = "درخواست‌های کارآموزی"
-        constraints = [
-            models.CheckConstraint(
-                condition=models.Q(
-                    request_type__in=[
-                        "INTERNSHIP_LETTER",
-                        "INTRODUCTION_LETTER",
-                    ]
-                ),
-                name="intern_type_valid",
-            ),
-            models.CheckConstraint(
-                condition=models.Q(
-                    status__in=["PENDING", "APPROVED", "REJECTED", "ISSUED"]
-                ),
-                name="intern_status_valid",
-            ),
-        ]
+    #"""
+    #    constraints = [
+    #        models.CheckConstraint(
+    #            condition=models.Q(
+    #                request_type__in=[
+    #                    "INTERNSHIP_LETTER",
+    #                    "INTRODUCTION_LETTER",
+    #                ]
+    #            ),
+    #            name="intern_type_valid",
+    #        ),
+    #        models.CheckConstraint(
+    #            condition=models.Q(
+    #                status__in=["PENDING", "APPROVED", "REJECTED", "ISSUED"]
+    #            ),
+    #            name="intern_status_valid",
+    #        ),
+    #    ]
+    #"""
+       
 
     def __str__(self):
         return f"{self.get_request_type_display()} - {self.company_name}"

@@ -803,12 +803,4 @@ class Migration(migrations.Migration):
             model_name='payment',
             constraint=models.CheckConstraint(condition=models.Q(('amount__gt', 0)), name='payment_amount_must_be_positive'),
         ),
-        migrations.AddConstraint(
-            model_name='internship',
-            constraint=models.CheckConstraint(condition=models.Q(('request_type__in', ['INTERNSHIP_LETTER', 'INTRODUCTION_LETTER'])), name='intern_type_valid'),
-        ),
-        migrations.AddConstraint(
-            model_name='internship',
-            constraint=models.CheckConstraint(condition=models.Q(('status__in', ['PENDING', 'APPROVED', 'REJECTED', 'ISSUED'])), name='intern_status_valid'),
-        ),
     ]
