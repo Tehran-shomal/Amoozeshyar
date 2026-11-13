@@ -2297,3 +2297,11 @@ class Internship(models.Model):
 
     def __str__(self):
         return f"{self.get_request_type_display()} - {self.company_name}"
+
+
+class Field(models.Model):
+    pass
+
+
+class Department(models.Model):
+    pass
