@@ -1262,6 +1262,14 @@ class Ticket(models.Model):
         verbose_name="وضعیت",
     )
     """
+    parent = models.ForeignKey(
+    "self",
+    on_delete=models.CASCADE,
+    null=True,
+    blank=True,
+    related_name="replies",
+    verbose_name="تیکت اصلی",
+)
     status = models.ForeignKey(
         Constant,
         on_delete=models.PROTECT,
