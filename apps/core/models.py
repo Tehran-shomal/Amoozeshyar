@@ -756,7 +756,8 @@ class Role(models.Model):
     )
 
     # توضیحات نقش
-    description = models.TextField(
+    description = models.CharField(
+        max_length=100,
         blank=True,
         null=True,
         verbose_name="توضیح"
