@@ -1,29 +1,64 @@
 from django.db import models
-from .constants import (
-    ProposalStatusChoices,
-    CounselingStatusChoices,
-    ScholarshipStatusChoices,
-)
+from django.db.models import Q
+from datetime import date #این خط کم بود اضافه کردم
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
-from django.db import models
+#from django.db import models 
+#خط بالا دوبار تکرار شده که کامنت کردم
 from django.utils import timezone
+#from django.db.models.fields.related import _OnDeleteOptions
+#این خط که کامنت کردم دستور قدیمیه و دیگه توی نسخه های جدید به آن نیازی نیست و وجود آن باعث خطا میشود
 
-from django.db.models.fields.related import _OnDeleteOptions
-from .constants import TicketCreatorRoleChoices, TicketStatusChoices
-from .constants import (
-    AcademicRankChoices,
-    AdmissionTypeChoices,
-    EducationalLevelChoices,
-    GenderChoices,
-    LanguageChoices,
-    SemesterChoices,
-    StudentAcademicRules,
-    StudentStatusChoices,
-)
+# ==========================================
+# قوانین آموزشی (برای استفاده در @propertyها)
+# ==========================================
+class StudentAcademicRules:
+    """
+    کلاس قوانین آموزشی.
+    این مقادیر در @propertyها استفاده می‌شوند تا افزونگی داده کاهش یابد.
+    """
+    # حداقل معدل برای مشروط نشدن
+    PROBATION_GPA = 12.0
+    
+    # معدل بالا (برای سقف واحد بیشتر)
+    HIGH_GPA = 17.0
+    
+    # سقف واحد مجاز بر اساس معدل
+    MAX_UNITS_UNKNOWN_GPA = 14    # معدل نامشخص (ترم اول)
+    MAX_UNITS_HIGH_GPA = 24       # معدل بالا (۱۷ به بالا)
+    MAX_UNITS_NORMAL = 20         # معدل عادی (۱۲ تا ۱۷)
+    MAX_UNITS_PROBATION = 14      # معدل مشروط (کمتر از ۱۲)
+    
+    # حداکثر تعداد ترم مجاز بر اساس مقطع
+    MAX_TERMS = {
+        "associate": 4,       # کاردانی: ۴ ترم
+        "bachelor": 8,        # کارشناسی: ۸ ترم
+        "master": 4,          # ارشد: ۴ ترم
+        "phd": 8,             # دکتری: ۸ ترم
+    }
+# ==========================================
+# جدول مقادیر ثابت (Constant)
+# ==========================================
+class Constant(models.Model):
+    constant_id = models.AutoField(primary_key=True, verbose_name="شناسه ثابت")
+    category = models.CharField(max_length=50, verbose_name="دسته‌بندی")
+    code = models.CharField(max_length=50, verbose_name="کد")
+    label = models.CharField(max_length=100, verbose_name="برچسب (نام نمایشی)")
+    is_active = models.BooleanField(default=True, verbose_name="فعال")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت")
 
+    class Meta:
+        db_table = "Constant"
+        verbose_name = "مقدار ثابت"
+        verbose_name_plural = "مقادیر ثابت"
+        ordering = ["category", "code"]
+        unique_together = [("category", "code")]
 
+    def __str__(self):
+        return f"{self.category} - {self.label} ({self.code})"
+
+    
 # شخص (جایگزین User پیش‌فرض جنگو)
 class Person(AbstractUser):
     first_name = models.CharField(verbose_name="نام", max_length=100, blank=False)
@@ -41,12 +76,22 @@ class Person(AbstractUser):
         validators=[RegexValidator(r"^\d{10}$", "کد ملی باید دقیقاً ۱۰ رقم باشد.")],
     )
     birth_date = models.DateField(verbose_name="تاریخ تولد", blank=False)
-    gender = models.CharField(
+    """
+       gender = models.CharField(
         verbose_name="جنسیت",
         max_length=6,
-        choices=GenderChoices.choices,
         blank=False,
     )
+    """
+    gender = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="person_genders",
+        verbose_name="جنسیت",
+        limit_choices_to={"category": "gender"},
+        null=True,
+        blank=True,
+    )    
     address = models.CharField(
         verbose_name="آدرس", max_length=200, blank=True, default=""
     )
@@ -57,14 +102,26 @@ class Person(AbstractUser):
         default="",
         help_text="برای صدور کارت دانشجویی دیجیتال",
     )
+    """
     preferred_language = models.CharField(
+            verbose_name="زبان ترجیحی",
+            max_length=2,
+            default='fa'
+            blank=False,
+            help_text="پشتیبانی از فارسی و راست‌چین (NFUP01)",
+     )
+    """
+    preferred_language = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="person_languages",
         verbose_name="زبان ترجیحی",
-        max_length=2,
-        choices=LanguageChoices.choices,
-        default=LanguageChoices.PERSIAN,
-        blank=False,
+        limit_choices_to={"category": "language"},
+        null=True,
+        blank=True,
         help_text="پشتیبانی از فارسی و راست‌چین (NFUP01)",
     )
+
     is_notification_enabled = models.BooleanField(
         verbose_name="دریافت اعلان فعال",
         default=True,
@@ -127,11 +184,22 @@ class Teacher(models.Model):
         related_name="teachers",
         verbose_name="گروه آموزشی",
     )
+    """
     academic_rank = models.CharField(
         verbose_name="مرتبه علمی",
         max_length=20,
-        choices=AcademicRankChoices.choices,
         blank=False,
+    )
+    """
+
+    academic_rank = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="teacher_ranks",
+        verbose_name="مرتبه علمی",
+        limit_choices_to={"category": "academic_rank"},
+        null=True,
+        blank=True,
     )
     hire_date = models.DateField(verbose_name="تاریخ استخدام", blank=False)
 
@@ -168,11 +236,21 @@ class Student(models.Model):
         unique=True,
         blank=False,
     )
+    """
     educational_level = models.CharField(
         verbose_name="مقطع تحصیلی",
         max_length=10,
-        choices=EducationalLevelChoices.choices,
         blank=False,
+    )
+    """
+    educational_level = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="student_levels",
+        verbose_name="مقطع تحصیلی",
+        limit_choices_to={"category": "educational_level"},
+        null=True,
+        blank=True,
     )
     field = models.ForeignKey(
         "Field",
@@ -181,18 +259,38 @@ class Student(models.Model):
         verbose_name="رشته تحصیلی",
     )
     application_date = models.DateField(verbose_name="تاریخ شروع تحصیل", blank=False)
+    """
     status = models.CharField(
         verbose_name="وضعیت تحصیلی",
         max_length=10,
-        choices=StudentStatusChoices.choices,
-        default=StudentStatusChoices.ACTIVE,
+        default='active'    
         blank=False,
     )
+    """
+    status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="student_statuses",
+        verbose_name="وضعیت تحصیلی",
+        limit_choices_to={"category": "student_status"},
+        null=True,
+        blank=True,
+    )
+    """
     admission_type = models.CharField(
         verbose_name="نوع پذیرش",
         max_length=20,
-        choices=AdmissionTypeChoices.choices,
         blank=False,
+    )
+    """
+    admission_type = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="student_admission_types",
+        verbose_name="نوع پذیرش",
+        limit_choices_to={"category": "admission_type"},
+        null=True,
+        blank=True,
     )
     previous_term_gpa = models.DecimalField(
         verbose_name="معدل ترم قبل",
@@ -300,18 +398,22 @@ class Lesson(models.Model):
         default=0,
         verbose_name='واحد نظری'
     )
-
+    """
     lesson_type = models.CharField(
         max_length=20,
-        choices=[
-            ('general', 'عمومی'),
-            ('basic', 'پایه'),
-            ('specialized', 'تخصصی'),
-            ('elective', 'اختیاری'),
-        ],
         verbose_name='نوع درس'
     )
+    """
 
+    lesson_type = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="lesson_types",
+        verbose_name="نوع درس",
+        limit_choices_to={"category": "lesson_type"},
+        null=True,
+        blank=True,
+    )
     department = models.ForeignKey(
         'Department',
         on_delete=models.PROTECT,
@@ -349,6 +451,7 @@ class Lesson(models.Model):
         ]
 
 # ترم
+"""
 class Student(models.Model):
     term_code = models.CharField(
         verbose_name="کد ترم",
@@ -360,7 +463,6 @@ class Student(models.Model):
     semester = models.CharField(
         verbose_name="نیمسال",
         max_length=10,
-        choices=SemesterChoices.choices,
         blank=False,
     )
     academic_year = models.CharField(
@@ -431,7 +533,7 @@ class Student(models.Model):
         return f"{self.get_semester_display()} {self.academic_year}"
 
     def clean(self):
-        """اعتبارسنجی ترتیب تاریخ‌های ترم و بازه‌های آموزشی."""
+        
         super().clean()
         pairs = [
             (self.start_date, self.end_date, "تاریخ پایان ترم"),
@@ -458,22 +560,21 @@ class Student(models.Model):
 
     @property
     def is_registration_open(self):
-        """آیا در حال حاضر بازه انتخاب واحد فعال است؟"""
         now = timezone.now()
         return self.registration_start <= now <= self.registration_end
 
     @property
     def is_add_drop_open(self):
-        """آیا در حال حاضر بازه حذف و اضافه فعال است؟"""
         now = timezone.now()
         return self.add_drop_start <= now <= self.add_drop_end
 
     @property
     def is_emergency_drop_open(self):
-        """آیا در حال حاضر بازه حذف اضطراری فعال است؟"""
         now = timezone.now()
         return self.emergency_drop_start <= now <= self.emergency_drop_end
 
+
+"""
 
 # ترم
 class Term(models.Model):
@@ -486,12 +587,22 @@ class Term(models.Model):
         blank=False,
         help_text="کد یکتای ترم، مثال: 14051",
     )
+    """
     semester = models.CharField(
         verbose_name="نیمسال",
         max_length=10,
-        choices=SemesterChoices.choices,
         null=False,
         blank=False,
+    )
+    """
+    semester = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="term_semesters",
+        verbose_name="نیمسال",
+        limit_choices_to={"category": "semester"},
+        null=True,
+        blank=True,
     )
     academic_year = models.CharField(
         verbose_name="سال تحصیلی",
@@ -680,15 +791,20 @@ class Payment(models.Model):
 class Exam(models.Model):
     offering = models.ForeignKey("CourseOffering", on_delete=models.CASCADE)
     exam_date = models.DateField()
+    """
     exam_type = models.CharField(
-        max_length=20,
-        choices=[
-            ("midterm", "میان‌ترم"),
-            ("final", "پایان‌ترم"),
-            ("virtual", "مجازی"),
-        ],
+        max_length=20
     )
-
+    """
+    exam_type = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="exam_types",
+        verbose_name="نوع آزمون",
+        limit_choices_to={"category": "exam_type"},
+        null=True,
+        blank=True,
+    )
 
 # گروه کلاسی
 class LessonGroups(models.Model):
@@ -697,7 +813,7 @@ class LessonGroups(models.Model):
     name = models.CharField(max_length = 50, blank = False, null = False, verbose_name = "نام گروه")
 
     created_at = models.DateTimeField(auto_now_add = True, verbose_name = "تاریخ ساخت")
-
+    """
     created_by = models.ForeignKey(
         Person, 
         on_delete = models.CASCADE, 
@@ -710,7 +826,9 @@ class LessonGroups(models.Model):
         related_name = "lesson_groups", 
         verbose_name = "اعضا"
     )
-
+    """
+    created_by = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="created_lesson_groups", verbose_name="سازنده گروه")
+    members = models.ManyToManyField(Person, related_name="member_lesson_groups", verbose_name="اعضا")
     teacher = models.ForeignKey(
         Teacher, 
         on_delete = models.DO_NOTHING, 
@@ -910,16 +1028,22 @@ class Prerequisite(models.Model):
     )
 
     # نوع رابطه
+    """
     prerequisite_type = models.CharField(
         max_length=50,
-        choices=[
-            ('prerequisite', 'پیش‌نیاز'),
-            ('corequisite', 'هم‌نیاز'),
-        ],
         db_column='Type',
         verbose_name="نوع رابطه"
     )
-
+    """
+    prerequisite_type = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="prerequisite_types",
+        verbose_name="نوع رابطه",
+        limit_choices_to={"category": "prerequisite_type"},
+        null=True,
+        blank=True,
+    )
     # تاریخ ثبت
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -994,13 +1118,21 @@ class CourseOffering(models.Model):
     remaining_capacity = models.PositiveIntegerField(
         verbose_name='ظرفیت باقی‌مانده'
     )
-
+    """
     day_of_week = models.CharField(
         max_length=20,
-        choices=DAY_CHOICES,
         verbose_name='روز هفته'
     )
-
+    """
+    day_of_week = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="offering_days",
+        verbose_name="روز هفته",
+        limit_choices_to={"category": "day_of_week"},
+        null=True,
+        blank=True,
+    )
     start_time = models.TimeField(
         verbose_name='ساعت شروع'
     )
@@ -1102,24 +1234,22 @@ class CourseOffering(models.Model):
 
 # انتخاب واحد
 class Enrollment(models.Model):
-
+    """
     # وضعیت‌های ثبت‌نام
-    STATUS_CHOICES = (
-
-        ('REGISTERED', 'ثبت‌نام شده'),
-        ('PASSED', 'پاس شده'),
-        ('FAILED', 'افتاده'),
-        ('DROPPED', 'حذف شده'),
-)
+        STATUS_CHOICES = (
     
-    
-
+            ('REGISTERED', 'ثبت‌نام شده'),
+            ('PASSED', 'پاس شده'),
+            ('FAILED', 'افتاده'),
+            ('DROPPED', 'حذف شده'),
+        )
+   
     # نوع ثبت‌نام
     TYPE_CHOICES = (
         ('NORMAL', 'عادی'),
         ('GUEST', 'مهمان'),
     )
-
+    """
     # شناسه ثبت‌نام
     EnrollmentId = models.AutoField(
         primary_key=True,
@@ -1133,7 +1263,13 @@ class Enrollment(models.Model):
         related_name='enrollments',
         verbose_name="دانشجو"
     )
-
+    # ✅ ارتباط با ارائه درس (کلید خارجی - این فیلد قبلاً کم بود)
+    offering = models.ForeignKey(
+        'CourseOffering',
+        on_delete=models.CASCADE,
+        related_name='enrollments',
+        verbose_name="ارائه درس"
+    )
     # تاریخ ثبت‌نام
     enrollment_date = models.DateTimeField(
         auto_now_add=True,
@@ -1143,7 +1279,6 @@ class Enrollment(models.Model):
     # وضعیت ثبت‌نام
     status = models.CharField(
         max_length=20,
-        choices=STATUS_CHOICES,
         default='REGISTERED',
         verbose_name="وضعیت ثبت‌نام"
     )
@@ -1151,7 +1286,6 @@ class Enrollment(models.Model):
     # نوع ثبت‌نام
     enrollment_type = models.CharField(
         max_length=20,
-        choices=TYPE_CHOICES,
         default='NORMAL',
         verbose_name="نوع ثبت‌نام"
     )
@@ -1170,8 +1304,8 @@ class Enrollment(models.Model):
         verbose_name = "انتخاب واحد"
         verbose_name_plural = "انتخاب واحدها"
         # نکته طلایی: یک دانشجو توی یک ترم نمی‌تونه یک درس رو دو بار انتخاب کنه!
-        unique_together = ("student", "lesson", "semester")
-
+        #unique_together = ("student", "lesson", "semester")
+        unique_together = ("student", "enrollment_date")
 
 # نمره
 class Grade(models.Model):
@@ -1183,15 +1317,20 @@ class GradeAppeal(models.Model):
     enrollment = models.ForeignKey("Enrollment", on_delete=models.CASCADE)
     appeal_reason = models.TextField()
     appeal_date = models.DateTimeField()
+    """
     appeal_status = models.CharField(
-        max_length=30,
-        choices=[
-            ("pending", "در انتظار بررسی"),
-            ("approved", "تأیید"),
-            ("rejected", "رد"),
-        ],
+        max_length=30
     )
-
+    """
+    appeal_status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="appeal_statuses",
+        verbose_name="وضعیت اعتراض",
+        limit_choices_to={"category": "appeal_status"},
+        null=True,
+        blank=True,
+    )
 
 # حضور و غیاب
 class Attendance(models.Model):  # مدل ثبت اطلاعات حضور و غیاب
@@ -1204,8 +1343,18 @@ class Attendance(models.Model):  # مدل ثبت اطلاعات حضور و غی
     session_number = models.IntegerField()  # شمارهٔ جلسه
 
     session_date = models.DateField()  # تاریخ برگزاری جلسه
-
+    """    
     attendance_status = models.CharField(max_length=50)  # وضعیت حضور، مثل حاضر یا غایب
+    """
+    attendance_status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="attendance_statuses",
+        verbose_name="وضعیت حضور",
+        limit_choices_to={"category": "attendance_status"},
+        null=True,
+        blank=True,
+    )
 
     attendance_time = models.TimeField()  # ساعت حضور یا ثبت وضعیت
 
@@ -1220,7 +1369,20 @@ class Attendance(models.Model):  # مدل ثبت اطلاعات حضور و غی
         auto_now_add=True
     )  # زمان ایجاد رکورد که خودکار ثبت می‌شود
 
+class TicketCategory(models.Model):
+    category_id = models.AutoField(primary_key=True, verbose_name="شناسه دسته")
+    name = models.CharField(max_length=100, unique=True, verbose_name="نام دسته")
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='sub_categories', verbose_name="دسته والد")
+    is_active = models.BooleanField(default=True, verbose_name="فعال")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت")
 
+    class Meta:
+        db_table = 'TicketCategory'
+        verbose_name = "دسته‌بندی تیکت"
+        verbose_name_plural = "دسته‌بندی تیکت‌ها"
+
+    def __str__(self):
+        return self.name
 # تیکت
 class Ticket(models.Model):
     creator = models.ForeignKey(
@@ -1229,10 +1391,20 @@ class Ticket(models.Model):
         related_name="created_tickets",
         verbose_name="سازنده",
     )
+    """
     creator_role = models.CharField(
         max_length=20,
-        choices=TicketCreatorRoleChoices.choices,
         verbose_name="نقش سازنده",
+    )
+    """
+    creator_role = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="ticket_creator_roles",
+        verbose_name="نقش سازنده",
+        limit_choices_to={"category": "ticket_creator_role"},
+        null=True,
+        blank=True,
     )
     category = models.ForeignKey(
         "TicketCategory",
@@ -1242,11 +1414,21 @@ class Ticket(models.Model):
     )
     subject = models.CharField(max_length=200, verbose_name="موضوع")
     content = models.CharField(max_length=1000, verbose_name="متن تیکت")
+    """
     status = models.CharField(
         max_length=20,
-        choices=TicketStatusChoices.choices,
-        default=TicketStatusChoices.OPEN,
+        default='open'
         verbose_name="وضعیت",
+    )
+    """
+    status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="ticket_statuses",
+        verbose_name="وضعیت",
+        limit_choices_to={"category": "ticket_status"},
+        null=True,
+        blank=True,
     )
     assigned_to = models.ForeignKey(
         "Person",
@@ -1268,11 +1450,15 @@ class Ticket(models.Model):
 
     def __str__(self):
         return self.subject
-
+    """
     @property
     def is_closed(self):
         return self.status == TicketStatusChoices.CLOSED
+    """
 
+    @property
+    def is_closed(self):
+            return self.status.code == 'closed' if self.status else False
     @property
     def is_assigned(self):
         return self.assigned_to_id is not None
@@ -1410,17 +1596,26 @@ class RefundRequest(models.Model):
         db_column="RefundJustificationText",
         verbose_name="دلیل درخواست استرداد"
     )
-
+    """
     refund_review_state = models.CharField(
         max_length=20,
-        choices=RequestReviewStatusChoices.choices,
         default=RequestReviewStatusChoices.PENDING,
         null=False,
         blank=False,
         db_column="RefundReviewState",
         verbose_name="وضعیت بررسی درخواست"
     )
+    """
 
+    refund_review_state = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="refund_review_states",
+        verbose_name="وضعیت بررسی درخواست",
+        limit_choices_to={"category": "review_status"},
+        null=True,
+        blank=True,
+    )
     class Meta:
         db_table = "RefundRequest"
         verbose_name = "درخواست استرداد وجه"
@@ -1429,7 +1624,7 @@ class RefundRequest(models.Model):
 
         constraints = [
             models.CheckConstraint(
-                condition=Q(refund_value_requested__gt=0),
+                condition=models.Q(refund_value_requested__gt=0),
                 name="refund_value_must_be_positive"
             )
         ]
@@ -1476,31 +1671,48 @@ class StudentServiceRequest(models.Model):
         db_column="ServiceRequesterLinkId",
         verbose_name="دانشجوی درخواست‌دهنده"
     )
-
+    """
     service_request_kind = models.CharField(
         max_length=30,
-        choices=ServiceRequestTypeChoices.choices,
         null=False,
         blank=False,
         db_column="ServiceRequestKind",
         verbose_name="نوع درخواست خدمات"
     )
-
+    """
+    service_request_kind = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="service_request_kinds",
+        verbose_name="نوع درخواست خدمات",
+        limit_choices_to={"category": "service_request_type"},
+        null=True,
+        blank=True,
+    )
     service_request_data = models.TextField(
         null=False,
         blank=True,
         db_column="ServiceRequestData",
         verbose_name="اطلاعات تکمیلی درخواست"
     )
-
+    """
     service_decision_state = models.CharField(
         max_length=20,
-        choices=RequestReviewStatusChoices.choices,
-        default=RequestReviewStatusChoices.PENDING,
+        default='pending',
         null=False,
         blank=False,
         db_column="ServiceDecisionState",
         verbose_name="وضعیت تصمیم‌گیری درخواست"
+    )
+    """
+    service_decision_state = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="service_decision_states",
+        verbose_name="وضعیت تصمیم‌گیری درخواست",
+        limit_choices_to={"category": "review_status"},
+        null=True,
+        blank=True,
     )
 
     class Meta:
@@ -1533,14 +1745,22 @@ class ScholarshipApplication(models.Model):
     scholarship_type = models.CharField(max_length=50, db_column="ScholarshipType")
 
     scholarship_reason = models.TextField(db_column="ScholarshipReason")
-
+    """
     scholarship_status = models.CharField(
         max_length=20,
-        choices=ScholarshipStatusChoices.choices,
-        default=ScholarshipStatusChoices.PENDING,
+        default='pending',
         db_column="ScholarshipStatus"
     )
-
+    """
+    scholarship_status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="scholarship_statuses",
+        verbose_name="وضعیت درخواست",
+        limit_choices_to={"category": "review_status"},
+        null=True,
+        blank=True,
+    )
     scholarship_submitted_at = models.DateTimeField(
         auto_now_add=True, db_column="ScholarshipSubmittedAt"
     )
@@ -1580,14 +1800,22 @@ class CounselingAppointment(models.Model):
     counseling_description = models.TextField(
         blank=True, db_column="CounselingDescription"
     )
-
+    """
     counseling_status = models.CharField(
         max_length=20,
-        choices=CounselingStatusChoices.choices,
-        default=CounselingStatusChoices.PENDING,
+        default='pending',
         db_column="CounselingStatus"
     )
-
+    """
+    counseling_status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="counseling_statuses",
+        verbose_name="وضعیت جلسه",
+        limit_choices_to={"category": "counseling_status"},
+        null=True,
+        blank=True,
+    )
     class Meta:
         db_table = "CounselingAppointment"
 
@@ -1615,12 +1843,21 @@ class Proposal(models.Model):
     proposal_submitted_at = models.DateTimeField(
         auto_now_add=True, db_column="ProposalSubmittedAt"
     )
-
+    """
     proposal_status = models.CharField(
         max_length=20,
-        choices=ProposalStatusChoices.choices,
-        default=ProposalStatusChoices.PENDING,
+        default='pending',
         db_column="ProposalStatus"
+    )
+    """
+    proposal_status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="proposal_statuses",
+        verbose_name="وضعیت پروپوزال",
+        limit_choices_to={"category": "proposal_status"},
+        null=True,
+        blank=True,
     )
 
     class Meta:
@@ -1656,13 +1893,22 @@ class TransferRequest(models.Model):
         db_column="DestinationUniversity",
         verbose_name="نام دانشگاه مقصد"
     )
-
+    """
     review_status = models.CharField(
         max_length=20,
-        choices=REVIEW_STATUS_CHOICES,
         default="pending",
         db_column="ReviewStatus",
         verbose_name="وضعیت بررسی"
+    )
+    """
+    review_status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="transfer_request_statuses",
+        verbose_name="وضعیت بررسی",
+        limit_choices_to={"category": "review_status"},
+        null=True,
+        blank=True,
     )
 
     course_compatibility_result = models.TextField(
@@ -1730,13 +1976,22 @@ class GraduationAudit(models.Model):
         db_column="RemainingUnits",
         verbose_name="تعداد واحد باقی‌مانده"
     )
-
+    """
     graduation_status = models.CharField(
         max_length=20,
-        choices=GRADUATION_STATUS_CHOICES,
         default="under_review",
         db_column="GraduationStatus",
         verbose_name="وضعیت فارغ‌التحصیلی"
+    )
+    """
+    graduation_status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="graduation_statuses",
+        verbose_name="وضعیت فارغ‌التحصیلی",
+        limit_choices_to={"category": "graduation_status"},
+        null=True,
+        blank=True,
     )
 
     audit_date = models.DateTimeField(
@@ -1791,14 +2046,22 @@ class EducationalChangeLog(models.Model):
         db_column="StudentId",
         verbose_name="دانشجو"
     )
-
+    """
     change_type = models.CharField(
         max_length=30,
-        choices=CHANGE_TYPE_CHOICES,
         db_column="ChangeType",
         verbose_name="نوع تغییر"
     )
-
+    """
+    change_type = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="change_types",
+        verbose_name="نوع تغییر",
+        limit_choices_to={"category": "change_type"},
+        null=True,
+        blank=True,
+    )
     changed_by = models.ForeignKey(
         "core.UserAccount",
         on_delete=models.PROTECT,
@@ -1841,84 +2104,112 @@ class EducationalChangeLog(models.Model):
 # جدول Curriculum (چارت درسی)
 # ==========================================
 class Curriculum(models.Model):
-    curriculum_id = models.AutoField(primary_key=True)
-    field = models.ForeignKey(
-        "Field", on_delete=models.CASCADE, verbose_name="رشته تحصیلی"
+    curriculum_id = models.AutoField(primary_key=True, verbose_name="شناسه چارت")
+    field = models.ForeignKey("Field",on_delete=models.CASCADE,related_name="curriculums",verbose_name="رشته تحصیلی")
+    lesson = models.ForeignKey("Lesson",on_delete=models.CASCADE,related_name="curriculums",verbose_name="درس")
+    requirement_type = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="curriculum_requirements",
+        verbose_name="نوع درس در چارت",
+        limit_choices_to={"category": "requirement_type"},
+        null=True,
+        blank=True,
     )
-    lesson = models.ForeignKey("Lesson", on_delete=models.CASCADE, verbose_name="درس")
-    requirement_type = models.CharField(max_length=20, verbose_name="نوع درس در چارت")
     recommended_term = models.IntegerField(verbose_name="ترم پیشنهادی")
     calculated_units = models.IntegerField(verbose_name="تعداد واحد قابل محاسبه")
     is_active = models.BooleanField(default=True, verbose_name="فعال")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت")
 
     class Meta:
         db_table = "Curriculum"
         verbose_name = "چارت درسی"
         verbose_name_plural = "چارت‌های درسی"
+        ordering = ["field", "recommended_term"]
+        unique_together = [("field", "lesson")]
+
+    def __str__(self):
+        return f"{self.field.field_name} - ترم {self.recommended_term} - {self.lesson.title}"
 
 
 # ==========================================
 # جدول Communication (ارتباطات و مکاتبات)
 # ==========================================
 class Communication(models.Model):
-    communication_id = models.AutoField(primary_key=True)
-    sender = models.ForeignKey(
-        "UserAccount",
-        on_delete=models.CASCADE,
-        related_name="sent_messages",
-        verbose_name="فرستنده",
-    )
-    receiver = models.ForeignKey(
-        "UserAccount",
-        on_delete=models.CASCADE,
-        related_name="received_messages",
-        verbose_name="گیرنده",
-    )
+    communication_id = models.AutoField(primary_key=True, verbose_name="شناسه مکاتبه")
+    sender = models.ForeignKey("UserAccount",on_delete=models.CASCADE,related_name="sent_messages",verbose_name="فرستنده" )
+    receiver = models.ForeignKey("UserAccount",on_delete=models.CASCADE,related_name="received_messages",verbose_name="گیرنده")
     subject = models.CharField(max_length=255, verbose_name="موضوع")
     message_body = models.TextField(verbose_name="متن پیام")
-    communication_type = models.CharField(max_length=30, verbose_name="نوع مکاتبه")
-    status = models.CharField(max_length=20, verbose_name="وضعیت")
-    sent_at = models.DateTimeField(verbose_name="تاریخ ارسال")
+    communication_type = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="communication_types",
+        verbose_name="نوع مکاتبه",
+        limit_choices_to={"category": "communication_type"},
+        null=True,
+        blank=True,
+    )
+    status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="communication_statuses",
+        verbose_name="وضعیت",
+        limit_choices_to={"category": "communication_status"},
+        null=True,
+        blank=True,
+    )
+    sent_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ارسال")
+    is_read = models.BooleanField(default=False, verbose_name="خوانده شده")
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name="تاریخ خوانده شدن")
 
     class Meta:
         db_table = "Communication"
         verbose_name = "مکاتبه"
         verbose_name_plural = "مکاتبات"
+        ordering = ["-sent_at"]
+       
 
+    def __str__(self):
+        return f"{self.sender} -> {self.receiver}: {self.subject}"
 
 # ==========================================
 # جدول SystemSetting (تنظیمات پویای سیستم)
 # ==========================================
 class SystemSetting(models.Model):
-    setting_id = models.AutoField(primary_key=True)
-    setting_key = models.CharField(
-        max_length=100, unique=True, verbose_name="کلید تنظیم"
-    )
+    setting_id = models.AutoField(primary_key=True, verbose_name="شناسه تنظیم")
+    setting_key = models.CharField(max_length=100,unique=True,verbose_name="کلید تنظیم")
     setting_value = models.CharField(max_length=255, verbose_name="مقدار تنظیم")
-    data_type = models.CharField(max_length=20, verbose_name="نوع داده")
-    description = models.TextField(null=True, blank=True, verbose_name="توضیحات")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین به‌روزرسانی")
-    updated_by = models.ForeignKey(
-        "UserAccount",
-        on_delete=models.SET_NULL,
+    data_type = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="system_data_types",
+        verbose_name="نوع داده",
+        limit_choices_to={"category": "data_type"},
         null=True,
         blank=True,
-        verbose_name="به‌روزرسانی‌کننده",
     )
+    description = models.TextField(null=True, blank=True, verbose_name="توضیحات")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین به‌روزرسانی")
+    updated_by = models.ForeignKey("UserAccount",on_delete=models.SET_NULL,null=True,blank=True,verbose_name="به‌روزرسانی‌کننده")
 
     class Meta:
         db_table = "SystemSetting"
         verbose_name = "تنظیمات سیستم"
         verbose_name_plural = "تنظیمات سیستم"
+        ordering = ["setting_key"]
 
-
+    def __str__(self):
+        return f"{self.setting_key} = {self.setting_value}"
+    
 class CreditTransferRequest(models.Model):
+    """
     STATUS_CHOICES = [
         ("pending", "در انتظار بررسی"),
         ("approved", "تأیید شده"),
         ("rejected", "رد شده"),
     ]
-
+    """
     transfer_request_id = models.AutoField(primary_key=True)
     student = models.ForeignKey(
         "core.Student",
@@ -1927,23 +2218,34 @@ class CreditTransferRequest(models.Model):
     )
     source_university = models.CharField(max_length=255)
     request_date = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(
+    """
+       status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default="pending",
     )
-
+    """
+    status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="credit_transfer_statuses",
+        verbose_name="وضعیت",
+        limit_choices_to={"category": "review_status"},
+        null=True,
+        blank=True,
+    )
     def __str__(self):
         return f"درخواست تطبیق واحد {self.transfer_request_id}"
 
 
 class InternshipRequest(models.Model):
+    """
     STATUS_CHOICES = [
         ("pending", "در انتظار بررسی"),
         ("approved", "تأیید شده"),
         ("rejected", "رد شده"),
     ]
-
+    """
     internship_request_id = models.AutoField(primary_key=True)
     student = models.ForeignKey(
         "core.Student",
@@ -1952,10 +2254,21 @@ class InternshipRequest(models.Model):
     )
     organization_name = models.CharField(max_length=255)
     start_date = models.DateField()
+    """
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default="pending",
+    )
+    """
+    status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="internship_request_statuses",
+        verbose_name="وضعیت",
+        limit_choices_to={"category": "review_status"},
+        null=True,
+        blank=True,
     )
 
     def __str__(self):
@@ -1963,12 +2276,13 @@ class InternshipRequest(models.Model):
 
 
 class ThesisProgressReport(models.Model):
+    """
     REVIEW_STATUS_CHOICES = [
         ("pending", "در انتظار بررسی"),
         ("approved", "تأیید شده"),
         ("needs_revision", "نیازمند اصلاح"),
     ]
-
+    """
     report_id = models.AutoField(primary_key=True)
     student = models.ForeignKey(
         "core.Student",
@@ -1981,10 +2295,21 @@ class ThesisProgressReport(models.Model):
         related_name="thesis_progress_reports",
     )
     report_content = models.TextField()
+    """
     review_status = models.CharField(
         max_length=20,
         choices=REVIEW_STATUS_CHOICES,
         default="pending",
+    )
+    """
+    review_status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="thesis_review_statuses",
+        verbose_name="وضعیت",
+        limit_choices_to={"category": "thesis_review_status"},
+        null=True,
+        blank=True,
     )
 
     def __str__(self):
@@ -1992,12 +2317,14 @@ class ThesisProgressReport(models.Model):
 
 #نوتیفیکیشن 
 class Notification(models.Model):
+    """
     NOTIFICATION_TYPE_CHOICES = [
         ("GRADE", "نمره"),
         ("ANNOUNCEMENT", "اطلاعیه"),
         ("CLASS_CHANGE", "تغییر کلاس"),
         ("SYSTEM", "سیستمی"),
     ]
+    """
     # notification_id=models.AutoField(primary_key=True,vebose_name="شناسه اعلان")
     user = models.ForeignKey(
         "UserAccount",
@@ -2020,10 +2347,21 @@ class Notification(models.Model):
         related_name="notifications",
         verbose_name="امتحان مرتبط",
     )
+    """
     notification_type = models.CharField(
         max_length=30,
         choices=NOTIFICATION_TYPE_CHOICES,
         verbose_name="نوع اعلان",
+    )
+    """
+    notification_type = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="notification_types",
+        verbose_name="نوع اعلان",
+        limit_choices_to={"category": "notification_type"},
+        null=True,
+        blank=True,
     )
     sent_at = models.DateTimeField(
         null=True,
@@ -2126,6 +2464,7 @@ class TeacherSurvey(models.Model):
 
 #کاراموزی
 class Internship(models.Model):
+    """
     REQUEST_TYPE_CHOICES = [
         ("INTERNSHIP_LETTER", "نامه کارآموزی"),
         ("INTRODUCTION_LETTER", "معرفی‌نامه"),
@@ -2137,6 +2476,8 @@ class Internship(models.Model):
         ("REJECTED", "رد شده"),
         ("ISSUED", "صادر شده"),
     ]
+    """
+
     # internship_id=models.AutoField(primary_key=True,verbose_name="شناسه کاراموزی")
     student = models.ForeignKey(
         "Student",
@@ -2144,10 +2485,21 @@ class Internship(models.Model):
         related_name="internship_records",
         verbose_name="دانشجو",
     )
+    """
     request_type = models.CharField(
         max_length=30,
         choices=REQUEST_TYPE_CHOICES,
         verbose_name="نوع درخواست",
+    )
+    """
+    request_type = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="internship_request_types",
+        verbose_name="نوع درخواست",
+        limit_choices_to={"category": "internship_request_type"},
+        null=True,
+        blank=True,
     )
     company_name = models.CharField(
         max_length=255,
@@ -2159,11 +2511,23 @@ class Internship(models.Model):
     duration_hours = models.PositiveIntegerField(
         verbose_name="مدت کارآموزی به ساعت",
     )
+    """
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default="PENDING",
         verbose_name="وضعیت درخواست",
+    )
+    """
+
+    status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="internship_statuses",
+        verbose_name="وضعیت درخواست",
+        limit_choices_to={"category": "review_status"},
+        null=True,
+        blank=True,
     )
     reviewed_by = models.ForeignKey(
         "UserAccount",
@@ -2186,23 +2550,26 @@ class Internship(models.Model):
     class Meta:
         verbose_name = "درخواست کارآموزی"
         verbose_name_plural = "درخواست‌های کارآموزی"
-        constraints = [
-            models.CheckConstraint(
-                condition=models.Q(
-                    request_type__in=[
-                        "INTERNSHIP_LETTER",
-                        "INTRODUCTION_LETTER",
-                    ]
-                ),
-                name="intern_type_valid",
-            ),
-            models.CheckConstraint(
-                condition=models.Q(
-                    status__in=["PENDING", "APPROVED", "REJECTED", "ISSUED"]
-                ),
-                name="intern_status_valid",
-            ),
-        ]
+    #"""
+    #    constraints = [
+    #        models.CheckConstraint(
+    #            condition=models.Q(
+    #                request_type__in=[
+    #                    "INTERNSHIP_LETTER",
+    #                    "INTRODUCTION_LETTER",
+    #                ]
+    #            ),
+    #            name="intern_type_valid",
+    #        ),
+    #        models.CheckConstraint(
+    #            condition=models.Q(
+    #                status__in=["PENDING", "APPROVED", "REJECTED", "ISSUED"]
+    #            ),
+    #            name="intern_status_valid",
+    #        ),
+    #    ]
+    #"""
+       
 
     def __str__(self):
         return f"{self.get_request_type_display()} - {self.company_name}"
