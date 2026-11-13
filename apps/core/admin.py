@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import (
     Department,
     Enrollment,
+    Field,
     Faculty,
     OnlineClass,
     Prerequisite,
@@ -39,6 +40,27 @@ class DepartmentAdmin(admin.ModelAdmin):
     )
     list_select_related = ("faculty",)
     ordering = ("department_name",)
+    list_per_page = 20
+
+
+@admin.register(Field)
+class FieldAdmin(admin.ModelAdmin):
+    list_display = (
+        "field_code",
+        "field_name",
+        "department",
+        "is_active",
+        "created_at",
+    )
+    list_filter = ("department__faculty", "department", "is_active")
+    search_fields = (
+        "field_code",
+        "field_name",
+        "department__department_name",
+        "department__faculty__faculty_name",
+    )
+    list_select_related = ("department", "department__faculty")
+    ordering = ("field_name",)
     list_per_page = 20
 
 

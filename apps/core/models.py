@@ -2355,4 +2355,27 @@ class Department(models.Model):
 
 
 class Field(models.Model):
-    pass
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.PROTECT,
+        related_name="fields",
+        verbose_name="گروه آموزشی",
+    )
+    field_name = models.CharField(max_length=150, verbose_name="نام رشته")
+    field_code = models.CharField(max_length=20, verbose_name="کد رشته")
+    is_active = models.BooleanField(default=True, verbose_name="فعال")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت")
+
+    class Meta:
+        verbose_name = "رشته تحصیلی"
+        verbose_name_plural = "رشته‌های تحصیلی"
+        ordering = ["field_name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["department", "field_code"],
+                name="unique_field_code_per_department",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.field_name} ({self.department.department_name})"
