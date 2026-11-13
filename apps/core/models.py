@@ -860,7 +860,6 @@ class Prerequisite(models.Model):
     # شناسه یکتای پیش‌نیاز
     prereq_id = models.AutoField(
         primary_key=True,
-        db_column='PrereqID',
         verbose_name="شناسه پیش‌نیاز"
     )
 
@@ -869,7 +868,6 @@ class Prerequisite(models.Model):
         Lesson,
         on_delete=models.CASCADE,
         related_name='prerequisites',
-        db_column='LessonID',
         verbose_name="درس اصلی"
     )
 
@@ -878,7 +876,6 @@ class Prerequisite(models.Model):
         Lesson,
         on_delete=models.CASCADE,
         related_name='is_prerequisite_for',
-        db_column='PrereqLessonID',
         verbose_name="درس پیش‌نیاز یا هم‌نیاز"
     )
 
@@ -886,7 +883,6 @@ class Prerequisite(models.Model):
     """
     prerequisite_type = models.CharField(
         max_length=50,
-        db_column='Type',
         verbose_name="نوع رابطه"
     )
     """
@@ -902,7 +898,6 @@ class Prerequisite(models.Model):
     # تاریخ ثبت
     created_at = models.DateTimeField(
         auto_now_add=True,
-        db_column='CreatedAt',
         verbose_name="تاریخ ثبت"
     )
 
@@ -1357,7 +1352,6 @@ class TuitionReceipt(models.Model):
 
     tuition_receipt_key = models.AutoField(
         primary_key=True,
-        db_column="TuitionReceiptKey",
         verbose_name="شناسه رسید شهریه"
     )
 
@@ -1366,7 +1360,6 @@ class TuitionReceipt(models.Model):
         unique=True,
         null=False,
         blank=False,
-        db_column="ReceiptSerialCode",
         verbose_name="شماره سریال رسید"
     )
 
@@ -1376,7 +1369,6 @@ class TuitionReceipt(models.Model):
         related_name="tuition_receipts",
         null=False,
         blank=False,
-        db_column="ReceiptPaymentLinkId",
         verbose_name="پرداخت مربوط به رسید"
     )
 
@@ -1384,7 +1376,6 @@ class TuitionReceipt(models.Model):
         auto_now_add=True,
         null=False,
         blank=True,
-        db_column="ReceiptIssuedOn",
         verbose_name="تاریخ صدور رسید"
     )
 
@@ -1392,7 +1383,6 @@ class TuitionReceipt(models.Model):
         max_length=500,
         null=False,
         blank=True,
-        db_column="ReceiptDocumentUri",
         verbose_name="آدرس فایل رسید"
     )
 
@@ -1413,7 +1403,6 @@ class RefundRequest(models.Model):
 
     refund_case_key = models.AutoField(
         primary_key=True,
-        db_column="RefundCaseKey",
         verbose_name="شناسه درخواست استرداد"
     )
 
@@ -1423,7 +1412,6 @@ class RefundRequest(models.Model):
         related_name="refund_requests",
         null=False,
         blank=False,
-        db_column="RefundPaymentLinkId",
         verbose_name="پرداخت مربوط به درخواست"
     )
 
@@ -1432,14 +1420,12 @@ class RefundRequest(models.Model):
         decimal_places=2,
         null=False,
         blank=False,
-        db_column="RefundValueRequested",
         verbose_name="مبلغ درخواستی بازپرداخت"
     )
 
     refund_justification_text = models.TextField(
         null=False,
         blank=False,
-        db_column="RefundJustificationText",
         verbose_name="دلیل درخواست استرداد"
     )
     """
@@ -1448,7 +1434,6 @@ class RefundRequest(models.Model):
         default=RequestReviewStatusChoices.PENDING,
         null=False,
         blank=False,
-        db_column="RefundReviewState",
         verbose_name="وضعیت بررسی درخواست"
     )
     """
@@ -1484,7 +1469,6 @@ class StudentServiceRequest(models.Model):
     
     student_service_case_key = models.AutoField(
         primary_key=True,
-        db_column="StudentServiceCaseKey",
         verbose_name="شناسه درخواست خدمات دانشجویی"
     )
 
@@ -1494,7 +1478,6 @@ class StudentServiceRequest(models.Model):
         related_name="service_requests",
         null=False,
         blank=False,
-        db_column="ServiceRequesterLinkId",
         verbose_name="دانشجوی درخواست‌دهنده"
     )
     """
@@ -1502,7 +1485,6 @@ class StudentServiceRequest(models.Model):
         max_length=30,
         null=False,
         blank=False,
-        db_column="ServiceRequestKind",
         verbose_name="نوع درخواست خدمات"
     )
     """
@@ -1518,7 +1500,6 @@ class StudentServiceRequest(models.Model):
     service_request_data = models.TextField(
         null=False,
         blank=True,
-        db_column="ServiceRequestData",
         verbose_name="اطلاعات تکمیلی درخواست"
     )
     """
@@ -1527,7 +1508,6 @@ class StudentServiceRequest(models.Model):
         default='pending',
         null=False,
         blank=False,
-        db_column="ServiceDecisionState",
         verbose_name="وضعیت تصمیم‌گیری درخواست"
     )
     """
@@ -1558,24 +1538,22 @@ class StudentServiceRequest(models.Model):
 class ScholarshipApplication(models.Model):
 
     scholarship_application_key = models.AutoField(
-        primary_key=True, db_column="ScholarshipApplicationKey"
+        primary_key=True
     )
 
     scholarship_applicant = models.ForeignKey(
         "core.Student",
         on_delete=models.PROTECT,
         related_name="scholarship_applications",
-        db_column="ScholarshipApplicantLinkId",
     )
 
-    scholarship_type = models.CharField(max_length=50, db_column="ScholarshipType")
+    scholarship_type = models.CharField(max_length=50)
 
-    scholarship_reason = models.TextField(db_column="ScholarshipReason")
+    scholarship_reason = models.TextField()
     """
     scholarship_status = models.CharField(
         max_length=20,
         default='pending',
-        db_column="ScholarshipStatus"
     )
     """
     scholarship_status = models.ForeignKey(
@@ -1588,7 +1566,7 @@ class ScholarshipApplication(models.Model):
         blank=True,
     )
     scholarship_submitted_at = models.DateTimeField(
-        auto_now_add=True, db_column="ScholarshipSubmittedAt"
+        auto_now_add=True
     )
 
     class Meta:
@@ -1602,35 +1580,32 @@ class ScholarshipApplication(models.Model):
 class CounselingAppointment(models.Model):
 
     counseling_appointment_key = models.AutoField(
-        primary_key=True, db_column="CounselingAppointmentKey"
+        primary_key=True
     )
 
     counseling_student_link = models.ForeignKey(
         "core.Student",
         on_delete=models.PROTECT,
         related_name="counseling_appointments",
-        db_column="CounselingStudentLinkId",
     )
 
     counseling_teacher_link = models.ForeignKey(
         "core.Teacher",
         on_delete=models.PROTECT,
         related_name="counseling_appointments",
-        db_column="CounselingTeacherLinkId",
     )
 
-    counseling_date = models.DateTimeField(db_column="CounselingDate")
+    counseling_date = models.DateTimeField()
 
-    counseling_topic = models.CharField(max_length=255, db_column="CounselingTopic")
+    counseling_topic = models.CharField(max_length=255)
 
     counseling_description = models.TextField(
-        blank=True, db_column="CounselingDescription"
+        blank=True
     )
     """
     counseling_status = models.CharField(
         max_length=20,
         default='pending',
-        db_column="CounselingStatus"
     )
     """
     counseling_status = models.ForeignKey(
@@ -1653,27 +1628,25 @@ class CounselingAppointment(models.Model):
 # پروپوزال
 class Proposal(models.Model):
 
-    proposal_case_key = models.AutoField(primary_key=True, db_column="ProposalCaseKey")
+    proposal_case_key = models.AutoField(primary_key=True)
 
     proposal_student_link = models.ForeignKey(
         "core.Student",
         on_delete=models.PROTECT,
         related_name="proposals",
-        db_column="ProposalStudentLinkId",
     )
 
-    proposal_title = models.CharField(max_length=255, db_column="ProposalTitle")
+    proposal_title = models.CharField(max_length=255)
 
-    proposal_description = models.TextField(db_column="ProposalDescription")
+    proposal_description = models.TextField()
 
     proposal_submitted_at = models.DateTimeField(
-        auto_now_add=True, db_column="ProposalSubmittedAt"
+        auto_now_add=True
     )
     """
     proposal_status = models.CharField(
         max_length=20,
         default='pending',
-        db_column="ProposalStatus"
     )
     """
     proposal_status = models.ForeignKey(
@@ -1702,7 +1675,6 @@ class TransferRequest(models.Model):
 
     transfer_id = models.AutoField(
         primary_key=True,
-        db_column="TransferId",
         verbose_name="شناسه درخواست"
     )
 
@@ -1710,20 +1682,17 @@ class TransferRequest(models.Model):
         "core.Student",
         on_delete=models.PROTECT,
         related_name="transfer_requests",
-        db_column="StudentId",
         verbose_name="دانشجو"
     )
 
     destination_university = models.CharField(
         max_length=255,
-        db_column="DestinationUniversity",
         verbose_name="نام دانشگاه مقصد"
     )
     """
     review_status = models.CharField(
         max_length=20,
         default="pending",
-        db_column="ReviewStatus",
         verbose_name="وضعیت بررسی"
     )
     """
@@ -1740,13 +1709,11 @@ class TransferRequest(models.Model):
     course_compatibility_result = models.TextField(
         blank=True,
         default="",
-        db_column="CourseCompatibilityResult",
         verbose_name="نتیجه بررسی دروس"
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        db_column="CreatedAt",
         verbose_name="تاریخ ثبت درخواست"
     )
 
@@ -1777,7 +1744,6 @@ class GraduationAudit(models.Model):
 
     audit_id = models.AutoField(
         primary_key=True,
-        db_column="AuditId",
         verbose_name="شناسه بررسی"
     )
 
@@ -1785,7 +1751,6 @@ class GraduationAudit(models.Model):
         "core.Student",
         on_delete=models.PROTECT,
         related_name="graduation_audits",
-        db_column="StudentId",
         verbose_name="دانشجو"
     )
 
@@ -1793,20 +1758,17 @@ class GraduationAudit(models.Model):
         "core.Curriculum",
         on_delete=models.PROTECT,
         related_name="graduation_audits",
-        db_column="CurriculumId",
         verbose_name="چارت درسی"
     )
 
     remaining_units = models.PositiveIntegerField(
         default=0,
-        db_column="RemainingUnits",
         verbose_name="تعداد واحد باقی‌مانده"
     )
     """
     graduation_status = models.CharField(
         max_length=20,
         default="under_review",
-        db_column="GraduationStatus",
         verbose_name="وضعیت فارغ‌التحصیلی"
     )
     """
@@ -1822,7 +1784,6 @@ class GraduationAudit(models.Model):
 
     audit_date = models.DateTimeField(
         auto_now_add=True,
-        db_column="AuditDate",
         verbose_name="تاریخ بررسی"
     )
 
@@ -1861,7 +1822,6 @@ class EducationalChangeLog(models.Model):
 
     log_id = models.AutoField(
         primary_key=True,
-        db_column="LogId",
         verbose_name="شناسه تاریخچه"
     )
 
@@ -1869,13 +1829,11 @@ class EducationalChangeLog(models.Model):
         "core.Student",
         on_delete=models.PROTECT,
         related_name="educational_change_logs",
-        db_column="StudentId",
         verbose_name="دانشجو"
     )
     """
     change_type = models.CharField(
         max_length=30,
-        db_column="ChangeType",
         verbose_name="نوع تغییر"
     )
     """
@@ -1892,20 +1850,17 @@ class EducationalChangeLog(models.Model):
         "core.UserAccount",
         on_delete=models.PROTECT,
         related_name="educational_change_logs",
-        db_column="ChangedBy",
         verbose_name="کاربر ثبت‌کننده"
     )
 
     changed_at = models.DateTimeField(
         auto_now_add=True,
-        db_column="ChangedAt",
         verbose_name="تاریخ و ساعت تغییر"
     )
 
     description = models.TextField(
         blank=True,
         default="",
-        db_column="Description",
         verbose_name="توضیحات تغییر"
     )
 
