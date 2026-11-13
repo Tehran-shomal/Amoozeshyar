@@ -1,14 +1,9 @@
 from django.db import models
-from django.db.models import Q
-from datetime import date #این خط کم بود اضافه کردم
+from datetime import date
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
-#from django.db import models 
-#خط بالا دوبار تکرار شده که کامنت کردم
 from django.utils import timezone
-#from django.db.models.fields.related import _OnDeleteOptions
-#این خط که کامنت کردم دستور قدیمیه و دیگه توی نسخه های جدید به آن نیازی نیست و وجود آن باعث خطا میشود
 
 # ==========================================
 # قوانین آموزشی (برای استفاده در @propertyها)
@@ -450,131 +445,6 @@ class Lesson(models.Model):
             ),
         ]
 
-# ترم
-"""
-class Student(models.Model):
-    term_code = models.CharField(
-        verbose_name="کد ترم",
-        max_length=20,
-        unique=True,
-        blank=False,
-        help_text="کد یکتای ترم، مثال: 14051",
-    )
-    semester = models.CharField(
-        verbose_name="نیمسال",
-        max_length=10,
-        blank=False,
-    )
-    academic_year = models.CharField(
-        verbose_name="سال تحصیلی",
-        max_length=9,
-        blank=False,
-        validators=[
-            RegexValidator(
-                r"^\d{4}-\d{4}$",
-                "فرمت سال تحصیلی باید مثل 1405-1406 باشد.",
-            )
-        ],
-        help_text="مثال: 1405-1406",
-    )
-    start_date = models.DateField(
-        verbose_name="تاریخ شروع ترم",
-        blank=False,
-        help_text="تاریخ شروع کلاس‌های ترم",
-    )
-    end_date = models.DateField(
-        verbose_name="تاریخ پایان ترم",
-        blank=False,
-        help_text="تاریخ پایان کلاس‌های ترم",
-    )
-    registration_start = models.DateTimeField(
-        verbose_name="شروع انتخاب واحد",
-        blank=False,
-        help_text="بازه انتخاب واحد توسط مدیر تعریف می‌شود (FUID03)",
-    )
-    registration_end = models.DateTimeField(
-        verbose_name="پایان انتخاب واحد", blank=False, help_text="FUID03"
-    )
-    add_drop_start = models.DateTimeField(
-        verbose_name="شروع حذف و اضافه", blank=False, help_text="FUID03"
-    )
-    add_drop_end = models.DateTimeField(
-        verbose_name="پایان حذف و اضافه", blank=False, help_text="FUID03"
-    )
-    emergency_drop_start = models.DateTimeField(
-        verbose_name="شروع حذف اضطراری",
-        blank=False,
-        help_text="بعد از پایان حذف و اضافه شروع می‌شود (FUFP04)",
-    )
-    emergency_drop_end = models.DateTimeField(
-        verbose_name="پایان حذف اضطراری", blank=False, help_text="FUFP04"
-    )
-    is_active = models.BooleanField(
-        verbose_name="فعال",
-        default=False,
-        help_text="فقط یک ترم می‌تواند هم‌زمان فعال باشد",
-    )
-
-    class Meta:
-        db_table = "Term"
-        verbose_name = "ترم"
-        verbose_name_plural = "ترم‌ها"
-        ordering = ["-start_date"]
-        unique_together = [("semester", "academic_year")]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["is_active"],
-                condition=models.Q(is_active=True),
-                name="only_one_active_term",
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.get_semester_display()} {self.academic_year}"
-
-    def clean(self):
-        
-        super().clean()
-        pairs = [
-            (self.start_date, self.end_date, "تاریخ پایان ترم"),
-            (self.registration_start, self.registration_end, "پایان انتخاب واحد"),
-            (self.add_drop_start, self.add_drop_end, "پایان حذف و اضافه"),
-            (self.emergency_drop_start, self.emergency_drop_end, "پایان حذف اضطراری"),
-        ]
-        for start, end, label in pairs:
-            if start is not None and end is not None and end <= start:
-                raise ValidationError(
-                    {"__all__": f"{label} باید بعد از زمان شروع باشد."}
-                )
-
-        if (
-            self.emergency_drop_start is not None
-            and self.add_drop_end is not None
-            and self.emergency_drop_start <= self.add_drop_end
-        ):
-            raise ValidationError(
-                {
-                    "emergency_drop_start": "حذف اضطراری باید بعد از پایان حذف و اضافه شروع شود."
-                }
-            )
-
-    @property
-    def is_registration_open(self):
-        now = timezone.now()
-        return self.registration_start <= now <= self.registration_end
-
-    @property
-    def is_add_drop_open(self):
-        now = timezone.now()
-        return self.add_drop_start <= now <= self.add_drop_end
-
-    @property
-    def is_emergency_drop_open(self):
-        now = timezone.now()
-        return self.emergency_drop_start <= now <= self.emergency_drop_end
-
-
-"""
 
 # ترم
 class Term(models.Model):
@@ -984,21 +854,6 @@ class UserAccount(
         return self.username  # هنگام نمایش حساب، نام کاربری را نشان می‌دهد
 
 
-# دانشکده
-class Faculty(models.Model):
-    pass
-
-
-# گروه آموزشی
-class Department(models.Model):
-    pass
-
-
-# رشته
-class Field(models.Model):
-    pass
-
-
 # پیش‌نیاز/هم‌نیاز
 class Prerequisite(models.Model):
 
@@ -1070,11 +925,6 @@ class Classroom(models.Model):
     room_number = models.TextField()
     capacity = models.IntegerField()
     classroom_type = models.TextField()
-
-
-# اعضای گروه کلاسی
-class LessonGroupMember(models.Model):
-    pass
 
 
 # ارائه درس در ترم
@@ -1306,10 +1156,6 @@ class Enrollment(models.Model):
         # نکته طلایی: یک دانشجو توی یک ترم نمی‌تونه یک درس رو دو بار انتخاب کنه!
         #unique_together = ("student", "lesson", "semester")
         unique_together = ("student", "enrollment_date")
-
-# نمره
-class Grade(models.Model):
-    pass
 
 
 # اعتراض به نمره
@@ -1631,26 +1477,6 @@ class RefundRequest(models.Model):
 
     def __str__(self):
         return f"درخواست استرداد شماره {self.refund_case_key}"
-
-
-# امانت کتابخانه
-class LibraryLoan(models.Model):
-    pass
-
-
-# رویداد
-class Event(models.Model):
-    pass
-
-
-# خوابگاه
-class Dormitory(models.Model):
-    pass
-
-
-# کتاب
-class Book(models.Model):
-    pass
 
 
 # درخواست خدمات دانشجویی
@@ -2203,13 +2029,6 @@ class SystemSetting(models.Model):
         return f"{self.setting_key} = {self.setting_value}"
     
 class CreditTransferRequest(models.Model):
-    """
-    STATUS_CHOICES = [
-        ("pending", "در انتظار بررسی"),
-        ("approved", "تأیید شده"),
-        ("rejected", "رد شده"),
-    ]
-    """
     transfer_request_id = models.AutoField(primary_key=True)
     student = models.ForeignKey(
         "core.Student",
@@ -2239,13 +2058,6 @@ class CreditTransferRequest(models.Model):
 
 
 class InternshipRequest(models.Model):
-    """
-    STATUS_CHOICES = [
-        ("pending", "در انتظار بررسی"),
-        ("approved", "تأیید شده"),
-        ("rejected", "رد شده"),
-    ]
-    """
     internship_request_id = models.AutoField(primary_key=True)
     student = models.ForeignKey(
         "core.Student",
@@ -2254,13 +2066,6 @@ class InternshipRequest(models.Model):
     )
     organization_name = models.CharField(max_length=255)
     start_date = models.DateField()
-    """
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="pending",
-    )
-    """
     status = models.ForeignKey(
         Constant,
         on_delete=models.PROTECT,
@@ -2397,9 +2202,7 @@ class TeacherSurvey(models.Model):
         (3, "۳"),
         (4, "۴"),
         (5, "۵"),
-    ]
-    # survey_id = models.AutoField(primary_key=True,verbose_name="شناسه نظرسنجی")
-    
+    ]    
     enrollment = models.ForeignKey(
         "Enrollment",
         on_delete=models.CASCADE,
@@ -2464,21 +2267,6 @@ class TeacherSurvey(models.Model):
 
 #کاراموزی
 class Internship(models.Model):
-    """
-    REQUEST_TYPE_CHOICES = [
-        ("INTERNSHIP_LETTER", "نامه کارآموزی"),
-        ("INTRODUCTION_LETTER", "معرفی‌نامه"),
-    ]
-
-    STATUS_CHOICES = [
-        ("PENDING", "در انتظار"),
-        ("APPROVED", "تأیید شده"),
-        ("REJECTED", "رد شده"),
-        ("ISSUED", "صادر شده"),
-    ]
-    """
-
-    # internship_id=models.AutoField(primary_key=True,verbose_name="شناسه کاراموزی")
     student = models.ForeignKey(
         "Student",
         on_delete=models.CASCADE,
@@ -2550,25 +2338,6 @@ class Internship(models.Model):
     class Meta:
         verbose_name = "درخواست کارآموزی"
         verbose_name_plural = "درخواست‌های کارآموزی"
-    #"""
-    #    constraints = [
-    #        models.CheckConstraint(
-    #            condition=models.Q(
-    #                request_type__in=[
-    #                    "INTERNSHIP_LETTER",
-    #                    "INTRODUCTION_LETTER",
-    #                ]
-    #            ),
-    #            name="intern_type_valid",
-    #        ),
-    #        models.CheckConstraint(
-    #            condition=models.Q(
-    #                status__in=["PENDING", "APPROVED", "REJECTED", "ISSUED"]
-    #            ),
-    #            name="intern_status_valid",
-    #        ),
-    #    ]
-    #"""
        
 
     def __str__(self):
