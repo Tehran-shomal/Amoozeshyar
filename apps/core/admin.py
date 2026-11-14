@@ -16,6 +16,9 @@ from .models import (
     Prerequisite,
     Role,
     Ticket,
+    TuitionReceipt,
+    RefundRequest,
+    StudentServiceRequest,
 )
 
 
@@ -24,34 +27,35 @@ from .models import (
 # ----------------------------------------------------------------------
 @admin.register(OnlineClass)
 class OnlineClassAdmin(admin.ModelAdmin):
+
     list_display = (
-        "id",
-        "course_offering",
-        "platform",
-        "class_link_button",
-        "is_recorded",
-        "is_active",
-        "created_at",
+        "title",
+        "teacher",
+        "offering",
+        "start_at",
+        "end_at",
+        "duration",
+        "is_ongoing",
     )
-    list_filter = ("platform", "is_recorded", "is_active", "created_at")
+
+    list_filter = (
+        "start_at",
+        "end_at",
+    )
+
     search_fields = (
-        "course_offering__lesson__title",
-        "course_offering__lesson__lesson_code",
-        "meeting_id",
+        "title",
+        "teacher__person__full_name",
+        "offering__lesson__title",
     )
-    list_select_related = ("course_offering__lesson",)
+
+    list_select_related = (
+        "teacher",
+        "offering",
+    )
+
+    ordering = ("start_at",)
     list_per_page = 20
-
-    @admin.display(description="لینک ورود به کلاس")
-    def class_link_button(self, obj):
-        if obj.class_url:
-            return format_html(
-                '<a class="button" href="{}" target="_blank" style="background:#2563eb; color:#fff; padding:3px 8px; border-radius:4px; text-decoration:none;">ورود به کلاس</a>',
-                obj.class_url,
-            )
-        return "-"
-
-
 # ----------------------------------------------------------------------
 # مدیریت دانشکده‌ها
 # ----------------------------------------------------------------------
@@ -205,35 +209,42 @@ class TicketReplyInline(admin.StackedInline):
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
-    inlines = [TicketReplyInline]
+
     list_display = (
         "id",
         "subject",
         "creator",
+        "creator_role",
         "category",
-        "priority",
-        "status_badge",
+        "status",
         "assigned_to",
-        "replies_count",
         "created_at",
     )
-    list_filter = ("status", "priority", "category", "created_at")
+
+    list_filter = (
+        "status",
+        "category",
+        "creator_role",
+        "created_at",
+    )
+
     search_fields = (
         "subject",
-        "message",
+        "content",
         "creator__username",
         "assigned_to__username",
     )
+
     list_select_related = (
         "creator",
         "creator_role",
         "category",
-        "priority",
         "status",
         "assigned_to",
     )
+
+    ordering = ("-created_at",)
     list_per_page = 20
-    actions = ["make_closed", "make_in_progress", "assign_to_me", "export_csv"]
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -383,3 +394,59 @@ class CourseOfferingAdmin(admin.ModelAdmin):
     list_filter = ("day_of_week", "term", "is_active", "classroom")
     ordering = ("start_time",)
     list_per_page = 25
+
+
+
+# ----------------------------------------------------------------------
+# مدیریت رسیدهای پرداخت شهریه
+# ----------------------------------------------------------------------
+@admin.register(TuitionReceipt)
+class TuitionReceiptAdmin(admin.ModelAdmin):
+    list_display = (
+        "receipt_serial_code",
+        "receipt_payment_link",
+        "receipt_issued_on",
+    )
+
+    search_fields = ("receipt_serial_code",)
+    list_filter = ("receipt_issued_on",)
+    list_select_related = ("receipt_payment_link",)
+    ordering = ("-receipt_issued_on",)
+
+
+# ----------------------------------------------------------------------
+# مدیریت درخواست‌های بازپرداخت وجه
+# ----------------------------------------------------------------------
+@admin.register(RefundRequest)
+class RefundRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "record_id",
+        "refund_payment_link",
+        "refund_value_requested",
+        "refund_review_state",
+    )
+    list_filter = ("refund_review_state",)
+    search_fields = ("refund_justification_text",)
+    list_select_related = ("refund_payment_link", "refund_review_state")
+
+    @admin.display(description="شناسه")
+    def record_id(self, obj):
+        return obj.pk
+# ----------------------------------------------------------------------
+# مدیریت درخواست‌های خدمات دانشجویی
+# ----------------------------------------------------------------------
+@admin.register(StudentServiceRequest)
+class StudentServiceRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "record_id",
+        "service_requester",
+        "service_request_kind",
+        "service_decision_state",
+    )
+    list_filter = ("service_request_kind", "service_decision_state")
+    search_fields = ("service_request_data",)
+    list_select_related = ("service_requester",)
+
+    @admin.display(description="شناسه")
+    def record_id(self, obj):
+        return obj.pk
