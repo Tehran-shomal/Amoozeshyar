@@ -1,10 +1,50 @@
 
 from django.contrib import admin
-from .models import OnlineClass, Ticket, Lesson, Payment, CourseOffering, Role, Enrollment, Prerequisite
+from .models import (
+    Department,
+    Enrollment,
+    Faculty,
+    OnlineClass,
+    Prerequisite,
+    Role,
+    Ticket,
+    Lesson,
+)
+
 
 
 # ثبت کلاس آنلاین
 admin.site.register(OnlineClass)
+
+
+@admin.register(Faculty)
+class FacultyAdmin(admin.ModelAdmin):
+    list_display = ("faculty_code", "faculty_name", "is_active", "created_at")
+    list_filter = ("is_active",)
+    search_fields = ("faculty_code", "faculty_name")
+    ordering = ("faculty_name",)
+    list_per_page = 20
+
+
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = (
+        "department_code",
+        "department_name",
+        "faculty",
+        "is_active",
+        "created_at",
+    )
+    list_filter = ("faculty", "is_active")
+    search_fields = (
+        "department_code",
+        "department_name",
+        "faculty__faculty_name",
+    )
+    list_select_related = ("faculty",)
+    ordering = ("department_name",)
+    list_per_page = 20
+
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
@@ -89,7 +129,6 @@ class TicketReplyInline(admin.TabularInline):
     model = Ticket
     fk_name = "parent"
     extra = 1
-
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):

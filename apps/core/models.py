@@ -2308,9 +2308,51 @@ class Internship(models.Model):
         return f"{self.get_request_type_display()} - {self.company_name}"
 
 
-class Field(models.Model):
-    pass
+class Faculty(models.Model):
+    faculty_name = models.CharField(max_length=150, verbose_name="نام دانشکده")
+    faculty_code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="کد دانشکده",
+    )
+    is_active = models.BooleanField(default=True, verbose_name="فعال")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت")
+
+    class Meta:
+        verbose_name = "دانشکده"
+        verbose_name_plural = "دانشکده‌ها"
+        ordering = ["faculty_name"]
+
+    def __str__(self):
+        return self.faculty_name
 
 
 class Department(models.Model):
+    faculty = models.ForeignKey(
+        Faculty,
+        on_delete=models.PROTECT,
+        related_name="departments",
+        verbose_name="دانشکده",
+    )
+    department_name = models.CharField(max_length=150, verbose_name="نام گروه آموزشی")
+    department_code = models.CharField(max_length=20, verbose_name="کد گروه آموزشی")
+    is_active = models.BooleanField(default=True, verbose_name="فعال")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت")
+
+    class Meta:
+        verbose_name = "گروه آموزشی"
+        verbose_name_plural = "گروه‌های آموزشی"
+        ordering = ["department_name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["faculty", "department_code"],
+                name="unique_department_code_per_faculty",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.department_name} ({self.faculty.faculty_name})"
+
+
+class Field(models.Model):
     pass
