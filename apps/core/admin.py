@@ -22,6 +22,8 @@ from .models import (
     Teacher,
     Student,
     Term,
+    LessonGroups,
+    ParkingPasses
 )
 
 
@@ -521,3 +523,54 @@ class TermAdmin(admin.ModelAdmin):
     ordering = ("-start_date",)
 
     list_per_page = 20
+
+    @admin.register(ParkingPasses)
+    class ParkingPassesAdmin(admin.ModelAdmin):
+        list_display = (
+            "parking_pass_code",
+            "expiration_date",
+            "charge",
+            "owner",
+            "remaining_days"
+        )
+
+        search_fields = (
+            "parking_pass_code",
+            "owner",
+            "expiration_date"
+        )
+
+        list_filter = (
+            "expiration_date",
+            "charge",
+            "remaining_days"
+        )
+
+        ordering = ("remaining_days")
+
+        list_per_page = 50
+
+    @admin.register(LessonGroups)
+    class LessonGroupsAdmin(admin.ModelAdmin):
+        list_display = (
+            "name",
+            "created_at",
+            "is_active",
+            "members",
+            "teacher"
+        )
+
+        search_fields = (
+            "members",
+            "name",
+            "teacher"
+        )
+
+        list_filter = (
+            "is_active",
+            "created_at"
+        )
+
+        ordering = ("created_at")
+
+        list_per_page = 50
