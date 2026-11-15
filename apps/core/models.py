@@ -1349,12 +1349,15 @@ class OnlineClass(models.Model):
 
     @property
     def duration(self):
+        if self.start_at is None or self.end_at is None:
+            return None
         return self.end_at - self.start_at
 
     @property
     def is_ongoing(self):
+        if self.start_at is None or self.end_at is None:
+         return False
         return self.start_at <= timezone.now() <= self.end_at
-
 
 # رسید شهریه
 class TuitionReceipt(models.Model):
