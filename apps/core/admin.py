@@ -3,6 +3,8 @@ from django.contrib import admin
 from django.db.models import Count
 from django.http import HttpResponse
 from django.utils.html import format_html
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import UserCreationForm
 
 from .models import (
     CourseOffering,
@@ -19,6 +21,13 @@ from .models import (
     Curriculum,
     Communication,
     SystemSetting,
+    Person,
+    Teacher,
+    Student,
+    Term,
+    LessonGroups,
+    ParkingPasses
+
 )
 
 
@@ -28,31 +37,28 @@ from .models import (
 @admin.register(OnlineClass)
 class OnlineClassAdmin(admin.ModelAdmin):
     list_display = (
-        "id",
-        "course_offering",
-        "platform",
-        "class_link_button",
-        "is_recorded",
-        "is_active",
-        "created_at",
+        "title",
+        "teacher",
+        "offering",
+        "start_at",
+        "end_at",
+        "duration",
+        "is_ongoing",
     )
-    list_filter = ("platform", "is_recorded", "is_active", "created_at")
-    search_fields = (
-        "course_offering__lesson__title",
-        "course_offering__lesson__lesson_code",
-        "meeting_id",
-    )
-    list_select_related = ("course_offering__lesson",)
-    list_per_page = 20
 
-    @admin.display(description="لینک ورود به کلاس")
-    def class_link_button(self, obj):
-        if obj.class_url:
-            return format_html(
-                '<a class="button" href="{}" target="_blank" style="background:#2563eb; color:#fff; padding:3px 8px; border-radius:4px; text-decoration:none;">ورود به کلاس</a>',
-                obj.class_url,
-            )
-        return "-"
+    list_filter = (
+        "start_at",
+        "end_at",
+    )
+
+    search_fields = ("title",)
+
+    ordering = ("start_at",)
+
+    readonly_fields = (
+        "duration",
+        "is_ongoing",
+    )
 
 
 # ----------------------------------------------------------------------
@@ -189,142 +195,42 @@ class PrerequisiteAdmin(admin.ModelAdmin):
 # ----------------------------------------------------------------------
 # مدیریت تیکت‌ها (Ticket)
 # ----------------------------------------------------------------------
-class TicketReplyInline(admin.StackedInline):
-    model = Ticket
-    fk_name = "parent"
-    extra = 1
-    fields = ("creator", "creator_role", "message", "status", "created_at")
-    readonly_fields = ("created_at",)
-
-    def save_formset(self, request, form, formset, change):
-        instances = formset.save(commit=False)
-        for instance in instances:
-            if not instance.pk and form.instance.pk:
-                instance.subject = f"Re: {form.instance.subject}"
-                instance.category = form.instance.category
-            instance.save()
-        formset.save_m2m()
-
-
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
-    inlines = [TicketReplyInline]
     list_display = (
-        "id",
         "subject",
-        "creator",
-        "category",
-        "priority",
-        "status_badge",
-        "assigned_to",
-        "replies_count",
-        "created_at",
-    )
-    list_filter = ("status", "priority", "category", "created_at")
-    search_fields = (
-        "subject",
-        "message",
-        "creator__username",
-        "assigned_to__username",
-    )
-    list_select_related = (
         "creator",
         "creator_role",
         "category",
-        "priority",
         "status",
         "assigned_to",
+        "is_assigned",
+        "created_at",
     )
-    list_per_page = 20
-    actions = ["make_closed", "make_in_progress", "assign_to_me", "export_csv"]
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(parent__isnull=True).annotate(
-            _replies_count=Count("replies")
-        )
+    list_filter = (
+        "creator_role",
+        "category",
+        "status",
+        "created_at",
+    )
 
-    @admin.display(description="تعداد پاسخ‌ها", ordering="_replies_count")
-    def replies_count(self, obj):
-        return getattr(obj, "_replies_count", 0)
+    search_fields = (
+        "subject",
+        "content",
+        "creator__username",
+        "creator__first_name",
+        "creator__last_name",
+    )
 
-    @admin.display(description="وضعیت", ordering="status")
-    def status_badge(self, obj):
-        if not obj.status:
-            return "-"
-        code = getattr(obj.status, "code", "").lower()
-        color_map = {
-            "open": "#0284c7",
-            "in_progress": "#eab308",
-            "closed": "#22c55e",
-        }
-        color = color_map.get(code, "#64748b")
-        return format_html(
-            '<span style="background:{}; color:#fff; padding:2px 8px; border-radius:10px; font-size:12px;">{}</span>',
-            color,
-            obj.status.label if hasattr(obj.status, "label") else obj.status,
-        )
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+        "is_closed",
+        "is_assigned",
+    )
 
-    @admin.action(description="تغییر وضعیت تیکت‌های انتخابی به بسته شده")
-    def make_closed(self, request, queryset):
-        from .models import Constant
-
-        closed_status = Constant.objects.filter(
-            category="ticket_status", code="closed"
-        ).first()
-        if closed_status:
-            updated = queryset.update(status=closed_status)
-            self.message_user(
-                request, f"{updated} تیکت با موفقیت بسته شدند."
-            )
-
-    @admin.action(description="تغییر وضعیت تیکت‌های انتخابی به در حال بررسی")
-    def make_in_progress(self, request, queryset):
-        from .models import Constant
-
-        in_progress_status = Constant.objects.filter(
-            category="ticket_status", code="in_progress"
-        ).first()
-        if in_progress_status:
-            updated = queryset.update(status=in_progress_status)
-            self.message_user(
-                request, f"{updated} تیکت در حال بررسی قرار گرفتند."
-            )
-
-    @admin.action(description="ارجاع تیکت‌های انتخابی به من")
-    def assign_to_me(self, request, queryset):
-        updated = queryset.update(assigned_to=request.user)
-        self.message_user(
-            request, f"{updated} تیکت به شما ارجاع داده شدند."
-        )
-
-    @admin.action(description="خروجی CSV از موارد انتخابی")
-    def export_csv(self, request, queryset):
-        response = HttpResponse(
-            content_type="text/csv; charset=utf-8-sig"
-        )
-        response["Content-Disposition"] = 'attachment; filename="tickets.csv"'
-        response.write("\ufeff".encode("utf8"))
-
-        writer = csv.writer(response)
-        writer.writerow(
-            ["شناسه", "موضوع", "سازنده", "دسته بندی", "اولویت", "وضعیت", "تاریخ ایجاد"]
-        )
-        for ticket in queryset:
-            writer.writerow(
-                [
-                    ticket.id,
-                    ticket.subject,
-                    str(ticket.creator) if ticket.creator else "",
-                    str(ticket.category) if ticket.category else "",
-                    str(ticket.priority) if ticket.priority else "",
-                    str(ticket.status) if ticket.status else "",
-                    ticket.created_at.strftime("%Y-%m-%d %H:%M")
-                    if ticket.created_at
-                    else "",
-                ]
-            )
-        return response
+    ordering = ("-created_at",)
 
 
 # ----------------------------------------------------------------------
@@ -540,3 +446,290 @@ class SystemSettingAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
+=======
+
+
+# ----------------------------------------------------------------------
+# مدیریت اشخاص
+# ----------------------------------------------------------------------
+class PersonCreationForm(UserCreationForm):
+    class Meta:
+        model = Person
+        fields = (
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "national_id",
+            "birth_date",
+            "birth_place",
+        )
+
+
+@admin.register(Person)
+class PersonAdmin(UserAdmin):
+    add_form = PersonCreationForm
+
+    list_display = (
+        "username",
+        "full_name",
+        "email",
+        "national_id",
+        "gender",
+        "is_active",
+        "is_staff",
+    )
+
+    search_fields = (
+        "username",
+        "first_name",
+        "last_name",
+        "email",
+        "national_id",
+    )
+
+    list_filter = (
+        "gender",
+        "preferred_language",
+        "is_active",
+        "is_staff",
+    )
+
+    ordering = ("last_name", "first_name")
+
+    readonly_fields = ("updated_at", "age", "full_name")
+
+    fieldsets = (
+        (
+            "اطلاعات ورود",
+            {
+                "fields": ("username", "password"),
+            },
+        ),
+        (
+            "اطلاعات شخصی",
+            {
+                "fields": (
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "national_id",
+                    "birth_date",
+                    "birth_place",
+                    "gender",
+                    "address",
+                    "profile_image_path",
+                    "preferred_language",
+                    "is_notification_enabled",
+                    "age",
+                    "full_name",
+                ),
+            },
+        ),
+        (
+            "دسترسی‌ها",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
+        (
+            "اطلاعات سیستمی",
+            {
+                "fields": ("last_login", "date_joined", "updated_at"),
+            },
+        ),
+    )
+
+    add_fieldsets = (
+        (
+            "ایجاد شخص جدید",
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "username",
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "national_id",
+                    "birth_date",
+                    "birth_place",
+                    "password1",
+                    "password2",
+                ),
+            },
+        ),
+    )
+
+
+# ----------------------------------------------------------------------
+# مدیریت اساتید
+# ----------------------------------------------------------------------
+@admin.register(Teacher)
+class TeacherAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "teacher_code",
+        "person",
+        "department",
+        "academic_rank",
+        "hire_date",
+        "years_of_service",
+    )
+
+    search_fields = (
+        "teacher_code",
+        "person__first_name",
+        "person__last_name",
+        "person__national_id",
+    )
+
+    list_filter = (
+        "department",
+        "academic_rank",
+        "hire_date",
+    )
+
+    list_select_related = (
+        "person",
+        "department",
+        "academic_rank",
+    )
+
+    ordering = ("teacher_code",)
+
+
+# ----------------------------------------------------------------------
+# مدیریت دانشجویان
+# ----------------------------------------------------------------------
+@admin.register(Student)
+class StudentAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "student_code",
+        "person",
+        "field",
+        "educational_level",
+        "status",
+        "total_gpa",
+        "tuition_debt",
+        "is_on_probation",
+    )
+
+    search_fields = (
+        "student_code",
+        "person__first_name",
+        "person__last_name",
+        "person__national_id",
+    )
+
+    list_filter = (
+        "educational_level",
+        "status",
+        "admission_type",
+        "field",
+    )
+
+    list_select_related = (
+        "person",
+        "field",
+        "educational_level",
+        "status",
+        "admission_type",
+    )
+
+    ordering = ("student_code",)
+
+    readonly_fields = (
+        "is_on_probation",
+        "can_register_courses",
+        "max_allowed_units",
+        "remaining_terms",
+    )
+
+
+# ----------------------------------------------------------------------
+# مدیریت ترم
+# ----------------------------------------------------------------------
+@admin.register(Term)
+class TermAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "term_code",
+        "semester",
+        "academic_year",
+        "start_date",
+        "end_date",
+        "is_active",
+    )
+
+    search_fields = (
+        "term_code",
+        "academic_year",
+    )
+
+    list_filter = (
+        "semester",
+        "academic_year",
+        "is_active",
+    )
+
+    ordering = ("-start_date",)
+
+    list_per_page = 20
+
+    @admin.register(ParkingPasses)
+    class ParkingPassesAdmin(admin.ModelAdmin):
+        list_display = (
+            "parking_pass_code",
+            "expiration_date",
+            "charge",
+            "owner",
+            "remaining_days"
+        )
+
+        search_fields = (
+            "parking_pass_code",
+            "owner",
+            "expiration_date"
+        )
+
+        list_filter = (
+            "expiration_date",
+            "charge",
+            "remaining_days"
+        )
+
+        ordering = ("remaining_days")
+
+        list_per_page = 50
+
+    @admin.register(LessonGroups)
+    class LessonGroupsAdmin(admin.ModelAdmin):
+        list_display = (
+            "name",
+            "created_at",
+            "is_active",
+            "members",
+            "teacher"
+        )
+
+        search_fields = (
+            "members",
+            "name",
+            "teacher"
+        )
+
+        list_filter = (
+            "is_active",
+            "created_at"
+        )
+
+        ordering = ("created_at")
+
+        list_per_page = 50
