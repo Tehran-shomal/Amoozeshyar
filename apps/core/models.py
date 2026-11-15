@@ -577,12 +577,14 @@ class Term(models.Model):
 
 class Payment(models.Model):
 
+
     STATUS_CHOICES = [
         ("pending", "در انتظار پرداخت"),
         ("successful", "موفق"),
         ("failed", "ناموفق"),
         ("refunded", "بازپرداخت شده"),
     ]
+
 
     term = models.ForeignKey(
         "Term",
@@ -607,14 +609,28 @@ class Payment(models.Model):
         related_name="payments",
         verbose_name="دانشجو",
     )
-
+    """
     status = models.CharField(
         max_length=30,
         choices=STATUS_CHOICES,
         default="pending",
         verbose_name="وضعیت پرداخت",
     )
+    """
 
+    status = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="payment_statuses",
+        verbose_name="وضعیت پرداخت",
+        limit_choices_to={"category": "payment_status"},
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='تاریخ ثبت'
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت")
 
     def __str__(self):
@@ -931,6 +947,10 @@ class CourseOffering(models.Model):
 
     capacity = models.PositiveIntegerField(verbose_name="ظرفیت کلاس")
 
+    remaining_capacity = models.PositiveIntegerField(
+        verbose_name='ظرفیت باقی‌مانده'
+    )
+ 
     remaining_capacity = models.PositiveIntegerField(verbose_name="ظرفیت باقی‌مانده")
     """
     day_of_week = models.CharField(
@@ -973,6 +993,11 @@ class CourseOffering(models.Model):
         end = self.end_time.hour * 60 + self.end_time.minute
 
         return end - start
+    @property
+    def remaining_capacity(self):
+        """محاسبه پویای ظرفیت باقی‌مانده بر اساس تعداد ثبت‌نام‌های فعال"""
+        registered_count = self.enrollments.exclude(status='DROPPED').count()
+        return max(self.capacity - registered_count, 0)
 
     def __str__(self):
         return self.lesson.title
@@ -1038,7 +1063,7 @@ class Enrollment(models.Model):
         related_name="enrollments",
         verbose_name="دانشجو",
     )
-    # ✅ ارتباط با ارائه درس (کلید خارجی - این فیلد قبلاً کم بود)
+    #  ارتباط با ارائه درس (کلید خارجی - این فیلد قبلاً کم بود)
     offering = models.ForeignKey(
         "CourseOffering",
         on_delete=models.CASCADE,
@@ -1715,11 +1740,7 @@ class GraduationAudit(models.Model):
 
 class EducationalChangeLog(models.Model):
 
-    CHANGE_TYPE_CHOICES = [
-        ("grade_change", "تغییر نمره"),
-        ("course_deletion", "حذف درس"),
-        ("academic_status_change", "تغییر وضعیت تحصیلی"),
-    ]
+
 
     log_id = models.AutoField(primary_key=True, verbose_name="شناسه تاریخچه")
 
@@ -1759,7 +1780,9 @@ class EducationalChangeLog(models.Model):
 
     @property
     def change_type_label(self):
-        return self.get_change_type_display()
+        #return self.get_change_type_display()
+        return self.change_type.label if self.change_type else "نامشخص"
+
 
     class Meta:
         db_table = "EducationalChangeLog"
@@ -1780,6 +1803,8 @@ class EducationalChangeLog(models.Model):
 # ==========================================
 class Curriculum(models.Model):
     curriculum_id = models.AutoField(primary_key=True, verbose_name="شناسه چارت")
+    field = models.ForeignKey("Field", on_delete=models.CASCADE, related_name="curriculums", verbose_name="رشته تحصیلی")
+    lesson = models.ForeignKey("Lesson", on_delete=models.CASCADE, related_name="curriculums", verbose_name="درس")
     field = models.ForeignKey(
         "Field",
         on_delete=models.CASCADE,
@@ -1816,12 +1841,13 @@ class Curriculum(models.Model):
     def __str__(self):
         return f"{self.field.field_name} - ترم {self.recommended_term} - {self.lesson.title}"
 
-
 # ==========================================
 # جدول Communication (ارتباطات و مکاتبات)
 # ==========================================
 class Communication(models.Model):
     communication_id = models.AutoField(primary_key=True, verbose_name="شناسه مکاتبه")
+    sender = models.ForeignKey("UserAccount", on_delete=models.CASCADE, related_name="sent_messages", verbose_name="فرستنده")
+    receiver = models.ForeignKey("UserAccount", on_delete=models.CASCADE, related_name="received_messages", verbose_name="گیرنده")
     sender = models.ForeignKey(
         "UserAccount",
         on_delete=models.CASCADE,
@@ -1875,6 +1901,7 @@ class Communication(models.Model):
 # ==========================================
 class SystemSetting(models.Model):
     setting_id = models.AutoField(primary_key=True, verbose_name="شناسه تنظیم")
+    setting_key = models.CharField(max_length=100, unique=True, verbose_name="کلید تنظیم")
     setting_key = models.CharField(
         max_length=100, unique=True, verbose_name="کلید تنظیم"
     )
@@ -1890,6 +1917,7 @@ class SystemSetting(models.Model):
     )
     description = models.TextField(null=True, blank=True, verbose_name="توضیحات")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="آخرین به‌روزرسانی")
+    updated_by = models.ForeignKey("UserAccount", on_delete=models.SET_NULL, null=True, blank=True, verbose_name="به‌روزرسانی‌کننده")
     updated_by = models.ForeignKey(
         "UserAccount",
         on_delete=models.SET_NULL,
@@ -1907,6 +1935,7 @@ class SystemSetting(models.Model):
     def __str__(self):
         return f"{self.setting_key} = {self.setting_value}"
 
+    
 
 class CreditTransferRequest(models.Model):
     transfer_request_id = models.AutoField(primary_key=True)
@@ -2081,6 +2110,7 @@ class Notification(models.Model):
 
 # نظرسنجی اساتید
 class TeacherSurvey(models.Model):
+  
     RATING_CHOICES = [
         (1, "۱"),
         (2, "۲"),
@@ -2095,21 +2125,26 @@ class TeacherSurvey(models.Model):
         verbose_name="ثبت‌نام",
     )
     overall_rating = models.PositiveSmallIntegerField(
-        choices=RATING_CHOICES,
         verbose_name="امتیاز کلی",
     )
     teaching_quality = models.PositiveSmallIntegerField(
-        choices=RATING_CHOICES,
         null=True,
         blank=True,
         verbose_name="کیفیت تدریس",
+    )
+    behavior = models.ForeignKey(
+        Constant,
+        on_delete=models.PROTECT,
+        related_name="survey_behaviors",
+        verbose_name="رفتار استاد",
+        limit_choices_to={"category": "rating"},
+        null=True, blank=True,
     )
     submitted_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="زمان ثبت نظرسنجی",
     )
     behavior = models.PositiveSmallIntegerField(
-        choices=RATING_CHOICES,
         null=True,
         blank=True,
         verbose_name="رفتار استاد",

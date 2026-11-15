@@ -18,12 +18,16 @@ from .models import (
     Prerequisite,
     Role,
     Ticket,
+    Curriculum,
+    Communication,
+    SystemSetting,
     Person,
     Teacher,
     Student,
     Term,
     LessonGroups,
     ParkingPasses
+
 )
 
 
@@ -288,6 +292,161 @@ class CourseOfferingAdmin(admin.ModelAdmin):
     list_filter = ("day_of_week", "term", "is_active", "classroom")
     ordering = ("start_time",)
     list_per_page = 25
+# ----------------------------------------------------------------------
+# مدیریت چارت درسی (Curriculum)  
+# ----------------------------------------------------------------------
+@admin.register(Curriculum)
+class CurriculumAdmin(admin.ModelAdmin):
+    # ستون‌هایی که در لیست اصلی نمایش داده می‌شوند
+    list_display = (
+        "curriculum_id",
+        "field",
+        "lesson",
+        "requirement_type",
+        "recommended_term",
+        "calculated_units",
+        "is_active",
+    )
+    
+    # فیلترهای سمت راست صفحه (بر اساس رشته، دانشکده، نوع درس و ...)
+    list_filter = (
+        "is_active",
+        "field__department__faculty",  # فیلتر بر اساس دانشکده
+        "field__department",           # فیلتر بر اساس گروه آموزشی
+        "field",                       # فیلتر بر اساس رشته
+        "requirement_type",            # اجباری/اختیاری
+        "recommended_term",            # ترم پیشنهادی
+    )
+    
+    # فیلدهای قابل جستجو (با کد و نام درس و رشته)
+    search_fields = (
+        "field__field_name",
+        "field__field_code",
+        "lesson__title",
+        "lesson__lesson_code",
+    )
+    
+    # بهینه‌سازی دیتابیس برای جلوگیری از کندی (JOIN یکجا)
+    list_select_related = ("field", "lesson", "requirement_type")
+    
+    # مرتب‌سازی پیش‌فرض
+    ordering = ("field", "recommended_term")
+    
+    # تعداد آیتم در هر صفحه
+    list_per_page = 25
+    
+    # تعداد ستون‌های قابل ویرایش مستقیم از لیست
+    list_editable = ("is_active", "calculated_units", "recommended_term")
+    
+    # اکشن‌های گروهی (فعال/غیرفعال کردن دسته‌جمعی)
+    actions = ["make_active", "make_inactive"]
+
+    @admin.action(description="فعال کردن چارت‌های انتخاب شده")
+    def make_active(self, request, queryset):
+        updated = queryset.update(is_active=True)
+        self.message_user(request, f"{updated} چارت درسی با موفقیت فعال شدند.")
+
+    @admin.action(description="غیرفعال کردن چارت‌های انتخاب شده")
+    def make_inactive(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, f"{updated} چارت درسی با موفقیت غیرفعال شدند.")
+
+
+# ----------------------------------------------------------------------
+# مدیریت ارتباطات و مکاتبات (Communication)   
+# ----------------------------------------------------------------------
+@admin.register(Communication)
+class CommunicationAdmin(admin.ModelAdmin):
+    list_display = (
+        "communication_id",
+        "sender",
+        "receiver",
+        "subject",
+        "communication_type",
+        "status",
+        "is_read_display",      # نمایش وضعیت خوانده شدن
+        "sent_at",
+    )
+    
+    # فیلترها
+    list_filter = (
+        "is_read",
+        "communication_type",
+        "status",
+        "sent_at",
+    )
+    
+    # جستجو بر اساس موضوع، متن پیام و نام فرستنده/گیرنده
+    search_fields = (
+        "subject",
+        "message_body",
+        "sender__username",
+        "receiver__username",
+    )
+    
+    list_select_related = ("sender", "receiver", "communication_type", "status")
+    ordering = ("-sent_at",)
+    list_per_page = 25
+    
+    # اضافه کردن نوار زمانی بالای صفحه (برای فیلتر سریع بر اساس تاریخ)
+    date_hierarchy = "sent_at"
+    
+    # اکشن‌های گروهی برای مدیریت وضعیت خوانده شدن
+    actions = ["mark_as_read", "mark_as_unread"]
+
+    # نمایش وضعیت خوانده شدن به صورت آیکون (تیک سبز/ضربدر قرمز)
+    @admin.display(description="خوانده شده؟", boolean=True)
+    def is_read_display(self, obj):
+        return obj.is_read
+
+    @admin.action(description="علامت‌گذاری پیام‌های انتخاب شده به عنوان خوانده شده")
+    def mark_as_read(self, request, queryset):
+        updated = queryset.update(is_read=True)
+        self.message_user(request, f"{updated} پیام خوانده شدند.")
+
+    @admin.action(description="علامت‌گذاری پیام‌های انتخاب شده به عنوان خوانده نشده")
+    def mark_as_unread(self, request, queryset):
+        updated = queryset.update(is_read=False)
+        self.message_user(request, f"{updated} پیام به حالت خوانده نشده برگشتند.")
+
+
+# ----------------------------------------------------------------------
+# مدیریت تنظیمات پویای سیستم (SystemSetting)  
+# ----------------------------------------------------------------------
+@admin.register(SystemSetting)
+class SystemSettingAdmin(admin.ModelAdmin):
+    list_display = (
+        "setting_id",
+        "setting_key",
+        "setting_value",
+        "data_type",
+        "updated_at",
+        "updated_by",
+    )
+    
+    list_filter = (
+        "data_type",
+        "updated_at",
+    )
+    
+    search_fields = (
+        "setting_key",
+        "setting_value",
+        "description",
+    )
+    
+    list_select_related = ("data_type", "updated_by")
+    ordering = ("setting_key",)
+    list_per_page = 20
+    
+    # فیلدهایی که نباید قابل ویرایش باشند
+    readonly_fields = ("updated_at", "updated_by")
+    
+    # تابع برای ثبت خودکار کاربری که تنظیمات رو تغییر داده
+    def save_model(self, request, obj, form, change):
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
+=======
 
 
 # ----------------------------------------------------------------------
