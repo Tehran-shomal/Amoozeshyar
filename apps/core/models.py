@@ -368,7 +368,9 @@ class Student(models.Model):
     @property
     def remaining_terms(self):
         """تعداد ترم باقی‌مانده تا سقف سنوات مجاز مقطع."""
-        max_terms = StudentAcademicRules.MAX_TERMS.get(self.educational_level)
+        max_terms = StudentAcademicRules.MAX_TERMS.get(
+            self.educational_level.code if self.educational_level else None
+        )
         if max_terms is None:
             return 0
         return max(max_terms - self.completed_terms, 0)
@@ -539,7 +541,7 @@ class Term(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.semester} {self.academic_year}"
+        return f"{self.semester or self.term_code} {self.academic_year}"
 
     def clean(self):
         """پایان هر بازه باید بعد از شروع آن باشد و حذف اضطراری بعد از حذف و اضافه بیاید"""
@@ -627,10 +629,6 @@ class Payment(models.Model):
         null=True,
         blank=True,
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='تاریخ ثبت'
-    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ثبت")
 
     def __str__(self):
@@ -669,10 +667,14 @@ class Exam(models.Model):
         blank=True,
     )
 
+    class Meta:
+        verbose_name = "امتحان"
+        verbose_name_plural = "امتحان‌ها"
+
 
 # گروه کلاسی
 class LessonGroups(models.Model):
-    id = models.BigIntegerField(primary_key=True, verbose_name="آیدی")
+    id = models.BigAutoField(primary_key=True, verbose_name="آیدی")
 
     name = models.CharField(
         max_length=50, blank=False, null=False, verbose_name="نام گروه"
@@ -746,13 +748,13 @@ class ParkingPasses(models.Model):
 
     @property
     def remaining_days(self):
-        return (self.aquisition_date - self.expiration_date).days
+        return (self.expiration_date - self.aquisition_date).days
 
     def __str__(self):
         return self.parking_pass_code
 
     class Meta:
-        verbose_name = ("مجوز پارکینگ",)
+        verbose_name = "مجوز پارکینگ"
         verbose_name_plural = "مجوزهای پارکینگ"
 
 
@@ -851,6 +853,10 @@ class UserAccount(
     def __str__(self):
         return self.username  # هنگام نمایش حساب، نام کاربری را نشان می‌دهد
 
+    class Meta:
+        verbose_name = "حساب کاربری"
+        verbose_name_plural = "حساب‌های کاربری"
+
 
 # پیش‌نیاز/هم‌نیاز
 class Prerequisite(models.Model):
@@ -910,6 +916,13 @@ class Classroom(models.Model):
     capacity = models.IntegerField()
     classroom_type = models.TextField()
 
+    def __str__(self):
+        return f"{self.building_name} - {self.room_number}"
+
+    class Meta:
+        verbose_name = "کلاس"
+        verbose_name_plural = "کلاس‌ها"
+
 
 # ارائه درس در ترم
 class CourseOffering(models.Model):
@@ -947,10 +960,6 @@ class CourseOffering(models.Model):
 
     capacity = models.PositiveIntegerField(verbose_name="ظرفیت کلاس")
 
-    remaining_capacity = models.PositiveIntegerField(
-        verbose_name='ظرفیت باقی‌مانده'
-    )
- 
     remaining_capacity = models.PositiveIntegerField(verbose_name="ظرفیت باقی‌مانده")
     """
     day_of_week = models.CharField(
@@ -994,9 +1003,9 @@ class CourseOffering(models.Model):
 
         return end - start
     @property
-    def remaining_capacity(self):
+    def live_remaining_capacity(self):
         """محاسبه پویای ظرفیت باقی‌مانده بر اساس تعداد ثبت‌نام‌های فعال"""
-        registered_count = self.enrollments.exclude(status='DROPPED').count()
+        registered_count = self.enrollments.exclude(status="DROPPED").count()
         return max(self.capacity - registered_count, 0)
 
     def __str__(self):
@@ -1006,32 +1015,32 @@ class CourseOffering(models.Model):
 
         verbose_name = "ارائه درس"
 
-    verbose_name_plural = "ارائه‌های درس"
-    ordering = ["start_time"]
+        verbose_name_plural = "ارائه‌های درس"
+        ordering = ["start_time"]
 
-    unique_together = [
-        ("teacher", "day_of_week", "start_time", "term"),
-    ]
-    constraints = [
-        models.CheckConstraint(
-            condition=models.Q(capacity__gt=0), name="offering_capacity_positive"
-        ),
-        models.CheckConstraint(
-            condition=models.Q(remaining_capacity__lte=models.F("capacity")),
-            name="remaining_capacity_valid",
-        ),
-        models.CheckConstraint(
-            condition=models.Q(end_time__gt=models.F("start_time")),
-            name="offering_end_time_valid",
-        ),
-        models.CheckConstraint(
-            condition=(
-                models.Q(exam_date__isnull=True, exam_time__isnull=True)
-                | models.Q(exam_date__isnull=False, exam_time__isnull=False)
+        unique_together = [
+            ("teacher", "day_of_week", "start_time", "term"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(capacity__gt=0), name="offering_capacity_positive"
             ),
-            name="exam_date_time_consistent",
-        ),
-    ]
+            models.CheckConstraint(
+                condition=models.Q(remaining_capacity__lte=models.F("capacity")),
+                name="remaining_capacity_valid",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(end_time__gt=models.F("start_time")),
+                name="offering_end_time_valid",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(exam_date__isnull=True, exam_time__isnull=True)
+                    | models.Q(exam_date__isnull=False, exam_time__isnull=False)
+                ),
+                name="exam_date_time_consistent",
+            ),
+        ]
 
 
 # انتخاب واحد
@@ -1089,14 +1098,14 @@ class Enrollment(models.Model):
     drop_date = models.DateField(null=True, blank=True, verbose_name="تاریخ حذف")
 
     def __str__(self):
-        return f"{self.student} - {self.get_status_display()}"
+        return f"{self.student} - {self.offering}"
 
     class Meta:
         verbose_name = "انتخاب واحد"
         verbose_name_plural = "انتخاب واحدها"
         # نکته طلایی: یک دانشجو توی یک ترم نمی‌تونه یک درس رو دو بار انتخاب کنه!
         # unique_together = ("student", "lesson", "semester")
-        unique_together = ("student", "enrollment_date")
+        unique_together = ("student", "offering")
 
 
 # اعتراض به نمره
@@ -1118,6 +1127,13 @@ class GradeAppeal(models.Model):
         null=True,
         blank=True,
     )
+
+    def __str__(self):
+        return f"اعتراض {self.enrollment_id}"
+
+    class Meta:
+        verbose_name = "اعتراض به نمره"
+        verbose_name_plural = "اعتراض‌های نمره"
 
 
 # حضور و غیاب
@@ -1156,6 +1172,13 @@ class Attendance(models.Model):  # مدل ثبت اطلاعات حضور و غی
     created_at = models.DateTimeField(
         auto_now_add=True
     )  # زمان ایجاد رکورد که خودکار ثبت می‌شود
+
+    def __str__(self):
+        return f"{self.enrollment_id} - جلسه {self.session_number}"
+
+    class Meta:
+        verbose_name = "حضور و غیاب"
+        verbose_name_plural = "حضور و غیاب‌ها"
 
 
 class TicketCategory(models.Model):
@@ -1483,7 +1506,7 @@ class StudentServiceRequest(models.Model):
     def __str__(self):
         return (
             f"درخواست شماره {self.student_service_case_key} - "
-            f"{self.get_service_request_kind_display()}"
+            f"{self.service_request_kind}"
         )
 
 
@@ -1519,6 +1542,8 @@ class ScholarshipApplication(models.Model):
     scholarship_submitted_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = "درخواست بورسیه"
+        verbose_name_plural = "درخواست‌های بورسیه"
         db_table = "ScholarshipApplication"
 
     def __str__(self):
@@ -1564,6 +1589,8 @@ class CounselingAppointment(models.Model):
     )
 
     class Meta:
+        verbose_name = "وقت مشاوره"
+        verbose_name_plural = "وقت‌های مشاوره"
         db_table = "CounselingAppointment"
 
     def __str__(self):
@@ -1603,6 +1630,8 @@ class Proposal(models.Model):
     )
 
     class Meta:
+        verbose_name = "پروپوزال"
+        verbose_name_plural = "پروپوزال‌ها"
         db_table = "Proposal"
 
     def __str__(self):
@@ -1668,7 +1697,7 @@ class TransferRequest(models.Model):
         return (
             f"درخواست مهمانی {self.transfer_id} - "
             f"{self.student} - "
-            f"{self.get_review_status_display()}"
+            f"{self.review_status}"
         )
 
 
@@ -1720,7 +1749,7 @@ class GraduationAudit(models.Model):
 
     @property
     def is_graduation_eligible(self):
-        return self.remaining_units == 0 and self.graduation_status == "eligible"
+        return self.remaining_units == 0 and getattr(self.graduation_status, "code", None) == "eligible"
 
     class Meta:
         db_table = "GraduationAudit"
@@ -1734,7 +1763,7 @@ class GraduationAudit(models.Model):
         return (
             f"بررسی فارغ‌التحصیلی {self.audit_id} - "
             f"{self.student} - "
-            f"{self.get_graduation_status_display()}"
+            f"{self.graduation_status}"
         )
 
 
@@ -1780,7 +1809,7 @@ class EducationalChangeLog(models.Model):
 
     @property
     def change_type_label(self):
-        #return self.get_change_type_display()
+        #return self.change_type
         return self.change_type.label if self.change_type else "نامشخص"
 
 
@@ -1794,7 +1823,7 @@ class EducationalChangeLog(models.Model):
         return (
             f"تغییر آموزشی {self.log_id} - "
             f"{self.student} - "
-            f"{self.get_change_type_display()}"
+            f"{self.change_type}"
         )
 
 
@@ -1966,6 +1995,10 @@ class CreditTransferRequest(models.Model):
     def __str__(self):
         return f"درخواست تطبیق واحد {self.transfer_request_id}"
 
+    class Meta:
+        verbose_name = "درخواست انتقال واحد"
+        verbose_name_plural = "درخواست‌های انتقال واحد"
+
 
 class InternshipRequest(models.Model):
     internship_request_id = models.AutoField(primary_key=True)
@@ -1988,6 +2021,10 @@ class InternshipRequest(models.Model):
 
     def __str__(self):
         return f"درخواست کارآموزی {self.internship_request_id}"
+
+    class Meta:
+        verbose_name = "درخواست کارآموزی"
+        verbose_name_plural = "درخواست‌های کارآموزی"
 
 
 class ThesisProgressReport(models.Model):
@@ -2030,6 +2067,10 @@ class ThesisProgressReport(models.Model):
 
     def __str__(self):
         return f"گزارش پیشرفت پایان‌نامه {self.report_id}"
+
+    class Meta:
+        verbose_name = "گزارش پیشرفت پایان‌نامه"
+        verbose_name_plural = "گزارش‌های پیشرفت پایان‌نامه"
 
 
 # نوتیفیکیشن
@@ -2105,7 +2146,7 @@ class Notification(models.Model):
         verbose_name_plural = "اعلان‌ها"
 
     def __str__(self):
-        return f"{self.get_notification_type_display()}: {self.title}"
+        return f"{self.notification_type}: {self.title}"
 
 
 # نظرسنجی اساتید
@@ -2144,11 +2185,6 @@ class TeacherSurvey(models.Model):
         auto_now_add=True,
         verbose_name="زمان ثبت نظرسنجی",
     )
-    behavior = models.PositiveSmallIntegerField(
-        null=True,
-        blank=True,
-        verbose_name="رفتار استاد",
-    )
     comment = models.TextField(
         blank=True,
         verbose_name="نظر دانشجو",
@@ -2172,13 +2208,6 @@ class TeacherSurvey(models.Model):
                     | models.Q(teaching_quality__gte=1, teaching_quality__lte=5)
                 ),
                 name="ts_quality_1_5",
-            ),
-            models.CheckConstraint(
-                condition=(
-                    models.Q(behavior__isnull=True)
-                    | models.Q(behavior__gte=1, behavior__lte=5)
-                ),
-                name="ts_behavior_1_5",
             ),
         ]
 
@@ -2261,7 +2290,7 @@ class Internship(models.Model):
         verbose_name_plural = "درخواست‌های کارآموزی"
 
     def __str__(self):
-        return f"{self.get_request_type_display()} - {self.company_name}"
+        return f"{self.request_type} - {self.company_name}"
 
 
 class Faculty(models.Model):

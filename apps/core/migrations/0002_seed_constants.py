@@ -180,5 +180,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(seed_constants, unseed_constants),
+        migrations.RunPython(seed_constants, migrations.RunPython.noop),
     ]
