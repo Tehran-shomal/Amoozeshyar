@@ -827,16 +827,18 @@ class OnlineClass(models.Model):
 
     @property
     def duration(self):
+        if self.start_at is None or self.end_at is None:
+            return None
         return self.end_at - self.start_at
 
     @property
     def is_ongoing(self):
+        if self.start_at is None or self.end_at is None:
+         return False
         return self.start_at <= timezone.now() <= self.end_at
 
 
-# ==========================================
 # رسید شهریه
-# ==========================================
 class TuitionReceipt(models.Model):
     tuition_receipt_key = models.AutoField(primary_key=True, verbose_name="شناسه رسید شهریه")
     receipt_serial_code = models.CharField(max_length=50, unique=True, null=False, blank=False, verbose_name="شماره سریال رسید")
