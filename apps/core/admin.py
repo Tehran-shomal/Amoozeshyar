@@ -51,12 +51,29 @@ class PersonAdmin(UserAdmin):
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('اطلاعات تکمیلی', {'fields': ('national_id', 'birth_date', 'birth_place')}),
     )
-    response.write("\ufeff")  # برای نمایش درست فارسی در Excel
-    writer = csv.writer(response)
-    writer.writerow([f.name for f in fields])
-    for obj in queryset:
-        writer.writerow([getattr(obj, f.attname) for f in fields])
-    return response
+
+    # اگر این کدها برای خروجی CSV (Action) است، باید داخل یک تابع تعریف شود:
+    actions = ['export_as_csv']
+
+    def export_as_csv(self, request, queryset):
+        meta = self.model._meta
+        fields = [field for field in meta.get_fields()]
+        
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename={meta.verbose_name_plural}.csv'
+        response.write("\ufeff")  # برای نمایش درست فارسی در Excel
+        
+        writer = csv.writer(response)
+        writer.writerow([f.name for f in fields])
+        
+        for obj in queryset:
+            writer.writerow([getattr(obj, f.attname, '') for f in fields])
+            
+        return response
+    
+    export_as_csv.short_description = "خروجی CSV"
+
+
 
 
 @admin.register(Student)
