@@ -3,19 +3,9 @@
 
 اجرا:
     python manage.py seed
-    python manage.py seed --password "رمز-دلخواه"
-
-نکته‌ها:
-- فقط وقتی DEBUG=True باشد اجرا می‌شود (روی سرور واقعی اجرا نمی‌شود).
-- چند بار اجرا کردنش رکورد تکراری نمی‌سازد (get_or_create) و رکوردهای
-  موجود را تغییر نمی‌دهد.
-- هر کاربر تستی با همان رمز (پیش‌فرض Test@12345) وارد می‌شود.
-  ورود به پنل ادمین:  admin  /  Test@12345
-- اگر کسی مدل جدیدی به models.py اضافه کرد، دادهٔ تستی‌اش را باید همین‌جا
-  (در متد seed) اضافه کند.
 """
 
-from datetime import date, time, timedelta
+from datetime import date, time, timedelta, datetime
 from decimal import Decimal
 
 from django.apps import apps
@@ -23,13 +13,11 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.utils import timezone
 
 from apps.core import models as m
 
 # ----------------------------------------------------------------------
 # مقادیر ثابت (Constant): category -> [(code, label), ...]
-# اگر قبلاً (مثلاً با migration) ساخته شده باشند، همان‌ها استفاده می‌شوند.
 # ----------------------------------------------------------------------
 CONSTANTS = {
     "gender": [("male", "مرد"), ("female", "زن")],
@@ -165,7 +153,7 @@ CONSTANTS = {
 
 
 class Command(BaseCommand):
-    help = "ساخت داده‌ی تستی (حداقل دو رکورد برای هر جدول) برای محیط توسعه"
+    help = "ساخت داده‌ی تستی برای محیط توسعه"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -174,12 +162,11 @@ class Command(BaseCommand):
             help="رمز کاربران تستی (پیش‌فرض: Test@12345)",
         )
 
-    # ------------------------------------------------------------------
     def handle(self, *args, **options):
         if not settings.DEBUG:
             raise CommandError("این دستور فقط وقتی DEBUG=True باشد اجرا می‌شود.")
 
-        self.password = options["password"]
+        self.default_password = options["password"]
         self.created = {}
         self.K = {}
 
@@ -188,11 +175,7 @@ class Command(BaseCommand):
 
         self.report()
 
-    # ------------------------------------------------------------------
-    # ابزارهای کمکی
-    # ------------------------------------------------------------------
     def make(self, model, lookup, **defaults):
-        """رکورد را با lookup پیدا می‌کند، اگر نبود با defaults می‌سازد."""
         obj, created = model.objects.get_or_create(defaults=defaults, **lookup)
         if created:
             name = model.__name__
@@ -200,11 +183,9 @@ class Command(BaseCommand):
         return obj
 
     def k(self, category, code):
-        """مقدار ثابت (Constant) را برمی‌گرداند."""
         return self.K[(category, code)]
 
-    def person(self, username, first, last, national_id, birth, place, gender,
-               superuser=False):
+    def person(self, username, first, last, national_id, birth, place, gender, superuser=False):
         obj = m.Person.objects.filter(username=username).first()
         if obj:
             return obj
@@ -220,24 +201,21 @@ class Command(BaseCommand):
         )
         if superuser:
             obj = m.Person.objects.create_superuser(
-                username=username, password=self.password, **extra
+                username=username, password=self.default_password, **extra
             )
         else:
             obj = m.Person.objects.create_user(
-                username=username, password=self.password, **extra
+                username=username, password=self.default_password, **extra
             )
         self.created["Person"] = self.created.get("Person", 0) + 1
         return obj
 
-    # ------------------------------------------------------------------
-    # ساخت داده‌ها به ترتیب وابستگی
-    # ------------------------------------------------------------------
     def seed(self):
-        now = timezone.now()
-        today = timezone.localdate()
+        now = datetime.now()
+        today = date.today()
         day = timedelta(days=1)
 
-        # ---------------- مقادیر ثابت ----------------
+        # مقادیر ثابت
         for category, items in CONSTANTS.items():
             for code, label in items:
                 self.K[(category, code)] = self.make(
@@ -246,7 +224,7 @@ class Command(BaseCommand):
                     label=label,
                 )
 
-        # ---------------- اشخاص ----------------
+        # اشخاص
         admin = self.person("admin", "مدیر", "سیستم", "0010000001",
                             date(1985, 3, 21), "تهران", "male", superuser=True)
         t_person1 = self.person("teacher1", "علی", "رضایی", "0010000002",
@@ -258,44 +236,32 @@ class Command(BaseCommand):
         s_person2 = self.person("student2", "محمد", "حسینی", "0010000005",
                                 date(2001, 11, 3), "مشهد", "male")
 
-        # ---------------- نقش‌ها و حساب‌های کاربری ----------------
-        role_student = self.make(m.Role, {"role_name": "دانشجو"},
-                                 description="دسترسی دانشجو")
-        role_teacher = self.make(m.Role, {"role_name": "استاد"},
-                                 description="دسترسی استاد")
+        # نقش‌ها و حساب‌های کاربری
+        role_student = self.make(m.Role, {"role_name": "دانشجو"}, description="دسترسی دانشجو")
+        role_teacher = self.make(m.Role, {"role_name": "استاد"}, description="دسترسی استاد")
 
         ua_teacher = self.make(
             m.UserAccount, {"username": "ua_teacher1"},
             person=t_person1, role=role_teacher,
-            password=make_password(self.password),
+            password=make_password(self.default_password),
         )
         ua_student = self.make(
             m.UserAccount, {"username": "ua_student1"},
             person=s_person1, role=role_student,
-            password=make_password(self.password),
+            password=make_password(self.default_password),
         )
 
-        # ---------------- دانشکده، گروه، رشته ----------------
-        fac_eng = self.make(m.Faculty, {"faculty_code": "ENG"},
-                            faculty_name="دانشکده فنی و مهندسی")
-        fac_sci = self.make(m.Faculty, {"faculty_code": "SCI"},
-                            faculty_name="دانشکده علوم پایه")
+        # دانشکده، گروه، رشته
+        fac_eng = self.make(m.Faculty, {"faculty_code": "ENG"}, faculty_name="دانشکده فنی و مهندسی")
+        fac_sci = self.make(m.Faculty, {"faculty_code": "SCI"}, faculty_name="دانشکده علوم پایه")
 
-        dep_ce = self.make(m.Department,
-                           {"faculty": fac_eng, "department_code": "CE"},
-                           department_name="گروه مهندسی کامپیوتر")
-        dep_math = self.make(m.Department,
-                             {"faculty": fac_sci, "department_code": "MATH"},
-                             department_name="گروه ریاضی")
+        dep_ce = self.make(m.Department, {"faculty": fac_eng, "department_code": "CE"}, department_name="گروه مهندسی کامپیوتر")
+        dep_math = self.make(m.Department, {"faculty": fac_sci, "department_code": "MATH"}, department_name="گروه ریاضی")
 
-        field_ce = self.make(m.Field,
-                             {"department": dep_ce, "field_code": "CE-BS"},
-                             field_name="مهندسی کامپیوتر")
-        field_am = self.make(m.Field,
-                             {"department": dep_math, "field_code": "AM-BS"},
-                             field_name="ریاضی کاربردی")
+        field_ce = self.make(m.Field, {"department": dep_ce, "field_code": "CE-BS"}, field_name="مهندسی کامپیوتر")
+        field_am = self.make(m.Field, {"department": dep_math, "field_code": "AM-BS"}, field_name="ریاضی کاربردی")
 
-        # ---------------- استاد و دانشجو ----------------
+        # استاد و دانشجو
         teacher1 = self.make(
             m.Teacher, {"teacher_code": "T-1001"},
             person=t_person1, department=dep_ce,
@@ -330,7 +296,7 @@ class Command(BaseCommand):
             passed_units=40, tuition_debt=Decimal("5000000"), completed_terms=4,
         )
 
-        # ---------------- دروس، پیش‌نیاز، چارت، کلاس ----------------
+        # دروس و چارت
         lesson_math = self.make(
             m.Lesson, {"lesson_code": "MATH101"},
             title="ریاضی عمومی ۱", theory_units=3, practical_units=0,
@@ -378,8 +344,7 @@ class Command(BaseCommand):
             capacity=25, classroom_type="آزمایشگاه",
         )
 
-        # ---------------- ترم‌ها ----------------
-        # فقط یک ترم می‌تواند فعال باشد (قید only_one_active_term)
+        # ترم‌ها
         term1 = self.make(
             m.Term, {"term_code": "14051"},
             semester=self.k("semester", "mehr"), academic_year="1405-1406",
@@ -399,11 +364,11 @@ class Command(BaseCommand):
             is_active=False,
         )
 
-        # ---------------- ارائه درس ----------------
+        # ارائه دروس (remaining_capacity حذف شده است چون @property است)
         offering1 = self.make(
             m.CourseOffering,
             {"lesson": lesson_prog, "term": term1, "teacher": teacher1},
-            capacity=40, remaining_capacity=38,
+            capacity=40,
             day_of_week=self.k("day_of_week", "saturday"),
             start_time=time(8, 0), end_time=time(10, 0), classroom=room1,
             exam_date=today + 60 * day, exam_time=time(9, 0), is_active=True,
@@ -411,26 +376,22 @@ class Command(BaseCommand):
         offering2 = self.make(
             m.CourseOffering,
             {"lesson": lesson_ds, "term": term1, "teacher": teacher2},
-            capacity=30, remaining_capacity=30,
+            capacity=30,
             day_of_week=self.k("day_of_week", "monday"),
             start_time=time(10, 0), end_time=time(12, 0), classroom=room2,
             is_active=True,
         )
 
-        # ---------------- انتخاب واحد و وابسته‌ها ----------------
-        enroll1 = self.make(m.Enrollment,
-                            {"student": student1, "offering": offering1})
-        enroll2 = self.make(m.Enrollment,
-                            {"student": student2, "offering": offering1})
+        # انتخاب واحد و امتحانات
+        enroll1 = self.make(m.Enrollment, {"student": student1, "offering": offering1})
+        enroll2 = self.make(m.Enrollment, {"student": student2, "offering": offering1})
 
         self.make(
-            m.Exam, {"offering": offering1,
-                     "exam_type": self.k("exam_type", "midterm")},
+            m.Exam, {"offering": offering1, "exam_type": self.k("exam_type", "midterm")},
             exam_date=today + 45 * day,
         )
         exam2 = self.make(
-            m.Exam, {"offering": offering2,
-                     "exam_type": self.k("exam_type", "final")},
+            m.Exam, {"offering": offering2, "exam_type": self.k("exam_type", "final")},
             exam_date=today + 70 * day,
         )
 
@@ -471,7 +432,7 @@ class Command(BaseCommand):
             comment="سرعت تدریس کمی بالا بود.",
         )
 
-        # ---------------- کلاس مجازی ----------------
+        # کلاس مجازی
         self.make(
             m.OnlineClass, {"offering": offering1, "title": "جلسه ۱ - معرفی درس"},
             teacher=teacher1,
@@ -485,16 +446,16 @@ class Command(BaseCommand):
             meeting_link="https://meet.example.com/ce201-session1",
         )
 
-        # ---------------- مالی ----------------
+        # مالی
         pay1 = self.make(
             m.Payment, {"tracking_code": "TRK-1001"},
             student=student1, term=term1, amount=Decimal("12000000.00"),
-            payment_date=now - 20 * day, status="successful",
+            payment_date=now - 20 * day, status=self.k("appeal_status", "approved"),
         )
         pay2 = self.make(
             m.Payment, {"tracking_code": "TRK-1002"},
             student=student2, term=term1, amount=Decimal("3000000.00"),
-            payment_date=now - 18 * day, status="successful",
+            payment_date=now - 18 * day, status=self.k("appeal_status", "approved"),
         )
         self.make(m.TuitionReceipt, {"receipt_serial_code": "RCP-1001"},
                   receipt_payment_link=pay1,
@@ -518,7 +479,7 @@ class Command(BaseCommand):
             refund_review_state=self.k("review_status", "approved"),
         )
 
-        # ---------------- درخواست‌ها و فرایندهای آموزشی ----------------
+        # درخواست‌ها و فرایندهای آموزشی
         self.make(
             m.StudentServiceRequest,
             {"service_requester": student1,
@@ -529,8 +490,7 @@ class Command(BaseCommand):
         self.make(
             m.StudentServiceRequest,
             {"service_requester": student2,
-             "service_request_kind": self.k("service_request_type",
-                                            "employment_certificate")},
+             "service_request_kind": self.k("service_request_type", "employment_certificate")},
             service_request_data="گواهی اشتغال به تحصیل برای بیمه",
             service_decision_state=self.k("review_status", "approved"),
         )
@@ -648,12 +608,10 @@ class Command(BaseCommand):
 
         self.make(
             m.GraduationAudit, {"student": student1, "curriculum": curr1},
-            remaining_units=100,
             graduation_status=self.k("graduation_status", "under_review"),
         )
         self.make(
             m.GraduationAudit, {"student": student2, "curriculum": curr2},
-            remaining_units=110,
             graduation_status=self.k("graduation_status", "not_eligible"),
         )
 
@@ -670,7 +628,7 @@ class Command(BaseCommand):
             change_type=self.k("change_type", "status_change"),
         )
 
-        # ---------------- ارتباطات، تنظیمات، اعلان ----------------
+        # ارتباطات، تنظیمات و اعلان‌ها
         self.make(
             m.Communication,
             {"sender": ua_teacher, "receiver": ua_student, "subject": "اطلاعیه امتحان"},
@@ -713,7 +671,7 @@ class Command(BaseCommand):
             sent_at=now - day, is_read=True, read_at=now,
         )
 
-        # ---------------- گروه کلاسی و پارکینگ ----------------
+        # گروه کلاسی و پارکینگ
         group1 = self.make(
             m.LessonGroups, {"id": 1},
             name="گروه درس مبانی برنامه‌نویسی",
@@ -736,7 +694,7 @@ class Command(BaseCommand):
             owner=s_person1, expiration_date=today + 30 * day, charge=100000,
         )
 
-        # ---------------- دسته‌بندی تیکت و تیکت ----------------
+        # تیکت‌ها
         cat_fin = self.make(m.TicketCategory, {"name": "مالی"})
         cat_edu = self.make(m.TicketCategory, {"name": "آموزشی"})
         self.make(m.TicketCategory, {"name": "اعتراض به نمره"}, parent=cat_edu)
@@ -756,7 +714,6 @@ class Command(BaseCommand):
             content="امکان جابه‌جایی کلاس شنبه به یکشنبه وجود دارد؟",
             status=self.k("ticket_status", "open"),
         )
-        # پاسخ به تیکت اول (نمونه‌ی رابطه parent)
         self.make(
             m.Ticket, {"subject": "Re: مشکل در پرداخت شهریه", "creator": admin},
             creator_role=self.k("ticket_creator_role", "staff"),
@@ -765,7 +722,6 @@ class Command(BaseCommand):
             status=self.k("ticket_status", "open"),
         )
 
-    # ------------------------------------------------------------------
     def report(self):
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("داده‌ی تستی آماده است."))
@@ -781,12 +737,8 @@ class Command(BaseCommand):
         self.stdout.write("")
         if low:
             self.stdout.write(self.style.WARNING(
-                "مدل‌های کمتر از دو رکورد (باید در seed.py اضافه شوند): "
-                + ", ".join(low)
+                "مدل‌های کمتر از دو رکورد: " + ", ".join(low)
             ))
         self.stdout.write(
-            f"ورود به پنل ادمین:  admin  /  {self.password}   (آدرس: /admin/)"
-        )
-        self.stdout.write(
-            "(رمز کاربرانی که از قبل در دیتابیس بوده‌اند تغییر نمی‌کند.)"
+            f"ورود به پنل ادمین:  admin  /  {self.default_password}   (آدرس: /admin/)"
         )
