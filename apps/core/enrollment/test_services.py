@@ -38,6 +38,7 @@ class EnrollmentFixtures(TestCase):
             ("enrollment_status", "registered", "ثبت‌نام‌شده"),
             ("enrollment_status", "dropped", "حذف‌شده"),
             ("student_status", "active", "فعال"),
+            ("student_status", "probation", "مشروط"),
             ("student_status", "on_leave", "مرخصی"),
             ("day_of_week", "saturday", "شنبه"),
             ("day_of_week", "sunday", "یکشنبه"),
@@ -300,6 +301,96 @@ class EnrollmentServiceTests(EnrollmentFixtures):
             self.register()
 
         self.assertEqual(raised.exception.code, "student_not_eligible")
+
+    def test_probation_students_can_register_with_their_reduced_credit_limit(self):
+        probation = self.constant("student_status", "probation")
+        self.student.status = probation
+        self.student.previous_term_gpa = Decimal("9.00")
+        self.student.save(update_fields=["status", "previous_term_gpa"])
+        offering = self.create_offering(lesson_units=3)
+
+        enrollment = self.register(offering=offering)
+
+        self.assertEqual(enrollment.status.code, "registered")
+
+    def test_probation_status_caps_load_even_when_previous_gpa_is_high(self):
+        self.student.status = self.constant("student_status", "probation")
+        self.student.previous_term_gpa = Decimal("18.00")
+        self.student.save(update_fields=["status", "previous_term_gpa"])
+        existing = self.create_offering(lesson_units=11, day="saturday")
+        self.make_enrollment(self.student, existing)
+        target = self.create_offering(lesson_units=4, day="sunday")
+
+        with self.assertRaises(api.APIError) as raised:
+            self.register(offering=target)
+
+        self.assertEqual(raised.exception.code, "credit_limit_exceeded")
+
+    def test_legacy_suspended_code_with_probation_label_uses_probation_rules(self):
+        legacy_status = Constant.objects.create(
+            category="student_status", code="suspended", label="مشروط"
+        )
+        self.student.status = legacy_status
+        self.student.previous_term_gpa = Decimal("18.00")
+        self.student.save(update_fields=["status", "previous_term_gpa"])
+        existing = self.create_offering(lesson_units=11, day="saturday")
+        self.make_enrollment(self.student, existing)
+        target = self.create_offering(lesson_units=4, day="sunday")
+
+        with self.assertRaises(api.APIError) as raised:
+            self.register(offering=target)
+
+        self.assertEqual(raised.exception.code, "credit_limit_exceeded")
+
+    def test_register_endpoint_accepts_student_code_for_multiple_profiles(self):
+        master = Constant.objects.create(
+            category="educational_level", code="master", label="Master"
+        )
+        Student.objects.create(
+            person=self.person,
+            student_code="S-002",
+            educational_level=master,
+            field=self.field,
+            application_date=date(2023, 9, 23),
+            status=self.constant("student_status", "active"),
+        )
+        offering = self.create_offering()
+        self.client.force_login(self.person)
+
+        ambiguous = self.client.post(f"/api/enrollment/register/{offering.pk}/")
+        registered = self.client.post(
+            f"/api/enrollment/register/{offering.pk}/",
+            data=json.dumps({"student_code": "S-002"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(ambiguous.status_code, 400)
+        self.assertEqual(ambiguous.json()["error"]["code"], "student_profile_ambiguous")
+        self.assertEqual(registered.status_code, 201)
+        self.assertEqual(registered.json()["enrollment"]["student_code"], "S-002")
+
+        now = timezone.now()
+        self.term.add_drop_start = now - timedelta(hours=1)
+        self.term.add_drop_end = now + timedelta(hours=1)
+        self.term.save(update_fields=["add_drop_start", "add_drop_end"])
+        dropped = self.client.post(
+            f"/api/enrollment/drop/{registered.json()['enrollment']['id']}/",
+            data=json.dumps({"student_code": "S-002"}),
+            content_type="application/json",
+        )
+        self.assertEqual(dropped.status_code, 200)
+        self.assertEqual(dropped.json()["enrollment"]["student_code"], "S-002")
+        self.assertEqual(dropped.json()["enrollment"]["status"], "dropped")
+
+    def test_repeated_registration_returns_ok_instead_of_created(self):
+        offering = self.create_offering()
+        self.client.force_login(self.person)
+
+        first = self.client.post(f"/api/enrollment/register/{offering.pk}/")
+        repeated = self.client.post(f"/api/enrollment/register/{offering.pk}/")
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(repeated.status_code, 200)
 
     def test_registration_requires_a_passing_prerequisite_grade(self):
         offering = self.create_offering()

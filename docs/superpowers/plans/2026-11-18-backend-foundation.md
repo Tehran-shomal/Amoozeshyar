@@ -45,14 +45,14 @@
 - Produces app labels and URL namespaces for enrollment, tuition, grading, requests, scheduling, attendance, classroom, tickets, online_exam, people, student_services, notifications, thesis, accounts, counseling, reports, internship, and scholarships.
 - Produces api.read_json(request) -> dict and api.error_response(code, message, status) -> JsonResponse.
 
-- [ ] Step 1: Write test_expected_feature_apps_are_registered_and_mounted in apps/core/test_architecture.py. Assert every feature label is in apps.get_app_configs() and every /api/<feature>/ prefix exists in the root URL resolver.
-- [ ] Step 2: Run .venv/Scripts/python.exe manage.py test apps.core.test_architecture. Expected: FAIL because feature apps and routes are missing.
-- [ ] Step 3: Create the 18 feature packages, register AppConfigs, and include their URLConfs under /api/<feature>/ in config/urls.py. Keep unfinished feature URL patterns empty.
-- [ ] Step 4: Write tests for read_json accepting a JSON object and returning a stable 400 error for malformed JSON or non-object JSON.
-- [ ] Step 5: Implement the shared JSON parsing and error response helpers in apps/core/api.py.
-- [ ] Step 6: Run .venv/Scripts/python.exe manage.py test apps.core.test_architecture. Expected: PASS.
-- [ ] Step 7: Run .venv/Scripts/python.exe manage.py check. Expected: no system-check issues.
-- [ ] Step 8: Update PROJECT_STRUCTURE.md with the feature app and route inventory; commit this task.
+- [x] Step 1: Write test_expected_feature_apps_are_registered_and_mounted in apps/core/test_architecture.py. Assert every feature label is in apps.get_app_configs() and every /api/<feature>/ prefix exists in the root URL resolver.
+- [x] Step 2: Run .venv/Scripts/python.exe manage.py test apps.core.test_architecture. Expected: FAIL because feature apps and routes are missing.
+- [x] Step 3: Create the 18 feature packages, register AppConfigs, and include their URLConfs under /api/<feature>/ in config/urls.py. Keep unfinished feature URL patterns empty.
+- [x] Step 4: Write tests for read_json accepting a JSON object and returning a stable 400 error for malformed JSON or non-object JSON.
+- [x] Step 5: Implement the shared JSON parsing and error response helpers in apps/core/api.py.
+- [x] Step 6: Run .venv/Scripts/python.exe manage.py test apps.core.test_architecture. Expected: PASS.
+- [x] Step 7: Run .venv/Scripts/python.exe manage.py check. Expected: no system-check issues.
+- [x] Step 8: Update PROJECT_STRUCTURE.md with the feature app and route inventory; commit this task.
 
 ### Task 2: Account API and session security
 
@@ -70,14 +70,14 @@
 - Produces role_codes_for(person) -> set[str], user_has_any_role(person, roles) -> bool, and current_student(person, student_code=None) -> Student.
 - Produces POST /api/accounts/login/, POST /api/accounts/logout/, and GET /api/accounts/me/.
 
-- [ ] Step 1: Write tests for successful login, invalid credentials, non-superusers without a role account, fifth-failure lockout, locked account rejection, lock expiry, current-user output, and role mapping. Cite FUIP09, #85 FUSP07, #126 NFSP11, #129 FUOP16, and #140 NFSP13.
-- [ ] Step 2: Run .venv/Scripts/python.exe manage.py test apps.core.accounts.test_services. Expected: FAIL because the account service and routes are missing.
-- [ ] Step 3: Implement login using Django authenticate/login against Person, update UserAccount counters without reading UserAccount.password, and return stable JSON errors.
-- [ ] Step 4: Implement logout, current-user output, role normalization, and ownership-safe student resolution.
-- [ ] Step 5: Set a 900-second session age and save sessions on every request; add configurable five-failure/900-second lockout constants.
-- [ ] Step 6: Change the seed command to use timezone-aware datetimes with USE_TZ enabled.
-- [ ] Step 7: Run .venv/Scripts/python.exe manage.py test apps.core.accounts.test_services. Expected: PASS.
-- [ ] Step 8: Run .venv/Scripts/python.exe manage.py check. Expected: no system-check issues; commit this task.
+- [x] Step 1: Write tests for successful login, invalid credentials, non-superusers without a role account, fifth-failure lockout, locked account rejection, lock expiry, current-user output, and role mapping. Cite FUIP09, #85 FUSP07, #126 NFSP11, #129 FUOP16, and #140 NFSP13.
+- [x] Step 2: Run .venv/Scripts/python.exe manage.py test apps.core.accounts.test_services. Expected: FAIL because the account service and routes are missing.
+- [x] Step 3: Implement login using Django authenticate/login against Person, update UserAccount counters without reading UserAccount.password, and return stable JSON errors.
+- [x] Step 4: Implement logout, current-user output, role normalization, and ownership-safe student resolution.
+- [x] Step 5: Set a 900-second session age and save sessions on every request; add configurable five-failure/900-second lockout constants.
+- [x] Step 6: Change the seed command to use timezone-aware datetimes with USE_TZ enabled.
+- [x] Step 7: Run .venv/Scripts/python.exe manage.py test apps.core.accounts.test_services. Expected: PASS.
+- [x] Step 8: Run .venv/Scripts/python.exe manage.py check. Expected: no system-check issues; commit this task.
 
 ### Task 3: Scheduling reads and enrollment operations
 
@@ -99,13 +99,13 @@
 - Produces EnrollmentError(code, message), register_student(student, offering_id, now=None) -> Enrollment, and drop_enrollment(student, enrollment_id, now=None) -> Enrollment.
 - Produces GET /api/scheduling/active-term/, GET /api/scheduling/offerings/, POST /api/enrollment/register/<offering_id>/, and POST /api/enrollment/drop/<enrollment_id>/.
 
-- [ ] Step 1: Write service tests for closed windows, debt, prerequisite/co-requisite, weekly conflict, exam conflict, credit limit, inactive offerings, capacity, idempotent registration, dropped-record reactivation, and valid/invalid drop windows. Cite ADR #132/#133 NFRP01/NFRP02 and enrollment codes from SDD.
-- [ ] Step 2: Run .venv/Scripts/python.exe manage.py test apps.core.enrollment.test_services. Expected: FAIL because services are missing.
-- [ ] Step 3: Implement service validation using existing Term, StudentAcademicRules, Prerequisite, Grade, CourseOffering, Enrollment, and Constant models. Use atomic transactions and row locks for offering/student.
-- [ ] Step 4: Add migration and seed values for registered/dropped enrollment status constants; correct remaining_capacity to treat lowercase dropped records consistently.
-- [ ] Step 5: Add scheduling read services and JSON views for active term and active offerings.
-- [ ] Step 6: Add authenticated enrollment register/drop views that resolve the acting student's own Student record and translate EnrollmentError to JSON.
-- [ ] Step 7: Enable USE_TZ and update date/time test fixtures and seed data to use aware datetimes.
+- [x] Step 1: Write service tests for closed windows, debt, prerequisite/co-requisite, weekly conflict, exam conflict, credit limit, inactive offerings, capacity, idempotent registration, dropped-record reactivation, and valid/invalid drop windows. Cite ADR #132/#133 NFRP01/NFRP02 and enrollment codes from SDD.
+- [x] Step 2: Run .venv/Scripts/python.exe manage.py test apps.core.enrollment.test_services. Expected: FAIL because services are missing.
+- [x] Step 3: Implement service validation using existing Term, StudentAcademicRules, Prerequisite, Grade, CourseOffering, Enrollment, and Constant models. Use atomic transactions and row locks for offering/student.
+- [x] Step 4: Add migration and seed values for registered/dropped enrollment status constants; correct remaining_capacity to treat lowercase dropped records consistently.
+- [x] Step 5: Add scheduling read services and JSON views for active term and active offerings.
+- [x] Step 6: Add authenticated enrollment register/drop views that resolve the acting student's own Student record and translate EnrollmentError to JSON.
+- [x] Step 7: Enable USE_TZ and update date/time test fixtures and seed data to use aware datetimes.
 - [x] Step 8: Run .venv/Scripts/python.exe manage.py test apps.core.enrollment.test_services apps.core.scheduling.test_services. Result: 25 tests pass.
 - [x] Step 9: Run .venv/Scripts/python.exe manage.py makemigrations --check --dry-run and manage.py check. Result: no model drift and no system-check issues; commit this task.
 
@@ -128,7 +128,7 @@
 - [x] Step 3: Add only missing workflow Constant values via an idempotent data migration and keep the development seed aligned.
 - [x] Step 4: Implement the model/status-field registry and atomic transition validation; retain existing model-specific status categories.
 - [x] Step 5: Add the role-checked JSON review view and route.
-- [x] Step 6: Run .venv/Scripts/python.exe manage.py test apps.core.requests.test_services. Result: 11 focused tests pass; follow-up full suite passes 58 tests.
+- [x] Step 6: Run .venv/Scripts/python.exe manage.py test apps.core.requests.test_services. Result: 11 focused tests pass; follow-up full suite passes 68 tests.
 
 ### Task 5: Documentation and final verification
 
@@ -142,5 +142,15 @@
 - [x] Step 1: Update the structure inventory to reflect implemented packages, routes, utilities, tests, and migrations.
 - [x] Step 2: Add an SDD implementation-readiness note stating that the referenced behavioral requirements file is missing and the traceability table does not specify all behaviors; split the 19 traceability tables into domain files and retain all 152 rows.
 - [x] Step 3: Record the API/session, lockout, pass-threshold, exam-conflict, UTC, and request-review decisions in the relevant architecture documents.
-- [x] Step 4: Run .venv/Scripts/python.exe manage.py test, manage.py check, manage.py makemigrations --check --dry-run, and manage.py check --deploy. Result: 58 tests pass, checks and migration drift are clean; deploy check reports HSTS/SSL redirect warnings for deployment configuration.
+- [x] Step 4: Run .venv/Scripts/python.exe manage.py test, manage.py check, manage.py makemigrations --check --dry-run, and manage.py check --deploy. Result: 68 tests pass, checks and migration drift are clean; deploy check reports HSTS/SSL redirect warnings for deployment configuration.
 - [x] Step 5: Review git diff and status, confirm no frontend assets or dependencies were added, commit the documentation task, and request a whole-branch review.
+
+### Task 6: Review fixes and legacy-data safety
+
+- [x] Resolve login aliases deterministically and use one shared lockout identity per Person; cover inactive accounts and aliases with regression tests.
+- [x] Add an optional `student_code` selector to enrollment mutations, allow probation students under the existing reduced-credit rule, and return HTTP 200 for idempotent registration.
+- [x] Add a guarded UTC data migration that requires the old source timezone when retained datetime rows exist; test conversion and no-double-conversion behavior on a temporary database copy.
+- [x] Run the full suite and review migration/status effects without changing the ignored working database.
+- [x] Add persistent lockout tracking for superusers without role accounts, make Person usernames authoritative on cross-table collisions, and enforce the probation-status cap independently of GPA.
+- [x] Treat the legacy root-seed `suspended` code with probation label as probation at registration time and normalize new seed output to `probation`.
+- [x] Re-run full verification after review fixes: 74 tests pass, Django check and migration drift check are clean; deploy check reports only the documented HSTS/SSL redirect warnings.

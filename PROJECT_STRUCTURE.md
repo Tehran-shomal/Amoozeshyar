@@ -8,7 +8,7 @@ This document began as a snapshot of the master baseline (1896c3c) and is update
     ├── apps/
     │   └── core/
     │       ├── management/commands/  seed.py, seed_data.py
-    │       ├── migrations/           0001_initial.py, 0002_enrollment_statuses.py, 0003_request_workflow_statuses.py
+    │       ├── migrations/           0001_initial.py–0005_person_failed_login_count_person_locked_until.py
     │       ├── templates/core/       home.html
     │       ├── admin.py
     │       ├── apps.py
@@ -36,12 +36,14 @@ The registered feature packages are apps/core/enrollment, tuition, grading, requ
 - INSTALLED_APPS contains Django admin/auth/contenttypes/sessions/messages/staticfiles, apps.core, and the 18 feature AppConfigs listed in docs/SSOT.md.
 - AUTH_USER_MODEL is core.Person.
 - Database engine is SQLite at db.sqlite3.
-- USE_TZ is True; TIME_ZONE is Asia/Tehran; language is fa-ir. DateTimeFields are timezone-aware and stored in UTC by Django.
+- USE_TZ is True; TIME_ZONE is Asia/Tehran and language is fa-ir. Migration 0004 converts retained naive datetimes only when `LEGACY_DATETIME_TIME_ZONE` is explicitly set; otherwise it aborts before changing rows. The ignored working database contains legacy seed rows and remains untouched; 0004 was checked on a temporary copy.
 - Root URLs: /admin/ is Django admin, / includes apps.core.urls, and /api/<feature>/ includes each registered feature URLConf.
 - apps.core.urls exposes only the core:home route at /, rendered by HomeView.
 - Implemented routes: GET /api/accounts/csrf/, POST /api/accounts/login/, POST /api/accounts/logout/, GET /api/accounts/me/, GET /api/scheduling/active-term/, GET /api/scheduling/offerings/, POST /api/enrollment/register/<offering_id>/, POST /api/enrollment/drop/<enrollment_id>/, and POST /api/requests/<request_type>/<request_id>/review/.
 - Middleware is Django's security, session, common, CSRF, authentication, messages, and clickjacking middleware. No project-specific middleware is present.
 - Session cookies expire after 900 seconds and are refreshed per request; production cookies are marked Secure when DEBUG is False. Account lockout is configured for five failed attempts and 900 seconds.
+- `Person.username` takes precedence over a colliding `UserAccount.username`; failed-login lockout is shared across aliases on the earliest active role account, with `Person` fields covering superusers without an active role account.
+- Enrollment mutations accept an optional `student_code` body field when one Person owns multiple Student records. Probation and legacy `suspended` status impose a 14-unit cap, further limited by `Student.max_allowed_units`; repeated registration returns HTTP 200.
 - Media and static roots are configured; the directories have no assets. templates/base.html provides Persian/RTL HTML and apps/core/templates/core/home.html is a placeholder landing page.
 
 ## Models and relations
@@ -51,7 +53,7 @@ All 43 current model classes are defined in apps/core/models.py; there are no fe
 | Model | Fields and relations |
 |---|---|
 | Constant | constant_id, category, code, label, is_active, created_at |
-| Person | AbstractUser fields; first_name, last_name, email, national_id, birth_date, gender -> Constant, address, profile_image_path, preferred_language -> Constant, is_notification_enabled, birth_place, updated_at |
+| Person | AbstractUser fields; first_name, last_name, email, national_id, birth_date, gender -> Constant, address, profile_image_path, preferred_language -> Constant, is_notification_enabled, birth_place, failed_login_count, locked_until, updated_at |
 | Teacher | person -> Person, teacher_code, department -> Department, academic_rank -> Constant, hire_date |
 | Student | person -> Person, student_code, educational_level -> Constant, field -> Field, application_date, status -> Constant, admission_type -> Constant, previous_term_gpa, total_gpa, passed_units, tuition_debt, completed_terms |
 | Lesson | lesson_code, title, practical_units, theory_units, lesson_type -> Constant, department -> Department, is_active, created_at |
@@ -98,7 +100,7 @@ The models include validation/constraints for positive payment/refund amounts an
 
 ## Admin registrations
 
-All 43 models are registered in apps/core/admin.py. The admin customizes Person, Student, Teacher, Lesson, Term, CourseOffering, Enrollment, Prerequisite, Curriculum, Faculty, Department, Field, Classroom, Payment, TuitionReceipt, RefundRequest, Exam, Grade, GradeAppeal, Attendance, Ticket, TicketCategory, Constant, SystemSetting, Communication, Notification, StudentServiceRequest, ScholarshipApplication, CounselingAppointment, Proposal, TransferRequest, GraduationAudit, EducationalChangeLog, CreditTransferRequest, InternshipRequest, ThesisProgressReport, TeacherSurvey, Internship, OnlineClass, LessonGroups, and ParkingPasses. Role and UserAccount use default admin registration.
+All 43 models are registered in apps/core/admin.py. The admin customizes Person, Student, Teacher, Lesson, Term, CourseOffering, Enrollment, Prerequisite, Curriculum, Faculty, Department, Field, Classroom, Payment, TuitionReceipt, RefundRequest, Exam, Grade, GradeAppeal, Attendance, Ticket, TicketCategory, Constant, SystemSetting, Communication, Notification, StudentServiceRequest, ScholarshipApplication, CounselingAppointment, Proposal, TransferRequest, GraduationAudit, EducationalChangeLog, CreditTransferRequest, InternshipRequest, ThesisProgressReport, TeacherSurvey, Internship, OnlineClass, LessonGroups, and ParkingPasses. Person exposes the service-managed login lockout fields as read-only; Role and UserAccount use default admin registration.
 
 ## Views, templates, utilities, and conventions
 
@@ -107,8 +109,8 @@ All 43 models are registered in apps/core/admin.py. The admin customizes Person,
 - Static assets: none.
 - Shared/domain utilities: StudentAcademicRules; computed properties on Person, Teacher, Student, Term, CourseOffering, ParkingPasses, Ticket, OnlineClass, TransferRequest, GraduationAudit, and EducationalChangeLog; apps/core/api.py provides JSON object parsing and stable JSON errors; accounts services authenticate Person and resolve roles/current student records; enrollment services enforce transactional register/drop rules; scheduling services provide active-term/offering reads; request services register existing request models and validate review transitions. Account and enrollment mutations use session/role checks; review roles are selected by request type.
 - Management commands: seed creates deterministic Persian development data and refuses to run unless DEBUG=True; seed_data generates sample rows for models. There is also a root seed_data.py.
-- Tests: apps/core/tests.py still contains only the generated placeholder. apps/core/test_architecture.py covers feature registration, URL mounting, JSON parsing, and JSON error responses. Account tests cover authentication/session/roles and browser CSRF bootstrap; enrollment and scheduling tests cover rules and APIs; request tests cover transitions and reviewer roles. The full suite contains 58 tests. The baseline manage.py test discovered 0 tests.
-- Migrations: 0001_initial.py defines the current model schema; 0002_enrollment_statuses.py seeds registered/dropped enrollment statuses; 0003_request_workflow_statuses.py seeds workflow statuses. No model fields were added in this milestone.
+- Tests: apps/core/tests.py still contains only the generated placeholder. apps/core/test_architecture.py covers feature registration, URL mounting, legacy datetime compatibility, JSON parsing, and JSON error responses. Account tests cover authentication/session/roles and browser CSRF bootstrap; enrollment and scheduling tests cover rules and APIs; request tests cover transitions and reviewer roles. The full suite contains 72 tests. The baseline manage.py test discovered 0 tests.
+- Migrations: 0001_initial.py defines the baseline model schema; 0002_enrollment_statuses.py seeds registered/dropped enrollment statuses; 0003_request_workflow_statuses.py seeds workflow statuses; 0004_legacy_datetime_utc.py converts retained naive datetime values using the explicitly configured source timezone; 0005_person_failed_login_count_person_locked_until.py adds persistent lockout state for superusers without a role account.
 - Existing style: Django models and admin use Persian verbose labels, English identifiers, a custom Person user, and Constant(category, code, label) lookup values. No repository-wide formatter or linter configuration is present.
 
 ## Gaps against SSOT, SDD, and ADR
@@ -120,8 +122,8 @@ All 43 models are registered in apps/core/admin.py. The admin customizes Person,
 - ADR-002/003 specify registration services, atomic register/drop, capacity locking, prerequisite/conflict/credit-limit/window checks. The enrollment service now applies those rules; exact-time exam collisions are used because the current model has no exam duration.
 - ADR-005 and SSOT call for role-based access, session timeout/lockout, and hashed passwords. The account API authenticates Person through Django's hashers and requires non-superusers to have an active UserAccount; it does not use the separate UserAccount.password field. Session expiry, 5-attempt/15-minute lockout, and role checks are implemented. TLS, sensitive-field encryption, password-change session invalidation, and production cookie setup remain deployment/security work.
 - `manage.py check --deploy` reports `security.W004` (HSTS is not configured) and `security.W008` (SSL redirect is not enabled). Configure these at deployment after confirming the HTTPS/reverse-proxy topology.
-- Enrollment assumes 10/20 is a passing grade and treats exams at the same date and exact time as conflicts because the model has no duration. These rules are tested and documented in ADR-002 pending the original requirements source.
+- Enrollment allows active and probation students; the legacy `suspended` code from the root seed is treated as probation. Probation status caps the load at 14 units, further limited by `Student.max_allowed_units`. On-leave students cannot enroll. It assumes 10/20 is a passing grade and treats exams at the same date and exact time as conflicts because the model has no duration. The latter rules are tested and documented in ADR-002 pending the original requirements source.
 - Request reviews use request-type role mappings, accept `pending` as a legacy state, and do not expose `cancelled`; verify these choices against the missing behavioral requirements.
-- The local SQLite database is ignored and not included in the change. ADR mentions TLS, background work, caching, backups, and availability; deployment and integration behavior remains unconfigured.
+- The local SQLite database is ignored and not included in the change; it contains legacy seed rows and was left untouched. Migration 0004 was exercised on a temporary copy with and without an explicit source timezone. ADR mentions TLS, background work, caching, backups, and availability; deployment and integration behavior remains unconfigured.
 - The project uses SQLite, so database-level row-lock behavior required by ADR-003 is not available in production-equivalent form.
 - SDD says SDD.md; this is the file present in the checkout (the user referred to it as SSD.md).

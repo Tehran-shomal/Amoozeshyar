@@ -162,3 +162,7 @@ CSRF_COOKIE_SECURE = not DEBUG
 # NFSP11: the source specifies repeated-failure lockout but not its threshold.
 AUTH_LOCKOUT_FAILURES = 5
 AUTH_LOCKOUT_SECONDS = 900
+
+# Set only when applying the legacy DateTimeField conversion migration to a
+# database that contains rows written before USE_TZ was enabled.
+LEGACY_DATETIME_TIME_ZONE = env("LEGACY_DATETIME_TIME_ZONE", default="")

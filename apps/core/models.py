@@ -100,6 +100,8 @@ class Person(AbstractUser):
         blank=False,
         help_text="برای مدارک رسمی (04FUFP)",
     )
+    failed_login_count = models.PositiveIntegerField(default=0, verbose_name="تعداد تلاش ناموفق ورود")
+    locked_until = models.DateTimeField(null=True, blank=True, verbose_name="قفل ورود تا")
     updated_at = models.DateTimeField(verbose_name="تاریخ آخرین ویرایش", auto_now=True)
 
     REQUIRED_FIELDS = ["email", "national_id", "birth_date"]

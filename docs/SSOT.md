@@ -44,13 +44,14 @@ Features (registered sub-apps):
 - Dates shown in Jalali; stored in UTC/Gregorian. UI Persian, RTL.
 - Request workflow status enum: `submitted`, `in_review`, `approved`, `rejected`. Add `cancelled` only when the relevant behavior requirement allows it. Existing `pending` records are legacy submitted requests.
 - Registration/drop operations are atomic transactions.
-- DateTimeField values are timezone-aware and stored in UTC; user-facing dates remain Gregorian in the API until a Jalali presentation layer is specified.
+- DateTimeField values are timezone-aware and stored in UTC; user-facing dates remain Gregorian in the API until a Jalali presentation layer is specified. Migration `0004` requires the source timezone for existing naive values before conversion and aborts without changing data when retained rows exist but that setting is missing (see ADR-008).
 
 ## 4. Backend contracts implemented in this checkout
 - JSON API errors use `{"error":{"code":"...","message":"..."}}`.
 - Browser clients call `GET /api/accounts/csrf/` first, retain the `csrftoken` cookie, send its value in `X-CSRFToken` on unsafe requests, and retain the session cookie after login. Use same-origin requests; cross-origin credentials are not configured.
 - Login uses the Django `Person` password hash. `UserAccount.password` is not an authentication source.
 - Session idle lifetime is 900 seconds, refreshed on requests. Login lockout is five consecutive failures for 900 seconds; both values are configurable in Django settings.
+- Person usernames take precedence over colliding role-account aliases. Failed attempts for people with active role accounts share the earliest active account's lockout; superusers without one use lockout fields on `Person`.
 - Enrollment mutation routes require a session and the student role; they resolve the acting user's own Student record.
 - Request-review transitions require a session and a role mapped to the request type. Only existing request models are registered; request submission and student status-list endpoints are not implemented by this backend foundation.
 
@@ -64,8 +65,8 @@ Features (registered sub-apps):
 | `GET /api/accounts/me/` | Authenticated session; returns the safe user summary. |
 | `GET /api/scheduling/active-term/` | Public read; returns the active term and registration-window flags, or `null`. |
 | `GET /api/scheduling/offerings/` | Public read; returns active offerings for the active term. |
-| `POST /api/enrollment/register/<offering_id>/` | Student session; no body; returns the resulting enrollment. |
-| `POST /api/enrollment/drop/<enrollment_id>/` | Owning student session; no body; returns the resulting enrollment. |
+| `POST /api/enrollment/register/<offering_id>/` | Student session; optional JSON `{ "student_code": "..." }` selects an owned profile when the person has multiple student records; probation status caps the term load at 14 units (`suspended` is accepted as the legacy seed alias); returns 201 for a new enrollment and 200 for an existing one. |
+| `POST /api/enrollment/drop/<enrollment_id>/` | Owning student session; accepts the same optional `student_code` selector when needed; returns the resulting enrollment. |
 | `POST /api/requests/<request_type>/<request_id>/review/` | Reviewer session; accepts `target_status` (`in_review`, `approved`, or `rejected`). Registered request types: `student-service`, `scholarship-application`, `proposal`, `transfer`, `credit-transfer`, `internship-request`, `internship`, `refund`, `grade-appeal`, `thesis-progress-report`. |
 
 ## 5. Entities and model coverage

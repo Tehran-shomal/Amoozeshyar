@@ -1,6 +1,9 @@
 import json
+import importlib
+from datetime import datetime, timezone as datetime_timezone
 
 from django.apps import apps
+from django.conf import settings
 from django.test import RequestFactory, SimpleTestCase
 from django.urls import get_resolver
 
@@ -42,6 +45,55 @@ class FeatureAppStructureTests(SimpleTestCase):
         self.assertTrue(
             {f"api/{feature}/" for feature in FEATURES}.issubset(mounted_prefixes)
         )
+
+
+class LegacyDateTimeCompatibilityTests(SimpleTestCase):
+    def test_timezone_aware_storage_uses_utc_with_an_explicit_legacy_migration_gate(self):
+        self.assertTrue(settings.USE_TZ)
+        self.assertEqual(settings.TIME_ZONE, "Asia/Tehran")
+        self.assertTrue(hasattr(settings, "LEGACY_DATETIME_TIME_ZONE"))
+
+    def test_legacy_datetime_conversion_uses_the_explicit_source_timezone(self):
+        migration = importlib.import_module(
+            "apps.core.migrations.0004_legacy_datetime_utc"
+        )
+        loaded_legacy_value = datetime(
+            2026, 11, 18, 12, 0, tzinfo=datetime_timezone.utc
+        )
+
+        converted = migration._to_utc(loaded_legacy_value, "Asia/Tehran")
+
+        self.assertEqual(
+            converted,
+            datetime(2026, 11, 18, 8, 30, tzinfo=datetime_timezone.utc),
+        )
+
+    def test_status_timestamps_created_by_this_branch_are_not_converted_again(self):
+        migration = importlib.import_module(
+            "apps.core.migrations.0004_legacy_datetime_utc"
+        )
+        created_at = datetime(2026, 11, 18, 12, 0, tzinfo=datetime_timezone.utc)
+        applied_at = datetime(2026, 11, 18, 12, 0, 1, tzinfo=datetime_timezone.utc)
+
+        self.assertTrue(migration._created_with_migration(created_at, applied_at))
+        self.assertFalse(
+            migration._created_with_migration(
+                created_at,
+                datetime(2026, 11, 18, 12, 2, tzinfo=datetime_timezone.utc),
+            )
+        )
+
+    def test_legacy_datetime_conversion_rejects_ambiguous_or_nonexistent_local_times(self):
+        migration = importlib.import_module(
+            "apps.core.migrations.0004_legacy_datetime_utc"
+        )
+        ambiguous = datetime(2026, 11, 1, 1, 30, tzinfo=datetime_timezone.utc)
+        nonexistent = datetime(2026, 3, 8, 2, 30, tzinfo=datetime_timezone.utc)
+
+        with self.assertRaises(RuntimeError):
+            migration._to_utc(ambiguous, "America/New_York")
+        with self.assertRaises(RuntimeError):
+            migration._to_utc(nonexistent, "America/New_York")
 
 
 class JsonApiHelperTests(SimpleTestCase):

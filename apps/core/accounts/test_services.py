@@ -109,6 +109,116 @@ class AccountServiceTests(TestCase):
         self.assertEqual(self.account.failed_login_count, 1)
         self.assertIsNone(self.account.locked_until)
 
+    def test_person_username_uses_an_active_role_account_when_earlier_account_is_inactive(self):
+        authenticate_person = self.function("authenticate_person")
+        person = Person.objects.create_user(
+            username="multi-account",
+            password="Person@Password1",
+            first_name="person",
+            last_name="multi",
+            email="multi@example.com",
+            national_id="0012345680",
+            birth_date=date(2001, 1, 1),
+            birth_place="Tehran",
+        )
+        inactive_account = UserAccount.objects.create(
+            person=person,
+            role=self.student_role,
+            username="inactive-student-alias",
+            password="unused",
+            is_active=False,
+        )
+        active_account = UserAccount.objects.create(
+            person=person,
+            role=self.teacher_role,
+            username="active-teacher-alias",
+            password="unused",
+        )
+
+        user = authenticate_person("multi-account", "Person@Password1", request=None)
+
+        self.assertEqual(user, person)
+        inactive_account.refresh_from_db()
+        active_account.refresh_from_db()
+        self.assertEqual(inactive_account.failed_login_count, 0)
+        self.assertIsNotNone(active_account.last_login_at)
+
+    def test_person_username_takes_precedence_over_another_persons_alias(self):
+        authenticate_person = self.function("authenticate_person")
+        other_person = Person.objects.create_user(
+            username="shared-name",
+            password="Person@Password1",
+            first_name="other",
+            last_name="person",
+            email="other@example.com",
+            national_id="0012345681",
+            birth_date=date(2001, 1, 1),
+            birth_place="Tehran",
+        )
+        other_account = UserAccount.objects.create(
+            person=other_person,
+            role=self.teacher_role,
+            username="other-person-alias",
+            password="unused",
+        )
+        conflicting_alias = UserAccount.objects.create(
+            person=self.person,
+            role=self.student_role,
+            username="shared-name",
+            password="unused",
+        )
+
+        user = authenticate_person("shared-name", "Person@Password1", request=None)
+
+        self.assertEqual(user, other_person)
+        other_account.refresh_from_db()
+        self.assertIsNotNone(other_account.last_login_at)
+        conflicting_alias.refresh_from_db()
+        self.assertEqual(conflicting_alias.failed_login_count, 0)
+
+    def test_lockout_identity_is_shared_across_role_aliases(self):
+        authenticate_person = self.function("authenticate_person")
+        second_account = UserAccount.objects.create(
+            person=self.person,
+            role=self.teacher_role,
+            username="teacher-alias",
+            password="unused",
+        )
+
+        for _ in range(4):
+            self.assertIsNone(authenticate_person("student-alias", "wrong", request=None))
+        with self.assertRaises(api.APIError) as raised:
+            authenticate_person("teacher-alias", "wrong", request=None)
+
+        self.assertEqual(raised.exception.code, "account_locked")
+        self.account.refresh_from_db()
+        second_account.refresh_from_db()
+        self.assertEqual(self.account.failed_login_count, 5)
+        self.assertEqual(second_account.failed_login_count, 0)
+
+    def test_inactive_alias_does_not_fall_back_to_another_active_alias(self):
+        authenticate_person = self.function("authenticate_person")
+        inactive_account = UserAccount.objects.create(
+            person=self.person,
+            role=self.student_role,
+            username="inactive-alias",
+            password="unused",
+            is_active=False,
+        )
+        UserAccount.objects.create(
+            person=self.person,
+            role=self.teacher_role,
+            username="active-alias",
+            password="unused",
+        )
+
+        with self.assertRaises(api.APIError) as raised:
+            authenticate_person("inactive-alias", "Person@Password1", request=None)
+
+        self.assertEqual(raised.exception.code, "account_inactive")
+        inactive_account.refresh_from_db()
+        self.assertEqual(inactive_account.failed_login_count, 0)
+
     def test_non_superuser_without_a_role_account_cannot_log_in(self):
         authenticate_person = self.function("authenticate_person")
         Person.objects.create_user(
@@ -125,6 +235,81 @@ class AccountServiceTests(TestCase):
         user = authenticate_person("unlinked", "Person@Password1", request=None)
 
         self.assertIsNone(user)
+
+    def test_superuser_without_role_account_is_locked_after_five_failed_logins(self):
+        authenticate_person = self.function("authenticate_person")
+        admin = Person.objects.create_superuser(
+            username="lockout-admin",
+            password="Admin@Password1",
+            first_name="admin",
+            last_name="account",
+            email="admin-lockout@example.com",
+            national_id="0087654322",
+            birth_date=date(1980, 1, 1),
+            birth_place="Tehran",
+        )
+
+        for _ in range(4):
+            self.assertIsNone(authenticate_person("lockout-admin", "wrong", request=None))
+        with self.assertRaises(api.APIError) as raised:
+            authenticate_person("lockout-admin", "wrong", request=None)
+
+        self.assertEqual(raised.exception.code, "account_locked")
+        admin.refresh_from_db()
+        self.assertEqual(admin.failed_login_count, 5)
+        self.assertGreater(admin.locked_until, timezone.now())
+
+        with self.assertRaises(api.APIError) as locked:
+            authenticate_person("lockout-admin", "Admin@Password1", request=None)
+        self.assertEqual(locked.exception.code, "account_locked")
+
+    def test_superuser_with_only_inactive_role_accounts_uses_person_lockout(self):
+        authenticate_person = self.function("authenticate_person")
+        admin = Person.objects.create_superuser(
+            username="inactive-role-admin",
+            password="Admin@Password1",
+            first_name="admin",
+            last_name="inactive role",
+            email="inactive-role-admin@example.com",
+            national_id="0087654324",
+            birth_date=date(1980, 1, 1),
+            birth_place="Tehran",
+        )
+        UserAccount.objects.create(
+            person=admin,
+            role=self.student_role,
+            username="inactive-role-admin-alias",
+            password="unused",
+            is_active=False,
+        )
+
+        user = authenticate_person(
+            "inactive-role-admin", "Admin@Password1", request=None
+        )
+
+        self.assertEqual(user, admin)
+
+    def test_expired_person_lock_allows_superuser_login_and_clears_counter(self):
+        authenticate_person = self.function("authenticate_person")
+        admin = Person.objects.create_superuser(
+            username="expired-admin",
+            password="Admin@Password1",
+            first_name="admin",
+            last_name="expired",
+            email="expired-admin@example.com",
+            national_id="0087654323",
+            birth_date=date(1980, 1, 1),
+            birth_place="Tehran",
+            failed_login_count=5,
+            locked_until=timezone.now() - timedelta(seconds=1),
+        )
+
+        user = authenticate_person("expired-admin", "Admin@Password1", request=None)
+
+        self.assertEqual(user, admin)
+        admin.refresh_from_db()
+        self.assertEqual(admin.failed_login_count, 0)
+        self.assertIsNone(admin.locked_until)
 
     def test_fifth_failed_login_locks_the_account(self):
         authenticate_person = self.function("authenticate_person")

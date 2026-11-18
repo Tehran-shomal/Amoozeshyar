@@ -5,11 +5,21 @@ from django.db.models import Q, Sum
 from django.utils import timezone
 
 from apps.core.api import APIError
-from apps.core.models import Constant, CourseOffering, Enrollment, Grade, Prerequisite, Student
+from apps.core.models import (
+    Constant,
+    CourseOffering,
+    Enrollment,
+    Grade,
+    Prerequisite,
+    Student,
+    StudentAcademicRules,
+)
 
 
 PASSING_GRADE = 10
 INACTIVE_ENROLLMENT_CODES = ("dropped", "cancelled", "canceled")
+# The legacy root seed used `suspended` for the Persian probation label.
+PROBATION_STATUS_CODES = {"probation", "suspended"}
 
 
 class EnrollmentError(APIError):
@@ -124,15 +134,18 @@ def _validate_credit_limit(student, offering, current_term_enrollments):
         + Sum("offering__lesson__practical_units")
     )["total"] or 0
     requested_units = offering.lesson.theory_units + offering.lesson.practical_units
-    if current_units + requested_units > student.max_allowed_units:
+    allowed_units = student.max_allowed_units
+    if student.status and student.status.code.casefold() in PROBATION_STATUS_CODES:
+        allowed_units = min(allowed_units, StudentAcademicRules.MAX_UNITS_PROBATION)
+    if current_units + requested_units > allowed_units:
         raise EnrollmentError(
             "credit_limit_exceeded", "The course would exceed your allowed credit load."
         )
 
 
 @transaction.atomic
-def register_student(student, offering_id, now=None):
-    """Register or reactivate one student in an offering after checking all rules."""
+def register_student_with_outcome(student, offering_id, now=None):
+    """Return ``(enrollment, created)`` after applying the registration rules."""
     now = now or timezone.now()
     try:
         offering = (
@@ -156,7 +169,7 @@ def register_student(student, offering_id, now=None):
         existing.status is None
         or existing.status.code.casefold() not in INACTIVE_ENROLLMENT_CODES
     ):
-        return existing
+        return existing, False
 
     if not offering.is_active:
         raise EnrollmentError("inactive_offering", "This course offering is inactive.")
@@ -172,7 +185,7 @@ def register_student(student, offering_id, now=None):
         )
 
     status_code = locked_student.status.code.casefold() if locked_student.status else None
-    if status_code not in {None, "active"}:
+    if status_code not in {None, "active", *PROBATION_STATUS_CODES}:
         raise EnrollmentError("student_not_eligible", "The student is not active.")
     if locked_student.tuition_debt > 0:
         raise EnrollmentError("tuition_debt", "Outstanding tuition debt blocks registration.")
@@ -198,12 +211,19 @@ def register_student(student, offering_id, now=None):
         existing.status = registered_status
         existing.drop_date = None
         existing.save(update_fields=["status", "drop_date"])
-        return existing
-    return Enrollment.objects.create(
+        return existing, False
+    enrollment = Enrollment.objects.create(
         student=locked_student,
         offering=offering,
         status=registered_status,
     )
+    return enrollment, True
+
+
+def register_student(student, offering_id, now=None):
+    """Register or reactivate one student, returning the enrollment record."""
+    enrollment, _created = register_student_with_outcome(student, offering_id, now=now)
+    return enrollment
 
 
 @transaction.atomic
@@ -235,6 +255,8 @@ def drop_enrollment(student, enrollment_id, now=None):
         raise EnrollmentError("drop_window_closed", "Course dropping is currently closed.")
 
     enrollment.status = _enrollment_status("dropped")
-    enrollment.drop_date = timezone.localdate(now)
+    enrollment.drop_date = (
+        timezone.localdate(now) if timezone.is_aware(now) else now.date()
+    )
     enrollment.save(update_fields=["status", "drop_date"])
     return enrollment
