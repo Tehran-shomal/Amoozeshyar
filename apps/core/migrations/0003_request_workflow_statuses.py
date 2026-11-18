@@ -5,18 +5,25 @@ STATUS_VALUES = {
     "review_status": (
         ("submitted", "ثبت‌شده"),
         ("in_review", "در حال بررسی"),
+        ("approved", "تأیید"),
+        ("rejected", "رد"),
     ),
     "proposal_status": (
         ("submitted", "ثبت‌شده"),
         ("in_review", "در حال بررسی"),
+        ("approved", "تأیید"),
+        ("rejected", "رد"),
     ),
     "appeal_status": (
         ("submitted", "ثبت‌شده"),
         ("in_review", "در حال بررسی"),
+        ("approved", "تأیید"),
+        ("rejected", "رد"),
     ),
     "thesis_review_status": (
         ("submitted", "ثبت‌شده"),
         ("in_review", "در حال بررسی"),
+        ("approved", "تأیید"),
         ("rejected", "رد"),
     ),
 }

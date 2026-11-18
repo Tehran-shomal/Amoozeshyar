@@ -18,7 +18,8 @@ from apps.core.models import (
 )
 
 
-# ADR-004 and the request-workflow requirements mapped in SDD §5.
+# SDD §5 requests: #10 FUFD03, #22 FUDO02, #24 FUFP04, #25 FUFP05, #26 FUFP06.
+# ADR-004 defines the shared workflow shape because the behavioral source is absent.
 class RequestWorkflowFixtures(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -185,6 +186,18 @@ class RequestWorkflowServiceTests(RequestWorkflowFixtures):
         self.assertIn("thesis-progress-report", registry)
         for definition in registry.values():
             self.assertTrue(hasattr(definition.model, definition.status_field))
+
+    def test_migration_provides_all_transition_targets_for_each_status_category(self):
+        for category in (
+            "review_status",
+            "proposal_status",
+            "appeal_status",
+            "thesis_review_status",
+        ):
+            codes = set(
+                Constant.objects.filter(category=category).values_list("code", flat=True)
+            )
+            self.assertTrue({"submitted", "in_review", "approved", "rejected"} <= codes)
 
     def test_scholarship_requests_require_the_scholarship_reviewer_role(self):
         scholarship = ScholarshipApplication.objects.create(

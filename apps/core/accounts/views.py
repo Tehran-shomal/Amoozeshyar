@@ -1,10 +1,19 @@
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.http import JsonResponse
+from django.middleware.csrf import get_token
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.core.api import APIError, error_response, read_json
 from apps.core.accounts.services import authenticate_person, role_codes_for
+
+
+@require_GET
+@ensure_csrf_cookie
+def csrf_token_view(request):
+    """Set the CSRF cookie and return a token for browser JSON requests."""
+    return JsonResponse({"csrf_token": get_token(request)})
 
 
 def _user_payload(user):

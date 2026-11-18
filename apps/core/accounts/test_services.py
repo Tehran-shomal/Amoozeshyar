@@ -4,7 +4,7 @@ from datetime import date, timedelta
 
 from django.conf import settings
 from django.http import JsonResponse
-from django.test import RequestFactory, TestCase
+from django.test import Client, RequestFactory, TestCase
 from django.utils import timezone
 
 from apps.core import api
@@ -240,6 +240,35 @@ class AccountAPITests(TestCase):
             },
         )
         self.assertNotIn("national_id", response.json()["user"])
+
+    def test_csrf_endpoint_bootstraps_a_browser_session_login(self):
+        browser = Client(enforce_csrf_checks=True)
+
+        csrf = browser.get("/api/accounts/csrf/")
+
+        self.assertEqual(csrf.status_code, 200)
+        token = csrf.json()["csrf_token"]
+        self.assertTrue(token)
+        self.assertIn("csrftoken", csrf.cookies)
+        login = browser.post(
+            "/api/accounts/login/",
+            data=json.dumps({"username": "ali", "password": "Person@Password1"}),
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN=token,
+        )
+
+        self.assertEqual(login.status_code, 200)
+
+    def test_browser_login_without_a_csrf_token_is_rejected_by_middleware(self):
+        browser = Client(enforce_csrf_checks=True)
+
+        response = browser.post(
+            "/api/accounts/login/",
+            data=json.dumps({"username": "ali", "password": "Person@Password1"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 403)
 
     def test_invalid_login_returns_a_stable_401_error(self):
         response = self.client.post(
