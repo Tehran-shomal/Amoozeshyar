@@ -17,7 +17,33 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+FEATURES = (
+    'enrollment',
+    'tuition',
+    'grading',
+    'requests',
+    'scheduling',
+    'attendance',
+    'classroom',
+    'tickets',
+    'online_exam',
+    'people',
+    'student_services',
+    'notifications',
+    'thesis',
+    'accounts',
+    'counseling',
+    'reports',
+    'internship',
+    'scholarships',
+)
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('apps.core.urls')),
+]
+
+urlpatterns += [
+    path(f'api/{feature}/', include(f'apps.core.{feature}.urls'))
+    for feature in FEATURES
 ]
