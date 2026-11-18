@@ -42,6 +42,10 @@ CONSTANTS = {
         ("graduated", "فارغ‌التحصیل"),
         ("withdrawn", "انصراف"),
     ],
+    "enrollment_status": [
+        ("registered", "ثبت‌نام‌شده"),
+        ("dropped", "حذف‌شده"),
+    ],
     "admission_type": [("with_exam", "با آزمون"), ("without_exam", "بدون آزمون")],
     "lesson_type": [
         ("specialized", "تخصصی"),
