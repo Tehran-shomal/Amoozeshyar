@@ -66,6 +66,8 @@ CONSTANTS = {
     "exam_type": [("midterm", "میان‌ترم"), ("final", "پایان‌ترم"), ("online", "مجازی")],
     "prerequisite_type": [("prerequisite", "پیش‌نیاز"), ("co_requisite", "هم‌نیاز")],
     "appeal_status": [
+        ("submitted", "ثبت‌شده"),
+        ("in_review", "در حال بررسی"),
         ("pending", "در انتظار بررسی"),
         ("approved", "تایید"),
         ("rejected", "رد"),
@@ -82,6 +84,8 @@ CONSTANTS = {
         ("closed", "بسته"),
     ],
     "review_status": [
+        ("submitted", "ثبت‌شده"),
+        ("in_review", "در حال بررسی"),
         ("pending", "در انتظار بررسی"),
         ("approved", "تایید"),
         ("rejected", "رد"),
@@ -100,14 +104,19 @@ CONSTANTS = {
         ("rejected", "رد شده"),
     ],
     "proposal_status": [
+        ("submitted", "ثبت‌شده"),
+        ("in_review", "در حال بررسی"),
         ("pending", "در انتظار بررسی"),
         ("approved", "تایید شده"),
         ("rejected", "رد شده"),
         ("needs_revision", "نیازمند اصلاح"),
     ],
     "thesis_review_status": [
+        ("submitted", "ثبت‌شده"),
+        ("in_review", "در حال بررسی"),
         ("pending", "در انتظار بررسی"),
         ("approved", "تایید"),
+        ("rejected", "رد"),
         ("needs_revision", "نیازمند اصلاح"),
     ],
     "graduation_status": [
