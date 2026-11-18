@@ -106,8 +106,8 @@
 - [ ] Step 5: Add scheduling read services and JSON views for active term and active offerings.
 - [ ] Step 6: Add authenticated enrollment register/drop views that resolve the acting student's own Student record and translate EnrollmentError to JSON.
 - [ ] Step 7: Enable USE_TZ and update date/time test fixtures and seed data to use aware datetimes.
-- [ ] Step 8: Run .venv/Scripts/python.exe manage.py test apps.core.enrollment.test_services apps.core.scheduling.test_services. Expected: PASS.
-- [ ] Step 9: Run .venv/Scripts/python.exe manage.py makemigrations --check --dry-run and manage.py check. Expected: no model drift and no system-check issues; commit this task.
+- [x] Step 8: Run .venv/Scripts/python.exe manage.py test apps.core.enrollment.test_services apps.core.scheduling.test_services. Result: 25 tests pass.
+- [x] Step 9: Run .venv/Scripts/python.exe manage.py makemigrations --check --dry-run and manage.py check. Result: no model drift and no system-check issues; commit this task.
 
 ### Task 4: Request review workflow
 
@@ -123,12 +123,12 @@
 - Produces REQUEST_MODELS, transition_request(instance, target_status, reviewer=None) -> instance, and POST /api/requests/<request_type>/<pk>/review/.
 - Supports existing StudentServiceRequest, ScholarshipApplication, Proposal, TransferRequest, CreditTransferRequest, InternshipRequest, Internship, RefundRequest, GradeAppeal, and ThesisProgressReport records.
 
-- [ ] Step 1: Write tests for submitted -> in_review -> approved/rejected, legacy pending transitions, invalid transitions, missing status constants, and role-denied/role-allowed reviews. Cite ADR-004 and the relevant SDD feature codes.
-- [ ] Step 2: Run .venv/Scripts/python.exe manage.py test apps.core.requests.test_services. Expected: FAIL because the review service is missing.
-- [ ] Step 3: Add only missing workflow Constant values via an idempotent data migration and keep the development seed aligned.
-- [ ] Step 4: Implement the model/status-field registry and atomic transition validation; retain existing model-specific status categories.
-- [ ] Step 5: Add the role-checked JSON review view and route.
-- [ ] Step 6: Run .venv/Scripts/python.exe manage.py test apps.core.requests.test_services. Expected: PASS; commit this task.
+- [x] Step 1: Write tests for submitted -> in_review -> approved/rejected, legacy pending transitions, invalid transitions, missing status constants, and role-denied/role-allowed reviews. Cite ADR-004 and the relevant SDD feature codes.
+- [x] Step 2: Run .venv/Scripts/python.exe manage.py test apps.core.requests.test_services. Result: tests failed because the review service and route were missing.
+- [x] Step 3: Add only missing workflow Constant values via an idempotent data migration and keep the development seed aligned.
+- [x] Step 4: Implement the model/status-field registry and atomic transition validation; retain existing model-specific status categories.
+- [x] Step 5: Add the role-checked JSON review view and route.
+- [x] Step 6: Run .venv/Scripts/python.exe manage.py test apps.core.requests.test_services. Result: 11 focused tests pass; follow-up full suite passes 58 tests.
 
 ### Task 5: Documentation and final verification
 
@@ -137,9 +137,10 @@
 - Modify: docs/SDD.md
 - Modify: docs/SSOT.md
 - Modify: docs/ADR.md
+- Create: docs/sdd/traceability/*.md
 
-- [ ] Step 1: Update the structure inventory to reflect implemented packages, routes, utilities, tests, and migrations.
-- [ ] Step 2: Add an SDD implementation-readiness note stating that the referenced behavioral requirements file is missing and the traceability table does not specify all behaviors.
-- [ ] Step 3: Record the API/session, lockout, pass-threshold, and UTC decisions in the relevant architecture documents.
-- [ ] Step 4: Run .venv/Scripts/python.exe manage.py test, manage.py check, manage.py makemigrations --check --dry-run, and manage.py check --deploy; report any deploy-only warnings separately.
-- [ ] Step 5: Review git diff and status, confirm no frontend assets or dependencies were added, and commit the documentation task.
+- [x] Step 1: Update the structure inventory to reflect implemented packages, routes, utilities, tests, and migrations.
+- [x] Step 2: Add an SDD implementation-readiness note stating that the referenced behavioral requirements file is missing and the traceability table does not specify all behaviors; split the 19 traceability tables into domain files and retain all 152 rows.
+- [x] Step 3: Record the API/session, lockout, pass-threshold, exam-conflict, UTC, and request-review decisions in the relevant architecture documents.
+- [x] Step 4: Run .venv/Scripts/python.exe manage.py test, manage.py check, manage.py makemigrations --check --dry-run, and manage.py check --deploy. Result: 58 tests pass, checks and migration drift are clean; deploy check reports HSTS/SSL redirect warnings for deployment configuration.
+- [x] Step 5: Review git diff and status, confirm no frontend assets or dependencies were added, commit the documentation task, and request a whole-branch review.

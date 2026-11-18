@@ -8,7 +8,7 @@ This document began as a snapshot of the master baseline (1896c3c) and is update
     ├── apps/
     │   └── core/
     │       ├── management/commands/  seed.py, seed_data.py
-│       ├── migrations/           0001_initial.py, 0002_enrollment_statuses.py
+    │       ├── migrations/           0001_initial.py, 0002_enrollment_statuses.py, 0003_request_workflow_statuses.py
     │       ├── templates/core/       home.html
     │       ├── admin.py
     │       ├── apps.py
@@ -18,6 +18,7 @@ This document began as a snapshot of the master baseline (1896c3c) and is update
     │       └── views.py
     ├── config/                       Django settings, root URLs, ASGI, WSGI
     ├── docs/                         AGENT_INSTRUCTIONS.md, SSOT.md, ADR.md, SDD.md
+    │   └── sdd/traceability/         19 split tables, all 152 rows preserved
     ├── media/                        empty except .gitkeep
     ├── static/                       empty except .gitkeep
     ├── templates/                    base.html
@@ -25,9 +26,9 @@ This document began as a snapshot of the master baseline (1896c3c) and is update
     ├── requirements.txt
     └── seed_data.py                  root-level data generator
 
-There are no frontend bundles or static assets. The baseline had no feature sub-apps, API framework, serializers, or shared service modules. Task 1 added the 18 SSOT feature packages; Tasks 2–3 added account, scheduling, and enrollment APIs/services. apps/core/models.py.backup is a tracked older model draft; it is not imported by Django.
+There are no frontend bundles or static assets. The baseline had no feature sub-apps, API framework, serializers, or shared service modules. Task 1 added the 18 SSOT feature packages; Tasks 2–4 added account, scheduling, enrollment, and existing-model request-review APIs/services. apps/core/models.py.backup is a tracked older model draft; it is not imported by Django.
 
-The registered feature packages are apps/core/enrollment, tuition, grading, requests, scheduling, attendance, classroom, tickets, online_exam, people, student_services, notifications, thesis, accounts, counseling, reports, internship, and scholarships. Each has __init__.py, apps.py, and urls.py. Accounts, enrollment, and scheduling also have service/view modules and automated tests.
+The registered feature packages are apps/core/enrollment, tuition, grading, requests, scheduling, attendance, classroom, tickets, online_exam, people, student_services, notifications, thesis, accounts, counseling, reports, internship, and scholarships. Each has __init__.py, apps.py, and urls.py. Accounts, enrollment, scheduling, and requests also have service/view modules and automated tests; the other feature packages are route namespaces for now.
 
 ## Django configuration and routing
 
@@ -38,7 +39,7 @@ The registered feature packages are apps/core/enrollment, tuition, grading, requ
 - USE_TZ is True; TIME_ZONE is Asia/Tehran; language is fa-ir. DateTimeFields are timezone-aware and stored in UTC by Django.
 - Root URLs: /admin/ is Django admin, / includes apps.core.urls, and /api/<feature>/ includes each registered feature URLConf.
 - apps.core.urls exposes only the core:home route at /, rendered by HomeView.
-- Implemented routes: POST /api/accounts/login/, POST /api/accounts/logout/, GET /api/accounts/me/, GET /api/scheduling/active-term/, GET /api/scheduling/offerings/, POST /api/enrollment/register/<offering_id>/, and POST /api/enrollment/drop/<enrollment_id>/.
+- Implemented routes: GET /api/accounts/csrf/, POST /api/accounts/login/, POST /api/accounts/logout/, GET /api/accounts/me/, GET /api/scheduling/active-term/, GET /api/scheduling/offerings/, POST /api/enrollment/register/<offering_id>/, POST /api/enrollment/drop/<enrollment_id>/, and POST /api/requests/<request_type>/<request_id>/review/.
 - Middleware is Django's security, session, common, CSRF, authentication, messages, and clickjacking middleware. No project-specific middleware is present.
 - Session cookies expire after 900 seconds and are refreshed per request; production cookies are marked Secure when DEBUG is False. Account lockout is configured for five failed attempts and 900 seconds.
 - Media and static roots are configured; the directories have no assets. templates/base.html provides Persian/RTL HTML and apps/core/templates/core/home.html is a placeholder landing page.
@@ -101,23 +102,26 @@ All 43 models are registered in apps/core/admin.py. The admin customizes Person,
 
 ## Views, templates, utilities, and conventions
 
-- Views: only HomeView(TemplateView) in apps/core/views.py.
-- Feature templates: only core/home.html; shared template: templates/base.html.
+- Core views: HomeView(TemplateView) in apps/core/views.py. Feature JSON views are in accounts, enrollment, scheduling, and requests.
+- Feature templates: only core/home.html; shared template: templates/base.html. The API endpoints do not depend on frontend templates.
 - Static assets: none.
-- Shared/domain utilities: StudentAcademicRules; computed properties on Person, Teacher, Student, Term, CourseOffering, ParkingPasses, Ticket, OnlineClass, TransferRequest, GraduationAudit, and EducationalChangeLog; apps/core/api.py provides JSON object parsing and stable JSON errors; apps/core/accounts/services.py authenticates the Person through Django auth and resolves canonical roles/current student records; apps/core/accounts/permissions.py provides a role-required decorator.
+- Shared/domain utilities: StudentAcademicRules; computed properties on Person, Teacher, Student, Term, CourseOffering, ParkingPasses, Ticket, OnlineClass, TransferRequest, GraduationAudit, and EducationalChangeLog; apps/core/api.py provides JSON object parsing and stable JSON errors; accounts services authenticate Person and resolve roles/current student records; enrollment services enforce transactional register/drop rules; scheduling services provide active-term/offering reads; request services register existing request models and validate review transitions. Account and enrollment mutations use session/role checks; review roles are selected by request type.
 - Management commands: seed creates deterministic Persian development data and refuses to run unless DEBUG=True; seed_data generates sample rows for models. There is also a root seed_data.py.
-- Tests: apps/core/tests.py still contains only the generated placeholder. apps/core/test_architecture.py has four tests for feature registration, URL mounting, JSON parsing, and JSON error responses. Account tests cover authentication/session/roles; enrollment and scheduling tests cover rule services and API boundaries. The baseline manage.py test discovered 0 tests.
-- Migrations: 0001_initial.py defines the current model schema; 0002_enrollment_statuses.py idempotently seeds registered/dropped enrollment statuses. No model fields were added in this milestone.
+- Tests: apps/core/tests.py still contains only the generated placeholder. apps/core/test_architecture.py covers feature registration, URL mounting, JSON parsing, and JSON error responses. Account tests cover authentication/session/roles and browser CSRF bootstrap; enrollment and scheduling tests cover rules and APIs; request tests cover transitions and reviewer roles. The full suite contains 58 tests. The baseline manage.py test discovered 0 tests.
+- Migrations: 0001_initial.py defines the current model schema; 0002_enrollment_statuses.py seeds registered/dropped enrollment statuses; 0003_request_workflow_statuses.py seeds workflow statuses. No model fields were added in this milestone.
 - Existing style: Django models and admin use Persian verbose labels, English identifiers, a custom Person user, and Constant(category, code, label) lookup values. No repository-wide formatter or linter configuration is present.
 
 ## Gaps against SSOT, SDD, and ADR
 
-- docs/SSOT.md and docs/SDD.md describe 18 feature sub-apps and 152 requirements. None of the feature sub-apps exist in the baseline; all models, URLs, and admin code are centralized under apps.core.
-- The SDD maps requirement codes to features but does not include the original behavioral text. The referenced نیازمندی_های_آموزشیار.md is absent from the repository and the searched project workspace, so the traceability table alone cannot establish all 152 behaviors.
+- docs/SSOT.md and docs/SDD.md describe 18 feature sub-apps and 152 requirements. The feature app namespaces now exist; model definitions and admin registrations remain centralized under apps.core.
+- The SDD maps requirement codes to features but does not include the original behavioral text. The referenced نیازمندی_های_آموزشیار.md is absent from the repository and searched project workspace, so traceability rows cannot establish all 152 behaviors. SDD §5 now links 19 smaller domain tables under docs/sdd/traceability/; row numbers and identifiers were preserved.
 - Feature model coverage is partial. Existing entities include enrollment, scheduling, grades, attendance, payments/refunds, tickets, online classes, people, service and scholarship applications, counseling, thesis proposals/reports, internships, notifications, and educational history. Missing entities explicitly listed in SSOT include WaitlistEntry, TuitionAccount, Installment, Loan, generic AdminRequest, profile correction/leave/withdrawal/major change/graduation requests, Scholarship, MealReservation, DormRequest, AuditLog, and ErrorLog.
-- The feature packages provide route namespaces; account, enrollment, and scheduling APIs/services are implemented. Tuition, grading, general request workflows, and the remaining domains are not implemented. Automated architecture, account, enrollment, and scheduling tests now exist.
+- Account, enrollment, scheduling, and existing-model request review APIs/services are implemented. Request submission/status-list endpoints, tuition, grading, and remaining domains are not implemented. Automated architecture, account, enrollment, scheduling, and request tests exist.
 - ADR-002/003 specify registration services, atomic register/drop, capacity locking, prerequisite/conflict/credit-limit/window checks. The enrollment service now applies those rules; exact-time exam collisions are used because the current model has no exam duration.
-- ADR-005 and SSOT call for role-based access, session timeout/lockout, and hashed passwords. The account API authenticates Person through Django's hashers and requires non-superusers to have an active UserAccount; it does not use the separate UserAccount.password field. Session expiry, 5-attempt/15-minute lockout, and role checks are now implemented for account endpoints.
+- ADR-005 and SSOT call for role-based access, session timeout/lockout, and hashed passwords. The account API authenticates Person through Django's hashers and requires non-superusers to have an active UserAccount; it does not use the separate UserAccount.password field. Session expiry, 5-attempt/15-minute lockout, and role checks are implemented. TLS, sensitive-field encryption, password-change session invalidation, and production cookie setup remain deployment/security work.
+- `manage.py check --deploy` reports `security.W004` (HSTS is not configured) and `security.W008` (SSL redirect is not enabled). Configure these at deployment after confirming the HTTPS/reverse-proxy topology.
+- Enrollment assumes 10/20 is a passing grade and treats exams at the same date and exact time as conflicts because the model has no duration. These rules are tested and documented in ADR-002 pending the original requirements source.
+- Request reviews use request-type role mappings, accept `pending` as a legacy state, and do not expose `cancelled`; verify these choices against the missing behavioral requirements.
 - The local SQLite database is ignored and not included in the change. ADR mentions TLS, background work, caching, backups, and availability; deployment and integration behavior remains unconfigured.
 - The project uses SQLite, so database-level row-lock behavior required by ADR-003 is not available in production-equivalent form.
 - SDD says SDD.md; this is the file present in the checkout (the user referred to it as SSD.md).
