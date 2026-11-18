@@ -5,7 +5,7 @@
     python manage.py seed
 """
 
-from datetime import date, time, timedelta, datetime
+from datetime import date, time, timedelta
 from decimal import Decimal
 
 from django.apps import apps
@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 
 from apps.core import models as m
 
@@ -211,7 +212,7 @@ class Command(BaseCommand):
         return obj
 
     def seed(self):
-        now = datetime.now()
+        now = timezone.now()
         today = date.today()
         day = timedelta(days=1)
 

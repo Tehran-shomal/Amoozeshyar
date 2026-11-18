@@ -70,7 +70,7 @@
 - Produces role_codes_for(person) -> set[str], user_has_any_role(person, roles) -> bool, and current_student(person, student_code=None) -> Student.
 - Produces POST /api/accounts/login/, POST /api/accounts/logout/, and GET /api/accounts/me/.
 
-- [ ] Step 1: Write tests for successful login, invalid credentials, fifth-failure lockout, locked account rejection, lock expiry, current-user output, and role mapping. Cite FUIP09, #85 FUSP07, #126 NFSP11, #129 FUOP16, and #140 NFSP13.
+- [ ] Step 1: Write tests for successful login, invalid credentials, non-superusers without a role account, fifth-failure lockout, locked account rejection, lock expiry, current-user output, and role mapping. Cite FUIP09, #85 FUSP07, #126 NFSP11, #129 FUOP16, and #140 NFSP13.
 - [ ] Step 2: Run .venv/Scripts/python.exe manage.py test apps.core.accounts.test_services. Expected: FAIL because the account service and routes are missing.
 - [ ] Step 3: Implement login using Django authenticate/login against Person, update UserAccount counters without reading UserAccount.password, and return stable JSON errors.
 - [ ] Step 4: Implement logout, current-user output, role normalization, and ownership-safe student resolution.

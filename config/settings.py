@@ -150,3 +150,15 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'core.Person'
+
+# NFSP03: a session expires after 15 minutes without a request.
+SESSION_COOKIE_AGE = 900
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+# NFSP11: the source specifies repeated-failure lockout but not its threshold.
+AUTH_LOCKOUT_FAILURES = 5
+AUTH_LOCKOUT_SECONDS = 900

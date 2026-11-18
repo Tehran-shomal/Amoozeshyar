@@ -48,7 +48,7 @@ Prepare the Django backend so a frontend can be built against real, tested behav
 
 - Feature apps are packages below apps/core. Existing model and admin locations do not change.
 - API routes use /api/<feature>/... and JSON error objects with stable error codes. Session auth and the existing CSRF middleware apply to unsafe requests.
-- Accounts authenticate the existing Person user through Django's configured auth backend. UserAccount.password is not used for login because it is a separate plain CharField with no model-level hashing guarantee.
+- Accounts authenticate the existing Person user through Django's configured auth backend. Non-superuser API users require an active UserAccount for role assignment and failed-attempt tracking. UserAccount.password is not used for login because it is a separate plain CharField with no model-level hashing guarantee.
 - The ADR calls for lockout but does not set its threshold or duration. This implementation uses five consecutive failures and a 15-minute lock, with tests and an explicit setting so the call can be changed.
 - SESSION_COOKIE_AGE is 900 seconds and sessions are saved on every request so the 15-minute expiry slides with activity.
 - Enrollment is implemented as a service, not embedded in views. It locks the offering and student rows, and a repeated registration returns the existing active enrollment. Dropped records are reactivated to respect the existing unique student/offering constraint.
