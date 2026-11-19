@@ -17,11 +17,13 @@ This document began as a snapshot of the master baseline (1896c3c) and is update
     │       ├── urls.py
     │       └── views.py
     ├── config/                       Django settings, root URLs, ASGI, WSGI
+    ├── README.md                     setup, API, verification, and scope guide
     ├── docs/                         AGENT_INSTRUCTIONS.md, SSOT.md, ADR.md, SDD.md
     │   └── sdd/traceability/         19 split tables, all 152 rows preserved
     ├── media/                        empty except .gitkeep
     ├── static/                       empty except .gitkeep
     ├── templates/                    base.html
+    ├── .env.example
     ├── manage.py
     ├── requirements.txt
     └── seed_data.py                  root-level data generator
