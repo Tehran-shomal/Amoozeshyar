@@ -100,6 +100,8 @@ class Person(AbstractUser):
         blank=False,
         help_text="برای مدارک رسمی (04FUFP)",
     )
+    failed_login_count = models.PositiveIntegerField(default=0, verbose_name="تعداد تلاش ناموفق ورود")
+    locked_until = models.DateTimeField(null=True, blank=True, verbose_name="قفل ورود تا")
     updated_at = models.DateTimeField(verbose_name="تاریخ آخرین ویرایش", auto_now=True)
 
     REQUIRED_FIELDS = ["email", "national_id", "birth_date"]
@@ -617,7 +619,12 @@ class CourseOffering(models.Model):
 
     @property
     def remaining_capacity(self):
-        registered_count = self.enrollments.exclude(status__code='DROPPED').count()
+        active_status = models.Q(status__isnull=True) | (
+            ~models.Q(status__code__iexact="dropped")
+            & ~models.Q(status__code__iexact="cancelled")
+            & ~models.Q(status__code__iexact="canceled")
+        )
+        registered_count = self.enrollments.filter(active_status).count()
         return max(self.capacity - registered_count, 0)
 
     def __str__(self):

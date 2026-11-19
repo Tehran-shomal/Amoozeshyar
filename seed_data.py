@@ -29,7 +29,7 @@ def run():
         ("academic_rank", "instructor", "مربی"), ("academic_rank", "assistant", "استادیار"),
         ("academic_rank", "associate", "دانشیار"), ("academic_rank", "full", "استاد"),
         ("educational_level", "bachelor", "کارشناسی"), ("educational_level", "master", "ارشد"),
-        ("student_status", "active", "فعال"), ("student_status", "suspended", "مشروط"), ("student_status", "graduated", "فارغ‌التحصیل"),
+        ("student_status", "active", "فعال"), ("student_status", "probation", "مشروط"), ("student_status", "graduated", "فارغ‌التحصیل"),
         ("admission_type", "national", "کنکور"), ("admission_type", "quota", "سهمیه"),
         ("lesson_type", "theoretical", "نظری"), ("lesson_type", "practical", "عملی"), ("lesson_type", "combined", "نظری-عملی"),
         ("semester", "first", "نیمسال اول"), ("semester", "second", "نیمسال دوم"), ("semester", "summer", "تابستان"),

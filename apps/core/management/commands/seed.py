@@ -5,7 +5,7 @@
     python manage.py seed
 """
 
-from datetime import date, time, timedelta, datetime
+from datetime import date, time, timedelta
 from decimal import Decimal
 
 from django.apps import apps
@@ -13,6 +13,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
 
 from apps.core import models as m
 
@@ -41,6 +42,10 @@ CONSTANTS = {
         ("graduated", "فارغ‌التحصیل"),
         ("withdrawn", "انصراف"),
     ],
+    "enrollment_status": [
+        ("registered", "ثبت‌نام‌شده"),
+        ("dropped", "حذف‌شده"),
+    ],
     "admission_type": [("with_exam", "با آزمون"), ("without_exam", "بدون آزمون")],
     "lesson_type": [
         ("specialized", "تخصصی"),
@@ -61,6 +66,8 @@ CONSTANTS = {
     "exam_type": [("midterm", "میان‌ترم"), ("final", "پایان‌ترم"), ("online", "مجازی")],
     "prerequisite_type": [("prerequisite", "پیش‌نیاز"), ("co_requisite", "هم‌نیاز")],
     "appeal_status": [
+        ("submitted", "ثبت‌شده"),
+        ("in_review", "در حال بررسی"),
         ("pending", "در انتظار بررسی"),
         ("approved", "تایید"),
         ("rejected", "رد"),
@@ -77,6 +84,8 @@ CONSTANTS = {
         ("closed", "بسته"),
     ],
     "review_status": [
+        ("submitted", "ثبت‌شده"),
+        ("in_review", "در حال بررسی"),
         ("pending", "در انتظار بررسی"),
         ("approved", "تایید"),
         ("rejected", "رد"),
@@ -95,14 +104,19 @@ CONSTANTS = {
         ("rejected", "رد شده"),
     ],
     "proposal_status": [
+        ("submitted", "ثبت‌شده"),
+        ("in_review", "در حال بررسی"),
         ("pending", "در انتظار بررسی"),
         ("approved", "تایید شده"),
         ("rejected", "رد شده"),
         ("needs_revision", "نیازمند اصلاح"),
     ],
     "thesis_review_status": [
+        ("submitted", "ثبت‌شده"),
+        ("in_review", "در حال بررسی"),
         ("pending", "در انتظار بررسی"),
         ("approved", "تایید"),
+        ("rejected", "رد"),
         ("needs_revision", "نیازمند اصلاح"),
     ],
     "graduation_status": [
@@ -211,7 +225,7 @@ class Command(BaseCommand):
         return obj
 
     def seed(self):
-        now = datetime.now()
+        now = timezone.now()
         today = date.today()
         day = timedelta(days=1)
 

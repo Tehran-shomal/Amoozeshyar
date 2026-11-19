@@ -43,10 +43,11 @@ class PersonAdmin(UserAdmin):
     search_fields = ('username', 'first_name', 'last_name', 'email', 'national_id')
     list_filter = ('gender', 'preferred_language', 'is_active', 'is_staff')
     ordering = ('last_name', 'first_name')
-    readonly_fields = ('updated_at', 'age', 'full_name')
+    readonly_fields = ('updated_at', 'age', 'full_name', 'failed_login_count', 'locked_until')
 
     fieldsets = UserAdmin.fieldsets + (
         ('اطلاعات تکمیلی', {'fields': ('national_id', 'birth_date', 'birth_place', 'gender', 'address', 'age', 'full_name')}),
+        ('وضعیت قفل ورود', {'fields': ('failed_login_count', 'locked_until')}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('اطلاعات تکمیلی', {'fields': ('national_id', 'birth_date', 'birth_place')}),
