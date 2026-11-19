@@ -41,6 +41,24 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'apps.core',
+    'apps.core.enrollment.apps.EnrollmentConfig',
+    'apps.core.tuition.apps.TuitionConfig',
+    'apps.core.grading.apps.GradingConfig',
+    'apps.core.requests.apps.RequestsConfig',
+    'apps.core.scheduling.apps.SchedulingConfig',
+    'apps.core.attendance.apps.AttendanceConfig',
+    'apps.core.classroom.apps.ClassroomConfig',
+    'apps.core.tickets.apps.TicketsConfig',
+    'apps.core.online_exam.apps.OnlineExamConfig',
+    'apps.core.people.apps.PeopleConfig',
+    'apps.core.student_services.apps.StudentServicesConfig',
+    'apps.core.notifications.apps.NotificationsConfig',
+    'apps.core.thesis.apps.ThesisConfig',
+    'apps.core.accounts.apps.AccountsConfig',
+    'apps.core.counseling.apps.CounselingConfig',
+    'apps.core.reports.apps.ReportsConfig',
+    'apps.core.internship.apps.InternshipConfig',
+    'apps.core.scholarships.apps.ScholarshipsConfig',
 ]
 
 MIDDLEWARE = [
@@ -112,7 +130,7 @@ TIME_ZONE = 'Asia/Tehran'
 
 USE_I18N = True
 
-USE_TZ = False
+USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -132,3 +150,19 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'core.Person'
+
+# NFSP03: a session expires after 15 minutes without a request.
+SESSION_COOKIE_AGE = 900
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+# NFSP11: the source specifies repeated-failure lockout but not its threshold.
+AUTH_LOCKOUT_FAILURES = 5
+AUTH_LOCKOUT_SECONDS = 900
+
+# Set only when applying the legacy DateTimeField conversion migration to a
+# database that contains rows written before USE_TZ was enabled.
+LEGACY_DATETIME_TIME_ZONE = env("LEGACY_DATETIME_TIME_ZONE", default="")
