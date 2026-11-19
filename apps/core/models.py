@@ -528,6 +528,10 @@ class UserAccount(models.Model):
         verbose_name = "حساب کاربری"
         verbose_name_plural = "حساب‌های کاربری"
 
+    class Meta:
+        verbose_name = "حساب کاربری"
+        verbose_name_plural = "حساب‌های کاربری"
+
 
 # ==========================================
 # پیش‌نیاز/هم‌نیاز
@@ -571,6 +575,13 @@ class Classroom(models.Model):
 
     def __str__(self):
         return f"{self.building_name} - {self.room_number}"
+
+    def __str__(self):
+        return f"{self.building_name} - {self.room_number}"
+
+    class Meta:
+        verbose_name = "کلاس"
+        verbose_name_plural = "کلاس‌ها"
 
 
 # ==========================================
@@ -735,6 +746,13 @@ class Attendance(models.Model):
         verbose_name = "حضور و غیاب"
         verbose_name_plural = "حضور و غیاب‌ها"
 
+    def __str__(self):
+        return f"{self.enrollment_id} - جلسه {self.session_number}"
+
+    class Meta:
+        verbose_name = "حضور و غیاب"
+        verbose_name_plural = "حضور و غیاب‌ها"
+
 
 # ==========================================
 # دسته‌بندی تیکت
@@ -827,16 +845,18 @@ class OnlineClass(models.Model):
 
     @property
     def duration(self):
+        if self.start_at is None or self.end_at is None:
+            return None
         return self.end_at - self.start_at
 
     @property
     def is_ongoing(self):
+        if self.start_at is None or self.end_at is None:
+         return False
         return self.start_at <= timezone.now() <= self.end_at
 
 
-# ==========================================
 # رسید شهریه
-# ==========================================
 class TuitionReceipt(models.Model):
     tuition_receipt_key = models.AutoField(primary_key=True, verbose_name="شناسه رسید شهریه")
     receipt_serial_code = models.CharField(max_length=50, unique=True, null=False, blank=False, verbose_name="شماره سریال رسید")
@@ -942,6 +962,8 @@ class ScholarshipApplication(models.Model):
     scholarship_submitted_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        verbose_name = "درخواست بورسیه"
+        verbose_name_plural = "درخواست‌های بورسیه"
         db_table = "ScholarshipApplication"
         verbose_name = "درخواست بورسیه"
         verbose_name_plural = "درخواست‌های بورسیه"
@@ -971,6 +993,8 @@ class CounselingAppointment(models.Model):
     )
 
     class Meta:
+        verbose_name = "وقت مشاوره"
+        verbose_name_plural = "وقت‌های مشاوره"
         db_table = "CounselingAppointment"
         verbose_name = "جلسه مشاوره"
         verbose_name_plural = "جلسات مشاوره"
@@ -999,6 +1023,8 @@ class Proposal(models.Model):
     )
 
     class Meta:
+        verbose_name = "پروپوزال"
+        verbose_name_plural = "پروپوزال‌ها"
         db_table = "Proposal"
         verbose_name = "پروپوزال"
         verbose_name_plural = "پروپوزال‌ها"

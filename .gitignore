@@ -16,3 +16,6 @@ media/*
 /.vs
 db.sqlite3.bak
 *.sqlite3*
+apps/core/migrations copy
+apps/core/admin copy.py
+apps/core/admin models copy.py
