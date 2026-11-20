@@ -59,6 +59,9 @@ INSTALLED_APPS = [
     'apps.core.reports.apps.ReportsConfig',
     'apps.core.internship.apps.InternshipConfig',
     'apps.core.scholarships.apps.ScholarshipsConfig',
+    'apps.core.curriculum.apps.CurriculumConfig',
+    'apps.core.communication.apps.CommunicationConfig',
+    'apps.core.system_settings.apps.SystemSettingsConfig',
 ]
 
 MIDDLEWARE = [

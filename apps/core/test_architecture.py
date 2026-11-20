@@ -29,6 +29,7 @@ FEATURES = (
     "reports",
     "internship",
     "scholarships",
+    "system_settings",
 )
 
 

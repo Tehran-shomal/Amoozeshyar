@@ -19,3 +19,7 @@ db.sqlite3.bak
 apps/core/migrations copy
 apps/core/admin copy.py
 apps/core/admin models copy.py
+# Local backups and browser/session data
+*.backup*
+*.bak
+cookies.txt
