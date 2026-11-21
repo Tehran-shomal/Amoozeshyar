@@ -1,0 +1,64 @@
+{# Drop actions always carry a real enrollment ID owned by the current student. #}
+{% if current_student %}
+<section class="panel student-course-summary">
+    <dl class="summary-rows">
+        <div><dt>نام و نام خانوادگی</dt><dd>{{ current_student.person.full_name }}</dd></div>
+        <div><dt>شماره دانشجویی</dt><dd>{{ current_student.student_code }}</dd></div>
+        <div><dt>رشته و مقطع</dt><dd>{{ current_student.field.field_name|default:"—" }} · {{ current_student.educational_level|default:"—" }}</dd></div>
+        <div><dt>نیمسال و وضعیت</dt><dd>{{ term_display_code }} · {{ current_student.status|default:"—" }}</dd></div>
+    </dl>
+</section>
+
+<div class="course-warning-panel">
+    <div>
+        {% if current_student.tuition_debt %}
+        <p>در پروندهٔ دانشجو بدهی شهریهٔ {{ current_student.tuition_debt|floatformat:"0" }} ریال ثبت شده است.</p>
+        {% else %}
+        <p>درخواست حذف طبق وضعیت نیمسال و پروندهٔ آموزشی در سامانه بررسی می‌شود.</p>
+        {% endif %}
+        <small>سقف مجاز: {{ current_student.max_allowed_units }} واحد · قوانین بازه و حداقل واحد در API اجرا می‌شوند.</small>
+    </div>
+    {% if active_slug == "add-drop" %}<a class="button button--primary" href="{% url 'core:section' 'enrollment' %}{{ query_suffix }}">افزودن درس</a>{% endif %}
+</div>
+
+<section class="panel data-panel course-change-table">
+    <div class="panel-heading"><h2>{% if active_slug == "emergency-drop" %}دروس قابل حذف اضطراری{% else %}دروس ثبت‌شده{% endif %}</h2></div>
+    <div class="table-wrap"><table class="data-table">
+        <thead><tr>{% for column in course_change_table.columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr></thead>
+        <tbody>
+            {% for row in course_change_table.rows %}
+            <tr>
+                {% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}
+                <td><button class="table-action" type="button"
+                    data-enrollment-action="drop" data-record-id="{{ row.id }}"
+                    data-course-name="{{ row.course_name }}" data-course-code="{{ row.course_code }}"
+                    data-course-units="{{ row.units }}">{{ row.action_label }}</button></td>
+            </tr>
+            {% empty %}<tr><td colspan="20" class="empty-state">برای این نیمسال ثبت‌نام فعالی وجود ندارد.</td></tr>{% endfor %}
+        </tbody>
+    </table></div>
+</section>
+
+<section class="course-totals" aria-label="خلاصهٔ ثبت‌نام نیمسال">
+    <div><span>مجموع واحدهای فعال</span><strong>{{ course_change_units }}</strong></div>
+    <div><span>سقف مجاز واحد</span><strong>{{ current_student.max_allowed_units }}</strong></div>
+</section>
+<p class="action-note">{% if active_slug == "emergency-drop" %}حذف اضطراری فقط در بازهٔ تعیین‌شده برای نیمسال پذیرفته می‌شود.{% else %}پس از پاسخ API، جدول با وضعیت ثبت‌نام به‌روز می‌شود.{% endif %}</p>
+
+<div class="modal-backdrop" data-drop-modal hidden>
+    <section class="modal-dialog drop-confirm-dialog{% if active_slug == 'emergency-drop' %} drop-confirm-dialog--emergency{% endif %}"
+        role="dialog" aria-modal="true" aria-labelledby="drop-dialog-title" data-drop-confirmation>
+        <header class="modal-heading"><h2 id="drop-dialog-title">{% if active_slug == "emergency-drop" %}تأیید حذف اضطراری{% else %}تأیید حذف درس{% endif %}</h2></header>
+        <h3 data-drop-course-name></h3>
+        <p class="course-modal-meta">کد درس: <span data-drop-course-code></span> · <span data-drop-course-units></span> واحد</p>
+        <p>برای ادامه، حذف این ثبت‌نام را در سامانه تأیید کنید.</p>
+        <p class="selected-group-note" data-drop-api-status role="status" aria-live="polite" hidden></p>
+        <div class="page-actions">
+            <button class="button button--primary" type="button" data-confirm-drop>تأیید نهایی حذف</button>
+            <button class="button button--soft" type="button" data-close-drop>انصراف</button>
+        </div>
+    </section>
+</div>
+{% else %}
+<section class="panel"><p class="empty-state">برای تغییر ثبت‌نام، ابتدا پروندهٔ دانشجویی را انتخاب کنید.</p></section>
+{% endif %}

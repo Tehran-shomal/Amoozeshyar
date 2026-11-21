@@ -26,7 +26,8 @@ class EnrollmentError(APIError):
     """A stable, client-readable enrollment-rule failure."""
 
 
-def _active_enrollments(queryset):
+def active_enrollments(queryset):
+    """Return registrations treated as active by the enrollment API."""
     return queryset.filter(
         Q(status__isnull=True)
         | (
@@ -81,7 +82,7 @@ def _validate_prerequisites(student, offering):
             else "prerequisite"
         )
         if relation_code in {"co_requisite", "corequisite", "co-requisite"}:
-            enrolled_together = _active_enrollments(
+            enrolled_together = active_enrollments(
                 Enrollment.objects.filter(
                     student=student,
                     offering__term=offering.term,
@@ -103,7 +104,7 @@ def _validate_prerequisites(student, offering):
 
 
 def _validate_schedule(student, offering):
-    current = _active_enrollments(
+    current = active_enrollments(
         Enrollment.objects.filter(
             student=student,
             offering__term=offering.term,
@@ -192,7 +193,7 @@ def register_student_with_outcome(student, offering_id, now=None):
 
     _validate_prerequisites(locked_student, offering)
 
-    current_term_enrollments = _active_enrollments(
+    current_term_enrollments = active_enrollments(
         Enrollment.objects.filter(student=locked_student, offering__term=term)
         .exclude(offering=offering)
         .select_related("status", "offering__lesson")
@@ -200,7 +201,7 @@ def register_student_with_outcome(student, offering_id, now=None):
     _validate_schedule(locked_student, offering)
     _validate_credit_limit(locked_student, offering, current_term_enrollments)
 
-    active_count = _active_enrollments(
+    active_count = active_enrollments(
         Enrollment.objects.filter(offering=offering).select_related("status")
     ).count()
     if active_count >= offering.capacity:

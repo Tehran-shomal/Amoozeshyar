@@ -1,5 +1,6 @@
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
+from django.db import OperationalError
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -31,10 +32,13 @@ def login_view(request):
         payload = read_json(request)
         username = payload.get("username")
         password = payload.get("password")
+        remember_me = payload.get("remember_me", True)
         if not isinstance(username, str) or not username.strip():
             raise APIError("missing_credentials", "A username is required.")
         if not isinstance(password, str) or not password:
             raise APIError("missing_credentials", "A password is required.")
+        if not isinstance(remember_me, bool):
+            raise APIError("invalid_remember_preference", "remember_me must be a boolean.")
 
         user = authenticate_person(username.strip(), password, request=request)
         if user is None:
@@ -45,8 +49,15 @@ def login_view(request):
             )
     except APIError as error:
         return error_response(error.code, error.message, error.status_code)
+    except OperationalError:
+        return error_response(
+            "database_unavailable",
+            "ساختار دیتابیس برای ورود آماده نیست.",
+            503,
+        )
 
     auth_login(request, user)
+    request.session.set_expiry(None if remember_me else 0)
     return JsonResponse({"user": _user_payload(user)})
 
 

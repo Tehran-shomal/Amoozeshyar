@@ -40,6 +40,7 @@ FEATURES = (
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/portal/', include('apps.core.frontend.api_urls')),
     path('', include('apps.core.urls')),
 ]
 

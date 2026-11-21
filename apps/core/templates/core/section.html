@@ -1,0 +1,8 @@
+{% extends "core/portal_base.html" %}
+{% block portal_content %}
+<header class="section-page-heading">
+<nav class="breadcrumbs" aria-label="مسیر صفحه"><a href="{% url 'core:home' %}{{ query_suffix }}">داشبورد</a><span>/</span><span>{{ section.group }}</span></nav>
+<h1>{{ section.title }}</h1>{% if page_subtitle %}<p>{{ page_subtitle }}</p>{% elif section.subtitle %}<p>{{ section.subtitle }}</p>{% endif %}
+</header>
+{% include module_template %}
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "core/portal_base.html" %}
+{% block portal_content %}
+{% if current_student %}
+<div class="finance-summary-strip" aria-label="خلاصهٔ وضعیت مالی">
+    {% for item in finance_summary %}
+    <span><strong>{{ item.label }}:</strong> {{ item.value }}</span>
+    {% endfor %}
+    <span><strong>نیمسال:</strong> {{ finance_term_label }}</span>
+</div>
+
+{% if active_slug == "payments" %}
+<section class="panel data-panel finance-transactions-panel">
+    <div class="panel-heading"><h2>تراکنش‌های نیمسال {{ finance_term_label }}</h2></div>
+    <div class="table-wrap"><table class="data-table">
+        <thead><tr><th scope="col">شناسه</th><th scope="col">نیمسال</th><th scope="col">تاریخ</th><th scope="col">مبلغ</th><th scope="col">وضعیت</th></tr></thead>
+        <tbody>
+            {% for payment in payment_rows %}
+            <tr>
+                <td>{{ payment.tracking_code }}</td>
+                <td>{{ payment.term.term_code }}</td>
+                <td>{{ payment.payment_date|date:"Y/m/d" }}</td>
+                <td>{{ payment.amount|floatformat:"0" }} ریال</td>
+                <td>{{ payment.status.label|default:"نامشخص" }}</td>
+            </tr>
+            {% empty %}<tr><td colspan="5" class="empty-state">برای این نیمسال سابقهٔ پرداختی ثبت نشده است.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+</section>
+{% if failed_payment %}
+<div class="inline-notice finance-reconciliation-note" role="status">
+    <span aria-hidden="true">!</span>
+    <p>تراکنش {{ failed_payment.tracking_code }} ناموفق ثبت شده و در جمع پرداخت‌های موفق محاسبه نشده است. برای پیگیری با پشتیبانی ارتباط بگیرید.</p>
+</div>
+{% else %}
+<div class="finance-reconciliation-note">مبلغ‌های بالا از رکوردهای پرداخت همین پرونده محاسبه شده‌اند. وضعیت بدهی از پروندهٔ آموزشی خوانده می‌شود.</div>
+{% endif %}
+{% elif active_slug == "secure-payment" %}
+<div class="inline-notice finance-gateway-note" role="status"><span aria-hidden="true">!</span><p>{{ finance_notice }}</p></div>
+<section class="panel finance-debt-panel">
+    <h2>ماندهٔ ثبت‌شده</h2>
+    <strong>{{ current_student.tuition_debt|floatformat:"0" }} ریال</strong>
+    <p>این مقدار از پروندهٔ دانشجویی خوانده می‌شود. برای پرداخت یا تغییر مانده، درگاه رسمی باید به سامانه متصل باشد.</p>
+</section>
+{% elif active_slug == "tuition" %}
+<section class="panel data-panel finance-transactions-panel">
+    <div class="panel-heading"><h2>پرداخت‌های موفق هر نیمسال</h2></div>
+    <div class="table-wrap"><table class="data-table">
+        <thead><tr><th scope="col">نیمسال</th><th scope="col">سال تحصیلی</th><th scope="col">نوع نیمسال</th><th scope="col">جمع پرداخت‌های موفق</th></tr></thead>
+        <tbody>{% for row in tuition_rows %}
+            <tr><td>{{ row.term_code }}</td><td>{{ row.academic_year }}</td><td>{{ row.semester }}</td><td>{{ row.total }}</td></tr>
+            {% empty %}<tr><td colspan="4" class="empty-state">پرداخت موفقی برای این پرونده ثبت نشده است.</td></tr>
+        {% endfor %}</tbody>
+    </table></div>
+</section>
+{% endif %}
+
+{% if finance_actions %}<div class="page-actions finance-actions">
+    {% for item in finance_actions %}<a class="button{% if forloop.first %} button--primary{% else %} button--soft{% endif %}" href="{% url 'core:section' item.slug %}{{ query_suffix }}">{{ item.label }}</a>{% endfor %}
+</div>{% endif %}
+{% else %}
+<section class="panel"><p class="empty-state">برای مشاهدهٔ اطلاعات مالی، پروندهٔ دانشجویی را انتخاب کنید.</p></section>
+{% endif %}
+{% endblock %}

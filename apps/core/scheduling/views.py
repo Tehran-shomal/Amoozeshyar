@@ -4,6 +4,8 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_GET
 
+from apps.core.api import error_response
+from apps.core.models import Term
 from apps.core.scheduling.services import get_active_term, list_offerings
 
 
@@ -22,15 +24,39 @@ def _term_payload(term, now):
     }
 
 
+def _authentication_error(request):
+    """Keep portal read endpoints private to authenticated sessions."""
+    if request.user.is_authenticated:
+        return None
+    return error_response(
+        "authentication_required", "Authentication is required.", 401
+    )
+
+
 @require_GET
 def active_term_view(request):
+    authentication_error = _authentication_error(request)
+    if authentication_error:
+        return authentication_error
+
     term = get_active_term()
     return JsonResponse({"term": _term_payload(term, timezone.now())})
 
 
 @require_GET
 def offerings_view(request):
-    offerings = list_offerings()
+    authentication_error = _authentication_error(request)
+    if authentication_error:
+        return authentication_error
+
+    term_code = request.GET.get("term")
+    if term_code:
+        term = Term.objects.filter(term_code=term_code).first()
+        if term is None:
+            return error_response("term_not_found", "The requested term does not exist.", 404)
+    else:
+        term = None
+    offerings = list_offerings(term)
     payload = [
         {
             "id": offering.pk,
