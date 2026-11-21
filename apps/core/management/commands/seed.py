@@ -249,21 +249,70 @@ class Command(BaseCommand):
                                 date(2002, 1, 15), "تهران", "female")
         s_person2 = self.person("student2", "محمد", "حسینی", "0010000005",
                                 date(2001, 11, 3), "مشهد", "male")
+        # --------------------------------------------------------------
+    # نقش‌ها و حساب‌های کاربری
+    # --------------------------------------------------------------
 
-        # نقش‌ها و حساب‌های کاربری
-        role_student = self.make(m.Role, {"role_name": "دانشجو"}, description="دسترسی دانشجو")
-        role_teacher = self.make(m.Role, {"role_name": "استاد"}, description="دسترسی استاد")
+        ROLE_DEFINITIONS = [
+            ("student", "دانشجو", "دسترسی دانشجو"),
+            ("professor", "استاد", "دسترسی استاد"),
+            ("admin", "مدیر", "مدیریت کامل سامانه"),
+            ("education_officer", "کارشناس آموزش", "مدیریت امور آموزشی"),
+            ("student_affairs_officer", "کارشناس امور دانشجویی", "مدیریت امور دانشجویان"),
+            ("finance_officer", "کارشناس مالی و شهریه", "مدیریت امور مالی و شهریه"),
+            ("exam_officer", "مسئول امتحانات", "مدیریت امتحانات"),
+            ("attendance_officer", "مسئول حضور و غیاب", "مدیریت حضور و غیاب"),
+            ("department_manager", "مدیر گروه آموزشی", "مدیریت گروه آموزشی"),
+            ("faculty_manager", "رئیس دانشکده", "مدیریت دانشکده"),
+            ("scholarship_officer", "کارشناس بورسیه", "مدیریت بورسیه‌ها"),
+            ("counselor", "مشاور دانشجویی", "مدیریت مشاوره دانشجویان"),
+            ("internship_officer", "مسئول کارآموزی", "مدیریت کارآموزی"),
+            ("thesis_officer", "مسئول پایان‌نامه", "مدیریت پایان‌نامه‌ها"),
+            ("support_officer", "پشتیبان سامانه", "پشتیبانی سامانه"),
+        ]
 
+        roles = {}
+
+        for role_code, role_name, description in ROLE_DEFINITIONS:
+
+            role, created = m.Role.objects.get_or_create(
+                role_name=role_name,
+                defaults={
+                    "description": description,
+                    "is_active": True,
+                },
+            )
+
+            if created:
+                self.created["Role"] = self.created.get("Role", 0) + 1
+            else:
+                role.description = description
+                role.is_active = True
+                role.save(update_fields=["description", "is_active"])
+
+            roles[role_code] = role
+
+        role_student = roles["student"]
+        role_teacher = roles["professor"]
+
+        # حساب کاربری استاد
         ua_teacher = self.make(
-            m.UserAccount, {"username": "ua_teacher1"},
-            person=t_person1, role=role_teacher,
+            m.UserAccount,
+            {"username": "ua_teacher1"},
+            person=t_person1,
+            role=role_teacher,
             password=make_password(self.default_password),
         )
+
+        # حساب کاربری دانشجو
         ua_student = self.make(
-            m.UserAccount, {"username": "ua_student1"},
-            person=s_person1, role=role_student,
+            m.UserAccount,
+            {"username": "ua_student1"},
+            person=s_person1,
+            role=role_student,
             password=make_password(self.default_password),
         )
+
 
         # دانشکده، گروه، رشته
         fac_eng = self.make(m.Faculty, {"faculty_code": "ENG"}, faculty_name="دانشکده فنی و مهندسی")
@@ -289,25 +338,44 @@ class Command(BaseCommand):
             hire_date=date(2010, 9, 1),
         )
 
+        # ساخت دانشجویان به‌صورت سازگار با رکوردهای موجود
+        # جست‌وجو با person و educational_level انجام می‌شود
+        # تا رکورد تکراری برای یک شخص و مقطع ایجاد نشود.
+
         student1 = self.make(
-            m.Student, {"student_code": "4011001"},
-            person=s_person1, field=field_ce,
-            educational_level=self.k("educational_level", "bachelor"),
+            m.Student,
+            {
+                "person": s_person1,
+                "educational_level": self.k("educational_level", "bachelor"),
+            },
+            student_code="4011001",
+            field=field_ce,
             application_date=date(2022, 9, 23),
             status=self.k("student_status", "active"),
             admission_type=self.k("admission_type", "with_exam"),
-            previous_term_gpa=Decimal("17.50"), total_gpa=Decimal("16.80"),
-            passed_units=60, tuition_debt=Decimal("0"), completed_terms=4,
+            previous_term_gpa=Decimal("17.50"),
+            total_gpa=Decimal("16.80"),
+            passed_units=60,
+            tuition_debt=Decimal("0"),
+            completed_terms=4,
         )
+
         student2 = self.make(
-            m.Student, {"student_code": "4011002"},
-            person=s_person2, field=field_am,
-            educational_level=self.k("educational_level", "bachelor"),
+            m.Student,
+            {
+                "person": s_person2,
+                "educational_level": self.k("educational_level", "bachelor"),
+            },
+            student_code="4011002",
+            field=field_am,
             application_date=date(2022, 9, 23),
             status=self.k("student_status", "probation"),
             admission_type=self.k("admission_type", "without_exam"),
-            previous_term_gpa=Decimal("11.25"), total_gpa=Decimal("11.90"),
-            passed_units=40, tuition_debt=Decimal("5000000"), completed_terms=4,
+            previous_term_gpa=Decimal("11.25"),
+            total_gpa=Decimal("11.90"),
+            passed_units=40,
+            tuition_debt=Decimal("5000000"),
+            completed_terms=4,
         )
 
         # دروس و چارت
@@ -384,8 +452,8 @@ class Command(BaseCommand):
             {"lesson": lesson_prog, "term": term1, "teacher": teacher1},
             capacity=40,
             day_of_week=self.k("day_of_week", "saturday"),
-            start_time=time(8, 0), end_time=time(10, 0), classroom=room1,
-            exam_date=today + 60 * day, exam_time=time(9, 0), is_active=True,
+            start_time=time(10, 0), end_time=time(12, 0), classroom=room1,
+            exam_date=today + 60 * day, exam_time=time(11, 0), is_active=True,
         )
         offering2 = self.make(
             m.CourseOffering,
@@ -660,15 +728,71 @@ class Command(BaseCommand):
             is_read=True, read_at=now - day,
         )
 
+        # تنظیمات پایه سامانه
+        # get_or_create در متد make باعث می‌شود مقادیر موجود بازنویسی نشوند.
+
         self.make(
-            m.SystemSetting, {"setting_key": "max_units_per_term"},
-            setting_value="20", data_type=self.k("data_type", "integer"),
-            description="سقف واحد مجاز در هر ترم", updated_by=ua_teacher,
+            m.SystemSetting,
+            {"setting_key": "max_units_per_term"},
+            setting_value="20",
+            data_type=self.k("data_type", "integer"),
+            description="حداکثر تعداد واحد مجاز در هر ترم",
         )
+
         self.make(
-            m.SystemSetting, {"setting_key": "university_name"},
-            setting_value="دانشگاه نمونه", data_type=self.k("data_type", "string"),
+            m.SystemSetting,
+            {"setting_key": "min_units_per_term"},
+            setting_value="12",
+            data_type=self.k("data_type", "integer"),
+            description="حداقل تعداد واحد پیشنهادی در هر ترم",
+        )
+
+        self.make(
+            m.SystemSetting,
+            {"setting_key": "minimum_passing_grade"},
+            setting_value="10",
+            data_type=self.k("data_type", "decimal"),
+            description="حداقل نمره قبولی پیش‌فرض",
+        )
+
+        self.make(
+            m.SystemSetting,
+            {"setting_key": "university_name"},
+            setting_value="دانشگاه نمونه",
+            data_type=self.k("data_type", "string"),
             description="نام دانشگاه برای نمایش در سامانه",
+        )
+
+        self.make(
+            m.SystemSetting,
+            {"setting_key": "default_language"},
+            setting_value="fa",
+            data_type=self.k("data_type", "string"),
+            description="زبان پیش‌فرض سامانه",
+        )
+
+        self.make(
+            m.SystemSetting,
+            {"setting_key": "default_timezone"},
+            setting_value="Asia/Tehran",
+            data_type=self.k("data_type", "string"),
+            description="منطقه زمانی پیش‌فرض سامانه",
+        )
+
+        self.make(
+            m.SystemSetting,
+            {"setting_key": "default_page_size"},
+            setting_value="20",
+            data_type=self.k("data_type", "integer"),
+            description="تعداد پیش‌فرض رکوردها در هر صفحه",
+        )
+
+        self.make(
+            m.SystemSetting,
+            {"setting_key": "max_page_size"},
+            setting_value="100",
+            data_type=self.k("data_type", "integer"),
+            description="حداکثر تعداد مجاز رکوردها در هر صفحه",
         )
 
         self.make(
@@ -700,12 +824,16 @@ class Command(BaseCommand):
         group2.members.add(s_person1)
 
         self.make(
-            m.ParkingPasses, {"parking_pass_code": "PK-1001"},
-            owner=t_person1, expiration_date=today + 180 * day, charge=500000,
+            m.ParkingPasses, {"owner": t_person1},
+            parking_pass_code="PK-1001",
+            expiration_date=today + 180 * day,
+            charge=500000,
         )
         self.make(
-            m.ParkingPasses, {"parking_pass_code": "PK-1002"},
-            owner=s_person1, expiration_date=today + 30 * day, charge=100000,
+            m.ParkingPasses, {"owner": s_person1},
+            parking_pass_code="PK-1002",
+            expiration_date=today + 30 * day,
+            charge=100000,
         )
 
         # تیکت‌ها

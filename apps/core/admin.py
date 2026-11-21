@@ -2,7 +2,8 @@ import csv
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.forms import UserCreationForm
+#from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import AdminUserCreationForm
 from django.db.models import Count
 from django.http import HttpResponse
 from django.utils.html import format_html
@@ -30,11 +31,22 @@ admin.site.index_title = "به سیستم مدیریت آموزشیار خوش �
 # ==========================================
 # ۱. شخص و کاربران
 # ==========================================
-class PersonCreationForm(UserCreationForm):
+#class PersonCreationForm(UserCreationForm):
+#    class Meta:
+#        model = Person
+#        fields = ("username", "first_name", "last_name", "email", "national_id", "birth_date", "birth_place")
+class PersonCreationForm(AdminUserCreationForm):
     class Meta:
         model = Person
-        fields = ("username", "first_name", "last_name", "email", "national_id", "birth_date", "birth_place")
-
+        fields = (
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "national_id",
+            "birth_date",
+            "birth_place",
+        )
 
 @admin.register(Person)
 class PersonAdmin(UserAdmin):

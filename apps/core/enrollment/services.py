@@ -1,10 +1,13 @@
 """Transactional course registration and drop rules (ADR-002/003, #132/#133)."""
 
+from decimal import Decimal
+
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
 
 from apps.core.api import APIError
+from apps.core.system_settings.reader import get_system_setting
 from apps.core.models import (
     Constant,
     CourseOffering,
@@ -16,7 +19,6 @@ from apps.core.models import (
 )
 
 
-PASSING_GRADE = 10
 INACTIVE_ENROLLMENT_CODES = ("dropped", "cancelled", "canceled")
 # The legacy root seed used `suspended` for the Persian probation label.
 PROBATION_STATUS_CODES = {"probation", "suspended"}
@@ -56,10 +58,16 @@ def _is_open(start, end, now):
 
 
 def _has_passed_lesson(student, lesson):
+    minimum_passing_grade = get_system_setting(
+        "minimum_passing_grade",
+        default=Decimal("10"),
+        cast=Decimal,
+    )
+
     grades = Grade.objects.filter(
         enrollment__student=student,
         enrollment__offering__lesson=lesson,
-        score__gte=PASSING_GRADE,
+        score__gte=minimum_passing_grade,
     )
     return grades.filter(
         Q(enrollment__status__isnull=True)
