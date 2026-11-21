@@ -2,6 +2,7 @@
 from datetime import date, timedelta
 from contextlib import redirect_stdout
 from io import StringIO
+import json
 from django.test import TestCase
 from django.test import SimpleTestCase
 from django.test import tag
@@ -72,51 +73,59 @@ class LiveFrontendTests(TestCase):
         for slug in PAGES:
             response = self.client.get(f"/portal/{slug}/")
             self.assertEqual(response.status_code, 200, slug)
+            self.assertContains(response, 'data-portal-loading="true"', msg_prefix=slug)
+            self.assertNotContains(response, self.users[0].full_name, msg_prefix=slug)
             self.assertNotContains(response, "ali.mohammadi@example.edu")
-        self.assertContains(self.client.get("/"), "دانشجو0")
+            api_response = self.client.get(f"/api/portal/pages/{slug}/")
+            self.assertEqual(api_response.status_code, 200, slug)
+            self.assertNotIn("ali.mohammadi@example.edu", api_response.json()["html"])
+        self.assertNotContains(self.client.get("/"), "دانشجو0")
+        self.assertIn("دانشجو0", self.client.get("/api/portal/pages/home/").json()["html"])
 
     def test_student_and_exam_cards_use_page_specific_real_data_templates(self):
         self.client.force_login(self.users[0])
 
-        student_card = self.client.get("/portal/student-card/")
-        self.assertContains(student_card, 'class="digital-card"')
-        self.assertContains(student_card, self.users[0].full_name)
-        self.assertContains(student_card, "S0")
-        self.assertNotContains(student_card, "23456789")
+        student_card = self.client.get("/api/portal/pages/student-card/").json()["html"]
+        self.assertIn('class="digital-card"', student_card)
+        self.assertIn(self.users[0].full_name, student_card)
+        self.assertIn("S0", student_card)
+        self.assertNotIn("23456789", student_card)
 
-        exam_card = self.client.get("/portal/exam-card/")
-        self.assertContains(exam_card, "exam-card-student")
-        self.assertContains(exam_card, "exam-card-table")
-        self.assertContains(exam_card, "صدور کارت رسمی در دسترس نیست")
-        self.assertNotContains(exam_card, "data-demo-action")
-        self.assertNotContains(exam_card, "سالن ۱")
+        exam_card = self.client.get("/api/portal/pages/exam-card/").json()["html"]
+        self.assertIn("exam-card-student", exam_card)
+        self.assertIn("exam-card-table", exam_card)
+        self.assertIn("صدور کارت رسمی در دسترس نیست", exam_card)
+        self.assertNotIn("data-demo-action", exam_card)
+        self.assertNotIn("سالن ۱", exam_card)
 
     def test_only_the_current_navigation_group_is_open(self):
         self.client.force_login(self.users[0])
-        response = self.client.get("/portal/student-card/")
-        details = re.findall(rb'<details class="nav-group"([^>]*)>', response.content)
+        response = self.client.get("/api/portal/pages/student-card/")
+        details = re.findall(rb'<details class="nav-group"([^>]*)>', response.json()["html"].encode())
         opened = [attrs for attrs in details if re.search(rb"\bopen\b", attrs)]
         self.assertEqual(len(opened), 1)
 
     def test_academic_activities_use_a_real_profile_summary_and_link_grid(self):
         self.client.force_login(self.users[0])
-        response = self.client.get("/portal/academic-activities/")
-        self.assertContains(response, self.users[0].full_name)
-        self.assertContains(response, "activity-summary-strip")
-        self.assertContains(response, "activity-links-grid")
-        self.assertContains(response, "واحدهای فعال")
+        response = self.client.get("/api/portal/pages/academic-activities/")
+        html = response.json()["html"]
+        self.assertIn(self.users[0].full_name, html)
+        self.assertIn("activity-summary-strip", html)
+        self.assertIn("activity-links-grid", html)
+        self.assertIn("واحدهای فعال", html)
 
     def test_payments_do_not_leak_another_student(self):
         for i, student in enumerate(self.students):
             m.Payment.objects.create(student=student, term=self.term, amount=100+i,
                 payment_date=timezone.now(), tracking_code=f"PRIVATE-{i}")
         self.client.force_login(self.users[0])
-        response = self.client.get("/portal/payments/")
-        self.assertContains(response, "finance-summary-strip")
-        self.assertContains(response, "finance-transactions-panel")
-        self.assertContains(response, "PRIVATE-0")
-        self.assertNotContains(response, "PRIVATE-1")
-        self.assertEqual(self.client.get("/portal/payments/?student_code=S1").status_code, 403)
+        response = self.client.get("/api/portal/pages/payments/")
+        html = response.json()["html"]
+        self.assertIn("finance-summary-strip", html)
+        self.assertIn("finance-transactions-panel", html)
+        self.assertIn("PRIVATE-0", html)
+        self.assertNotIn("PRIVATE-1", html)
+        self.assertEqual(self.client.get("/api/portal/pages/payments/?student_code=S1").status_code, 403)
 
     def test_request_submission_assigns_owner_and_pending_on_server(self):
         self.client.force_login(self.users[0])
@@ -131,25 +140,79 @@ class LiveFrontendTests(TestCase):
     def test_no_student_profile_has_explicit_empty_state(self):
         self.client.force_login(self.users[0])
         m.Student.objects.filter(pk=self.students[0].pk).delete()
-        response = self.client.get("/")
+        response = self.client.get("/api/portal/pages/home/")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "پروندهٔ دانشجویی")
+        self.assertIn("پروندهٔ دانشجویی", response.json()["html"])
 
     def test_section_breadcrumb_uses_persian_labels(self):
         self.client.force_login(self.users[0])
-        response = self.client.get("/portal/transcript/")
+        response = self.client.get("/api/portal/pages/transcript/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'aria-label="مسیر صفحه"')
-        self.assertContains(response, "داشبورد")
-        self.assertNotContains(response, "????")
+        self.assertIn('aria-label="مسیر صفحه"', response.json()["html"])
+        self.assertIn("داشبورد", response.json()["html"])
+        self.assertNotIn("????", response.json()["html"])
 
     def test_payment_page_does_not_fake_a_gateway(self):
         self.client.force_login(self.users[0])
-        response = self.client.get("/portal/secure-payment/")
-        self.assertContains(response, "درگاه")
-        self.assertContains(response, "finance-debt-panel")
+        response = self.client.get("/api/portal/pages/secure-payment/")
+        self.assertIn("درگاه", response.json()["html"])
+        self.assertIn("finance-debt-panel", response.json()["html"])
         self.assertEqual(m.Payment.objects.count(), 0)
+
+    def test_portal_page_api_returns_database_backed_html_and_profile_metadata(self):
+        self.client.force_login(self.users[0])
+
+        response = self.client.get("/api/portal/pages/transcript/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["page"], "transcript")
+        self.assertEqual(response.json()["profile"]["student_code"], "S0")
+        self.assertIn(self.users[0].full_name, response.json()["html"])
+        self.assertIn('class="portal-shell"', response.json()["html"])
+
+    def test_portal_page_api_returns_json_authentication_error(self):
+        response = self.client.get("/api/portal/pages/transcript/")
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["error"]["code"], "authentication_required")
+
+    def test_portal_page_api_keeps_student_profiles_scoped(self):
+        self.client.force_login(self.users[0])
+
+        response = self.client.get("/api/portal/pages/transcript/?student_code=S1")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()["error"]["code"], "permission_denied")
+
+    def test_portal_page_api_returns_bound_form_errors_as_json(self):
+        self.client.force_login(self.users[0])
+
+        response = self.client.post(
+            "/api/portal/pages/financial-aid/?student_code=S0&term=T1",
+            data=json.dumps({"scholarship_type": "", "scholarship_reason": "درخواست واقعی"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"]["code"], "validation_error")
+        self.assertIn("درخواست واقعی", response.json()["html"])
+        self.assertIn("errorlist", response.json()["html"])
+
+    def test_portal_page_api_submits_valid_existing_form(self):
+        self.client.force_login(self.users[0])
+
+        response = self.client.post(
+            "/api/portal/pages/financial-aid/?student_code=S0&term=T1",
+            data=json.dumps({"scholarship_type": "وام", "scholarship_reason": "درخواست واقعی"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["redirect"], "/portal/financial-aid/?student_code=S0&term=T1")
+        self.assertTrue(m.ScholarshipApplication.objects.filter(
+            scholarship_applicant=self.students[0], scholarship_type="وام"
+        ).exists())
 
 
 @tag("seeded_frontend")
@@ -166,21 +229,21 @@ class SeededFrontendSmokeTests(TestCase):
         student_user = m.Person.objects.get(username="student1")
         student = m.Student.objects.get(person=student_user)
         self.client.force_login(student_user)
-        response = self.client.get("/")
+        response = self.client.get("/api/portal/pages/home/")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, student_user.full_name)
+        self.assertIn(student_user.full_name, response.json()["html"])
         for slug in PAGES:
-            response = self.client.get(f"/portal/{slug}/")
+            response = self.client.get(f"/api/portal/pages/{slug}/")
             self.assertEqual(response.status_code, 200, slug)
 
         enrollment = m.Enrollment.objects.filter(
             student=student, offering__term__is_active=True
         ).select_related("offering__lesson").first()
         self.assertIsNotNone(enrollment)
-        self.assertContains(self.client.get("/portal/student-card/"), student.student_code)
-        self.assertContains(
-            self.client.get("/portal/exam-card/"), enrollment.offering.lesson.title
-        )
+        student_card = self.client.get("/api/portal/pages/student-card/").json()["html"]
+        exam_card = self.client.get("/api/portal/pages/exam-card/").json()["html"]
+        self.assertIn(student.student_code, student_card)
+        self.assertIn(enrollment.offering.lesson.title, exam_card)
 
     def test_seeded_student_can_submit_owned_requests(self):
         student_user = m.Person.objects.get(username="student1")

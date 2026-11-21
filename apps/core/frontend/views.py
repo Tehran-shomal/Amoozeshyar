@@ -108,8 +108,46 @@ class PortalView(LoginRequiredMixin, View):
             data["dashboard"] = dashboard(student, term, request.user)
         return data
 
+    def shell_context(self, request, slug=None):
+        """Build presentation-only context; all record data comes from the page API."""
+        if slug is not None and slug not in PAGES:
+            raise Http404("این صفحه وجود ندارد.")
+        section = dict(PAGES[slug]) if slug else {}
+        active_slug = slug or "home"
+        query = {}
+        for key in ("student_code", "term"):
+            value = request.GET.get(key)
+            if value:
+                query[key] = value
+        return {
+            "page_title": section.get("title", "داشبورد"),
+            "section": section,
+            "owner": section.get("owner", "mobina"),
+            "module_template": section.get("template", "core/live_content.html"),
+            "module_js": section.get("script"),
+            "active_slug": active_slug,
+            "is_home": slug is None,
+            "nav_groups": NAV_GROUPS,
+            "sidebar_footer": SIDEBAR_FOOTER,
+            "profiles": [],
+            "terms": [],
+            "term_options": [],
+            "term_display_code": "در حال دریافت…",
+            "selected_term": None,
+            "current_student": None,
+            "query_suffix": "?" + urlencode(query) if query else "",
+            "api_profile": {},
+            "student": {
+                "name": "دانشجوی گرامی",
+                "avatar_initials": "د",
+                "student_code": "در حال دریافت…",
+                "term": "در حال دریافت…",
+            },
+            "portal_loading": True,
+        }
+
     def get(self, request, slug=None):
-        context = self.context(request, slug)
+        context = self.shell_context(request, slug)
         return render(request, "core/section.html" if slug else "mobina/home.html", context)
 
     def post(self, request, slug=None):

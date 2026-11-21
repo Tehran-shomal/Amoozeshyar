@@ -7,6 +7,12 @@ window.PortalUI = {
             account_inactive: "حساب غیرفعال است.",
             authentication_required: "نشست پایان یافته است؛ دوباره وارد شوید.",
             permission_denied: "حساب شما اجازهٔ انجام این عملیات را ندارد.",
+            page_not_found: "صفحهٔ درخواستی پیدا نشد.",
+            page_data_not_found: "اطلاعات این صفحه پیدا نشد.",
+            term_not_found: "نیمسال انتخاب‌شده پیدا نشد.",
+            database_unavailable: "پایگاه داده در دسترس نیست.",
+            invalid_form_payload: "اطلاعات فرم معتبر نیست.",
+            validation_error: "فرم را بررسی و خطاها را اصلاح کنید.",
             student_profile_not_found: "پروندهٔ دانشجویی پیدا نشد.",
             student_profile_ambiguous: "ابتدا پروندهٔ دانشجویی را انتخاب کنید.",
             registration_window_closed: "بازهٔ انتخاب واحد باز نیست.",
@@ -35,52 +41,217 @@ window.PortalUI = {
         return JSON.parse(document.getElementById("api-profile")?.textContent || "{}");
     }
 };
-document.addEventListener("DOMContentLoaded", () => {
-    // Use the browser's native dialog behavior, including keyboard focus and Escape.
-    const termDialog = document.querySelector("[data-term-dialog]");
-    document.querySelector("[data-term-dialog-open]")?.addEventListener("click", () => {
-        if (termDialog?.showModal) termDialog.showModal();
-    });
-    document.querySelector("[data-term-dialog-close]")?.addEventListener("click", () => termDialog?.close());
-    termDialog?.addEventListener("click", event => {
-        if (event.target === termDialog) termDialog.close();
-    });
+function pageApiUrl(shell) {
+    return shell.dataset.pageApiUrl + window.location.search;
+}
 
-    const toggle = document.querySelector("[data-menu-toggle]");
-    const close = () => { document.body.classList.remove("sidebar-open"); toggle?.setAttribute("aria-expanded", "false"); };
-    toggle?.setAttribute("aria-expanded", "false");
-    toggle?.addEventListener("click", () => {
+function formPayload(form) {
+    const payload = {};
+    for (const [name, value] of new FormData(form).entries()) {
+        if (name === "csrfmiddlewaretoken") continue;
+        if (value instanceof File) continue;
+        if (Object.prototype.hasOwnProperty.call(payload, name)) {
+            payload[name] = Array.isArray(payload[name]) ? [...payload[name], value] : [payload[name], value];
+        } else {
+            payload[name] = value;
+        }
+    }
+    return payload;
+}
+
+function replacePortalShell(html) {
+    const parsed = new DOMParser().parseFromString(html, "text/html");
+    const currentShell = document.querySelector(".portal-shell");
+    const nextShell = parsed.querySelector(".portal-shell");
+    if (!currentShell || !nextShell) throw new Error("The page API did not return a portal shell.");
+
+    const importedShell = document.importNode(nextShell, true);
+    currentShell.replaceWith(importedShell);
+    const currentProfile = document.getElementById("api-profile");
+    const nextProfile = parsed.getElementById("api-profile");
+    if (currentProfile && nextProfile) {
+        currentProfile.replaceWith(document.importNode(nextProfile, true));
+    }
+    document.body.className = parsed.body.className;
+    document.title = parsed.title;
+    document.dispatchEvent(new CustomEvent("portal:content-loaded", {
+        detail: { page: importedShell.dataset.portalPage },
+    }));
+    return importedShell;
+}
+
+function showLoadFailure(shell, error) {
+    shell.dataset.portalLoading = "false";
+    shell.setAttribute("aria-busy", "false");
+    shell.querySelector("[data-page-loading]")?.remove();
+    if (error.code === "authentication_required") {
+        window.location.assign("/login/");
+        return;
+    }
+    window.PortalUI.showStatus(window.PortalUI.errorMessage(error));
+}
+
+function renderOfferings(shell, offerings) {
+    const table = shell.querySelector("[data-offerings-api-table]");
+    const body = table?.querySelector("tbody");
+    if (!body) return;
+
+    const fragment = document.createDocumentFragment();
+    const dayLabels = {
+        saturday: "شنبه", sunday: "یکشنبه", monday: "دوشنبه", tuesday: "سه‌شنبه",
+        wednesday: "چهارشنبه", thursday: "پنجشنبه", friday: "جمعه",
+    };
+    for (const offering of offerings) {
+        const row = document.createElement("tr");
+        const day = dayLabels[String(offering.day_of_week || "").toLowerCase()] || "";
+        const start = String(offering.start_time || "").slice(0, 5);
+        const end = String(offering.end_time || "").slice(0, 5);
+        const units = Number(offering.total_units || 0);
+        const cells = [
+            offering.lesson_code,
+            offering.title,
+            offering.teacher,
+            units,
+            `${day} ${start}–${end}`.trim(),
+            offering.remaining_capacity,
+        ];
+        for (const value of cells) {
+            const cell = document.createElement("td");
+            cell.textContent = value == null ? "—" : String(value);
+            row.append(cell);
+        }
+        const actionCell = document.createElement("td");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "table-action";
+        button.dataset.enrollmentAction = "register";
+        button.dataset.recordId = String(offering.id);
+        button.textContent = "انتخاب درس";
+        actionCell.append(button);
+        row.append(actionCell);
+        fragment.append(row);
+    }
+
+    if (!offerings.length) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 7;
+        cell.className = "empty-state";
+        cell.textContent = "برای این نیمسال درسی ارائه نشده است.";
+        row.append(cell);
+        fragment.append(row);
+    }
+    body.replaceChildren(fragment);
+}
+
+async function loadActiveTerm(shell) {
+    try {
+        const { term } = await window.PortalApi.activeTerm();
+        if (!term) return;
+        shell.dataset.activeTermCode = term.term_code;
+        const button = shell.querySelector("[data-term-dialog-open]");
+        if (button) button.title = `نیمسال فعال: ${term.term_code}`;
+    } catch (error) {
+        window.PortalUI.showStatus(window.PortalUI.errorMessage(error));
+    }
+}
+
+async function loadCourseOfferings(shell) {
+    const table = shell.querySelector("[data-offerings-api-table]");
+    if (!table) return;
+    const selectedTerm = shell.dataset.selectedTermCode || new URLSearchParams(window.location.search).get("term");
+    try {
+        const payload = await window.PortalApi.offerings(selectedTerm || undefined);
+        renderOfferings(shell, payload.offerings || []);
+    } catch (error) {
+        window.PortalUI.showStatus(window.PortalUI.errorMessage(error));
+    }
+}
+
+function bindPortalShell(shell) {
+    const closeSidebar = () => {
+        document.body.classList.remove("sidebar-open");
+        shell.querySelector("[data-menu-toggle]")?.setAttribute("aria-expanded", "false");
+    };
+    shell.querySelector("[data-menu-toggle]")?.addEventListener("click", event => {
         const open = document.body.classList.toggle("sidebar-open");
-        toggle.setAttribute("aria-expanded", String(open));
+        event.currentTarget.setAttribute("aria-expanded", String(open));
     });
-    document.querySelector("[data-sidebar-close]")?.addEventListener("click", close);
-    document.addEventListener("keydown", event => { if (event.key === "Escape") close(); });
-    document.querySelectorAll("[data-table-search]").forEach(input => input.addEventListener("input", () => {
-        input.closest(".panel").querySelectorAll("tbody tr").forEach(row => {
+    shell.querySelector("[data-sidebar-close]")?.addEventListener("click", closeSidebar);
+
+    const dialog = shell.querySelector("[data-term-dialog]");
+    shell.querySelector("[data-term-dialog-open]")?.addEventListener("click", () => dialog?.showModal?.());
+    shell.querySelector("[data-term-dialog-close]")?.addEventListener("click", () => dialog?.close());
+    dialog?.addEventListener("click", event => { if (event.target === dialog) dialog.close(); });
+
+    shell.querySelectorAll("[data-table-search]").forEach(input => input.addEventListener("input", () => {
+        input.closest(".panel")?.querySelectorAll("tbody tr").forEach(row => {
             row.hidden = !row.textContent.toLocaleLowerCase().includes(input.value.trim().toLocaleLowerCase());
         });
     }));
-    document.querySelector("[data-global-search]")?.addEventListener("input", event => {
+    shell.querySelector("[data-global-search]")?.addEventListener("input", event => {
         const needle = event.target.value.trim().toLocaleLowerCase();
-        document.querySelectorAll(".sidebar-nav .nav-link").forEach(link => {
+        shell.querySelectorAll(".sidebar-nav .nav-link").forEach(link => {
             link.hidden = !link.textContent.toLocaleLowerCase().includes(needle);
         });
-        document.querySelectorAll(".nav-group").forEach(group => {
+        shell.querySelectorAll(".nav-group").forEach(group => {
             group.hidden = ![...group.querySelectorAll(".nav-link")].some(link => !link.hidden);
             if (needle && !group.hidden) group.open = true;
         });
     });
-    document.querySelectorAll("[data-api-logout-form]").forEach(form => form.addEventListener("submit", async event => {
+    shell.querySelectorAll("[data-print]").forEach(button => button.addEventListener("click", () => window.print()));
+
+    shell.addEventListener("submit", async event => {
+        const form = event.target.closest("form");
+        if (!form) return;
+        if (form.matches("[data-api-logout-form]")) {
+            event.preventDefault();
+            const button = form.querySelector("button");
+            button.disabled = true;
+            try {
+                await window.PortalApi.logout();
+                window.location.assign(form.dataset.loginRedirect);
+            } catch (error) {
+                window.PortalUI.showStatus(window.PortalUI.errorMessage(error));
+                button.disabled = false;
+            }
+            return;
+        }
+        if (!form.matches("form.live-form")) return;
         event.preventDefault();
-        const button = form.querySelector("button");
-        button.disabled = true;
-        try { await window.PortalApi.logout(); window.location.assign(form.dataset.loginRedirect); }
-        catch (error) { window.PortalUI.showStatus(window.PortalUI.errorMessage(error)); }
-        finally { button.disabled = false; }
-    }));
-    document.querySelectorAll("[data-print]").forEach(button => button.addEventListener("click", () => window.print()));
-    // Prevent repeated clicks while the native POST and redirect complete.
-    document.querySelectorAll("form.live-form").forEach(form => form.addEventListener("submit", () => {
-        form.querySelectorAll('[type="submit"]').forEach(button => button.disabled = true);
-    }));
+        const buttons = [...form.querySelectorAll('[type="submit"]')];
+        buttons.forEach(button => { button.disabled = true; });
+        try {
+            const result = await window.PortalApi.submitPage(pageApiUrl(shell), formPayload(form));
+            if (result.redirect) window.location.assign(result.redirect);
+        } catch (error) {
+            if (error.payload?.html) {
+                const replacement = replacePortalShell(error.payload.html);
+                bindPortalShell(replacement);
+                void loadActiveTerm(replacement);
+                void loadCourseOfferings(replacement);
+            }
+            window.PortalUI.showStatus(window.PortalUI.errorMessage(error));
+            buttons.forEach(button => { button.disabled = false; });
+        }
+    });
+}
+
+async function loadPortalPage() {
+    const shell = document.querySelector(".portal-shell[data-page-api-url]");
+    if (!shell) return;
+    try {
+        const page = await window.PortalApi.portalPage(pageApiUrl(shell));
+        const loadedShell = replacePortalShell(page.html);
+        bindPortalShell(loadedShell);
+        void loadActiveTerm(loadedShell);
+        void loadCourseOfferings(loadedShell);
+    } catch (error) {
+        showLoadFailure(shell, error);
+    }
+}
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape") document.body.classList.remove("sidebar-open");
 });
+document.addEventListener("DOMContentLoaded", loadPortalPage);

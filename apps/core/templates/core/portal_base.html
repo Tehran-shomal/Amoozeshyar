@@ -6,7 +6,10 @@
 {% block content %}
 {{ api_profile|json_script:"api-profile" }}
 <!-- پوستهٔ مشترک صفحه‌های پورتال؛ عنوان‌ها و پیوندها از داده‌های PDF می‌آیند. -->
-<div class="portal-shell">
+<div class="portal-shell" data-page-api-url="/api/portal/pages/{{ active_slug }}/"
+     data-portal-page="{{ active_slug }}" data-portal-loading="{{ portal_loading|yesno:'true,false' }}"
+     data-selected-term-code="{{ selected_term.term_code|default:'' }}"
+     aria-busy="{{ portal_loading|yesno:'true,false' }}">
     <aside class="sidebar" id="portal-sidebar" aria-label="منوی اصلی">
         <a class="brand" href="{% url 'core:home' %}{{ query_suffix }}">
             <span class="brand-copy">
@@ -53,6 +56,12 @@
     </aside>
 
     <div class="sidebar-backdrop" data-sidebar-close aria-hidden="true"></div>
+
+    {% if portal_loading %}
+        <div class="portal-page-loading" data-page-loading role="status" aria-live="polite">
+            در حال دریافت اطلاعات از سامانه…
+        </div>
+    {% endif %}
 
     <div class="portal-main">
         <div class="inline-notice" data-api-status role="status" aria-live="polite" hidden>

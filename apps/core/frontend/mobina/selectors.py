@@ -11,19 +11,14 @@ def build(slug, student, term, request):
         return {"tables": [table("چارت انتخاب واحد", ["درس", "نوع", "ترم پیشنهادی", "واحد"],
             ((x.lesson.title, x.requirement_type, x.recommended_term, x.calculated_units)
              for x in m.Curriculum.objects.filter(field=student.field, is_active=True).select_related("lesson", "requirement_type")))]}
-    offers = m.CourseOffering.objects.filter(term=term, is_active=True).select_related("lesson", "teacher__person", "day_of_week", "classroom") if term else []
     available = table("دروس ارائه‌شده", ["کد", "درس", "استاد", "واحد", "زمان", "ظرفیت باقی‌مانده"], [])
     available["has_actions"] = True
-    for offer in offers:
-        available["rows"].append({"cells": [offer.lesson.lesson_code, offer.lesson.title,
-            offer.teacher.person.full_name, offer.lesson.theory_units+offer.lesson.practical_units,
-            f"{offer.day_of_week or ''} {offer.start_time:%H:%M}–{offer.end_time:%H:%M}", offer.remaining_capacity],
-            "id": offer.pk, "action": "register", "action_label": "انتخاب درس"})
+    # The scheduling API owns the available-offerings list; keep only the empty table shape here.
     selected = active_enrollment_rows(student, term)
     selected_units = sum(row.offering.lesson.theory_units + row.offering.lesson.practical_units
                          for row in selected)
     return {"tables": [enrollments_table(student, term, queryset=selected), available],
-            "selected_units": selected_units, "available_offerings": offers}
+            "selected_units": selected_units, "available_offerings": []}
 
 
 def dashboard(student, term, person):

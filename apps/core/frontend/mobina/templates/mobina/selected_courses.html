@@ -24,7 +24,7 @@
 {% for table in tables %}
 <section class="panel data-panel course-list-panel{% if forloop.first %} course-current-panel{% else %} course-offerings-panel{% endif %}">
     <div class="panel-heading"><h2>{{ table.title }}</h2></div>
-    <div class="table-wrap"><table class="data-table">
+    <div class="table-wrap"><table class="data-table"{% if forloop.last %} data-offerings-api-table{% endif %}>
         <thead><tr>{% for column in table.columns %}<th scope="col">{{ column }}</th>{% endfor %}{% if table.has_actions %}<th scope="col">عملیات</th>{% endif %}</tr></thead>
         <tbody>
             {% for row in table.rows %}

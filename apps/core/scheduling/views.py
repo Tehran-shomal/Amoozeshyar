@@ -4,6 +4,8 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_GET
 
+from apps.core.api import error_response
+from apps.core.models import Term
 from apps.core.scheduling.services import get_active_term, list_offerings
 
 
@@ -30,7 +32,14 @@ def active_term_view(request):
 
 @require_GET
 def offerings_view(request):
-    offerings = list_offerings()
+    term_code = request.GET.get("term")
+    if term_code:
+        term = Term.objects.filter(term_code=term_code).first()
+        if term is None:
+            return error_response("term_not_found", "The requested term does not exist.", 404)
+    else:
+        term = None
+    offerings = list_offerings(term)
     payload = [
         {
             "id": offering.pk,

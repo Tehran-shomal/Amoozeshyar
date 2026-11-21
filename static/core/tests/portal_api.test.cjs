@@ -124,6 +124,42 @@ test("testExistingEndpointsUseTheirDocumentedPaths", async () => {
     }
 });
 
+test("testPortalPagesUseJsonAndTermFilteredOfferingsUseSchedulingApi", async () => {
+    const calls = [];
+    const fetchImpl = async (url, options = {}) => {
+        calls.push({ url, options });
+        if (url === "/api/accounts/csrf/") return jsonResponse({ csrf_token: "csrf-page" });
+        if (url === "/api/portal/pages/transcript/?student_code=S1") {
+            return jsonResponse({ page: "transcript", html: "<main>page</main>" });
+        }
+        if (url === "/api/portal/pages/financial-aid/?student_code=S1") {
+            return jsonResponse(
+                { error: { code: "validation_error" }, html: "<main>bound form</main>" },
+                400,
+            );
+        }
+        if (url === "/api/scheduling/offerings/?term=T-1") {
+            return jsonResponse({ offerings: [{ id: 27 }] });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+    };
+    const client = apiModule().createPortalApi({ fetchImpl, cookieReader: () => "" });
+
+    const page = await client.portalPage("/api/portal/pages/transcript/?student_code=S1");
+    assert.equal(page.page, "transcript");
+    await assert.rejects(
+        client.submitPage("/api/portal/pages/financial-aid/?student_code=S1", { scholarship_type: "" }),
+        (error) => error.payload.error.code === "validation_error"
+            && error.payload.html.includes("bound form"),
+    );
+    const offerings = await client.offerings("T-1");
+    assert.equal(offerings.offerings[0].id, 27);
+    assert.equal(calls[1].options.method, "GET");
+    assert.equal(calls[2].options.method, "POST");
+    assert.equal(calls[2].options.headers["X-CSRFToken"], "csrf-page");
+    assert.deepEqual(JSON.parse(calls[2].options.body), { scholarship_type: "" });
+});
+
 test("testNormalizeDigitsAndMatchCode", () => {
     const api = apiModule();
     assert.equal(api.normalizeDigits("۱۱۲٠۸۴"), "112084");

@@ -121,6 +121,7 @@
         const error = new Error(detail.message || `API request failed (${status})`);
         error.code = detail.code || "api_error";
         error.status = status;
+        error.payload = payload;
         return error;
     }
 
@@ -200,7 +201,14 @@
                 return result;
             },
             activeTerm: () => request("/api/scheduling/active-term/"),
-            offerings: () => request("/api/scheduling/offerings/"),
+            offerings: (termCode) => {
+                const query = termCode
+                    ? `?term=${encodeURIComponent(String(termCode))}`
+                    : "";
+                return request(`/api/scheduling/offerings/${query}`);
+            },
+            portalPage: (url) => request(url),
+            submitPage: (url, payload) => request(url, { method: "POST", payload }),
             register: (offeringId, payload = {}) => {
                 const id = Number(offeringId);
                 if (!Number.isInteger(id) || id <= 0) {

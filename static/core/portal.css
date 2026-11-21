@@ -218,6 +218,22 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .online-dot, .status-dot, .notification-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #58cf9a; }
 
 .portal-main { min-width: 0; }
+.portal-shell[data-portal-loading="true"] .portal-main > .topbar,
+.portal-shell[data-portal-loading="true"] .portal-main > .workspace { visibility: hidden; }
+.portal-page-loading {
+    position: fixed;
+    z-index: 80;
+    top: 50%;
+    left: 50%;
+    max-width: calc(100vw - 32px);
+    padding: 15px 22px;
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    color: var(--ink-700);
+    background: var(--surface);
+    box-shadow: var(--shadow-soft);
+}
 .topbar {
     position: sticky;
     top: 0;

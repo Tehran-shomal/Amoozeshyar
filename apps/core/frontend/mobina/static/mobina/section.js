@@ -19,11 +19,18 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) { ui.showStatus(ui.errorMessage(error), "[data-login-status]"); }
         finally { button.disabled = false; }
     });
-    document.querySelectorAll('[data-enrollment-action="register"]').forEach(button => {
-        button.addEventListener("click", async () => {
-            button.disabled = true;
-            try { await api.register(Number(button.dataset.recordId), ui.profile()); window.location.reload(); }
-            catch (error) { ui.showStatus(ui.errorMessage(error)); button.disabled = false; }
-        });
-    });
+});
+
+// Course rows arrive from the scheduling API after this script has loaded.
+document.addEventListener("click", async event => {
+    const button = event.target.closest('[data-enrollment-action="register"]');
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    try {
+        await window.PortalApi.register(Number(button.dataset.recordId), window.PortalUI.profile());
+        window.location.reload();
+    } catch (error) {
+        window.PortalUI.showStatus(window.PortalUI.errorMessage(error));
+        button.disabled = false;
+    }
 });

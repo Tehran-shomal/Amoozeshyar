@@ -20,8 +20,8 @@ test("every team declares real page ownership without placeholder assets", () =>
 test("registration and drop flows call the APIs with database record IDs", () => {
     const registration = fs.readFileSync(path.join(root, "mobina/static/mobina/section.js"), "utf8");
     const drop = fs.readFileSync(path.join(root, "shaghayegh/static/shaghayegh/section.js"), "utf8");
-    assert.match(registration, /api\.register\(Number\(button\.dataset\.recordId\)/);
-    assert.match(drop, /api\.drop\(Number\(activeButton\.dataset\.recordId\)/);
+    assert.match(registration, /PortalApi\.register\(Number\(button\.dataset\.recordId\)/);
+    assert.match(drop, /PortalApi\.drop\(\s*Number\(activeDropButton\.dataset\.recordId\)/);
     assert.match(drop, /data-confirm-drop/);
     assert.doesNotMatch(drop, /window\.confirm/);
 });
