@@ -1,0 +1,11 @@
+{# اعلان‌ها و اطلاعیه‌ها markup اختصاصی دارند؛ فرم‌ها و جدول مشترک از قالب اصلی می‌آید. #}
+{% if active_slug == 'notifications' or active_slug == 'announcements' %}
+<section class="panel home-notices-panel">
+    {% for notification in notifications %}
+    <article class="notification-entry"><h2>{{ notification.title }}</h2><p>{{ notification.message }}</p><time>{{ notification.created_at|date:"Y-m-d H:i" }}</time>
+        {% if notification.is_read %}<span>خوانده‌شده</span>{% else %}<form method="post">{% csrf_token %}<input type="hidden" name="notification_id" value="{{ notification.pk }}"><button type="submit" class="button button--soft">خواندم</button></form>{% endif %}
+    </article>
+    {% empty %}<p class="empty-state">اعلانی ثبت نشده است.</p>{% endfor %}
+</section>
+{% endif %}
+{% include "core/live_content.html" %}

@@ -1,0 +1,31 @@
+{# All identity details come from the selected Student and Term records. #}
+{% if current_student %}
+<section class="digital-card" aria-label="کارت دانشجویی دیجیتال">
+    <div class="digital-card-top">
+        <strong>دانشگاه آزاد اسلامی</strong>
+        <small>کارت دانشجویی دیجیتال</small>
+    </div>
+    <strong class="digital-card-name">{{ current_student.person.full_name }}</strong>
+    <strong class="digital-card-number">شماره دانشجویی: {{ current_student.student_code }}</strong>
+    <div class="digital-card-facts">
+        <span>رشته / مقطع / وضعیت: {{ current_student.field.field_name|default:"—" }} / {{ current_student.educational_level|default:"—" }} / {{ current_student.status|default:"—" }}</span>
+        <span>نیمسال: {{ term_display_code }}</span>
+    </div>
+    <strong class="digital-card-check">وضعیت پرونده: {{ current_student.status|default:"—" }}</strong>
+</section>
+
+<div class="student-card-warning">این کارت پیش‌نمایش اطلاعات پرونده است و جایگزین کارت رسمی دانشگاه نیست. برای احراز هویت از کارت معتبر دانشگاه استفاده کنید.</div>
+<section class="panel student-card-meta-panel">
+    <div>
+        <strong>آخرین وضعیت پرونده: {{ current_student.status|default:"—" }}</strong>
+        <span>تاریخ شروع تحصیل: {{ current_student.application_date|date:"Y/m/d" }}</span>
+    </div>
+    <p>در صورت مغایرت نام یا رشته، درخواست اصلاح اطلاعات ثبت کنید.</p>
+</section>
+<div class="page-actions student-card-actions">
+    <a class="button button--primary" href="{% url 'core:section' 'requests' %}{{ query_suffix }}">درخواست اصلاح اطلاعات</a>
+    <a class="button button--soft" href="{% url 'core:section' 'support' %}{{ query_suffix }}">مرکز پشتیبانی</a>
+</div>
+{% else %}
+<section class="panel"><p class="empty-state">اطلاعات کارت برای پروندهٔ انتخاب‌شده در دسترس نیست.</p></section>
+{% endif %}

@@ -47,7 +47,7 @@ Cross-cutting items (rows with type غیرعملیاتی, plus a few functional-
 - The source `نیازمندی_های_آموزشیار.md` is referenced as the authority for behavior but is absent from the repository and searched workspace.
 - This SDD contains 152 identifiers and metadata rows, not the full behavioral language. Do not infer domain rules solely from those codes.
 - Backend work in this checkout is limited to contracts stated explicitly in SSOT/ADR and rules supported by existing models. Assumptions and unimplemented areas are recorded in ADR.md and PROJECT_STRUCTURE.md.
-- The frontend is not ready; the current milestone exposes backend JSON services and leaves templates, styling, and frontend bundles untouched.
+- A Persian/RTL server-rendered student portal is implemented. Login and logout use the existing account/session flow, page data is read for the authenticated student's selected profile, and course registration/drop actions use the existing APIs. Remaining feature/API gaps are listed in `PROJECT_STRUCTURE.md`.
 
 ## 5. Traceability (all 152 requirements)
 

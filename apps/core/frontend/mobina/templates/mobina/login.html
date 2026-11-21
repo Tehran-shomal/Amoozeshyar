@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}آموزشیار | {{ page_title }}{% endblock %}
+{% block body_class %}login-body{% endblock %}
+
+{% block content %}
+<main class="login-page">
+    <section class="login-card" aria-label="ورود به سامانه آموزشیار">
+        <div class="login-brand-panel">
+            <div class="login-brand-heading">
+                <span class="login-university">{{ login.university }}</span>
+                <img class="login-logo" src="{% static 'core/azad-logo.png' %}" alt="">
+            </div>
+            <div class="login-brand-copy">
+                <h1>{{ login.brand_title }}</h1>
+                <h2>{{ login.brand_slogan }}</h2>
+                <p>{{ login.brand_description }}</p>
+            </div>
+            <div class="login-art" aria-hidden="true">
+                <span class="login-art-circle login-art-circle--one"></span>
+                <span class="login-art-circle login-art-circle--two"></span>
+            </div>
+            <p class="login-brand-footer">{{ login.brand_version }}</p>
+        </div>
+
+        <div class="login-form-panel">
+            <div class="login-heading">
+                <span class="eyebrow">{{ page_title }}</span>
+                <h2>{{ login.heading }}</h2>
+                <p>{{ login.intro }}</p>
+            </div>
+
+            <form class="login-form" method="post" autocomplete="on" data-login-form data-login-redirect="{% url 'core:home' %}">{% csrf_token %}
+                <label class="form-field">
+                    <span>{{ login.username_label }}</span>
+                    <input type="text" name="username" placeholder="{{ login.username_placeholder }}" autocomplete="username" required>
+                </label>
+                <label class="form-field">
+                    <span>{{ login.password_label }}</span>
+                    <input type="password" name="password" placeholder="{{ login.password_placeholder }}" autocomplete="current-password" required>
+                </label>
+
+                <div class="login-options">
+                    <label><input type="checkbox" name="remember_me"><span>{{ login.remember }}</span></label>
+                    <span class="login-recovery">{{ login.recovery }}</span>
+                </div>
+
+                <button class="button button--primary button--wide" type="submit">
+                    {{ login.submit }} <span aria-hidden="true">←</span>
+                </button>
+            </form>
+
+            {% if login.warning %}
+            <div class="login-warning" role="note">
+                <span aria-hidden="true">i</span>
+                <p>{{ login.warning }}</p>
+            </div>
+            {% endif %}
+
+            {% if login_error %}<div class="inline-notice" role="alert"><span aria-hidden="true">!</span><p>{{ login_error }}</p></div>{% endif %}
+            <div class="inline-notice" data-login-status role="status" aria-live="polite" hidden>
+                <span aria-hidden="true">!</span><p></p>
+            </div>
+
+            <span class="login-support-link">{{ login.support }}</span>
+        </div>
+    </section>
+</main>
+{% endblock %}

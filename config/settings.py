@@ -156,8 +156,9 @@ SESSION_COOKIE_AGE = 900
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+# Local HTTP can opt out in .env; secure defaults stay enabled when DEBUG is off.
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=not DEBUG)
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=not DEBUG)
 
 # NFSP11: the source specifies repeated-failure lockout but not its threshold.
 AUTH_LOCKOUT_FAILURES = 5
@@ -166,3 +167,12 @@ AUTH_LOCKOUT_SECONDS = 900
 # Set only when applying the legacy DateTimeField conversion migration to a
 # database that contains rows written before USE_TZ was enabled.
 LEGACY_DATETIME_TIME_ZONE = env("LEGACY_DATETIME_TIME_ZONE", default="")
+
+# Register only team folders that contain real page templates or interactions.
+FRONTEND_TEMPLATE_TEAMS = ("mobina", "shaghayegh", "academic_services", "parsa", "neyousha_pouya")
+FRONTEND_STATIC_TEAMS = ("mobina", "shaghayegh")
+FRONTEND_ROOT = BASE_DIR / "apps" / "core" / "frontend"
+for team in FRONTEND_TEMPLATE_TEAMS:
+    TEMPLATES[0]["DIRS"].append(FRONTEND_ROOT / team / "templates")
+for team in FRONTEND_STATIC_TEAMS:
+    STATICFILES_DIRS.append(FRONTEND_ROOT / team / "static")

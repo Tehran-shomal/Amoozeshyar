@@ -1,0 +1,23 @@
+{# نمایش مشترک؛ داده و فرم‌ها در پوشهٔ هر گروه ساخته می‌شوند. #}
+{% if notice %}<div class="inline-notice"><p>{{ notice }}</p></div>{% endif %}
+{% if facts %}<section class="panel"><dl class="key-value-list">{% for label,value in facts %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>{% endfor %}</dl></section>{% endif %}
+{% if form %}
+<section class="panel live-form-panel">
+    <div class="panel-heading"><h2>{{ form_title|default:"ثبت اطلاعات" }}</h2></div>
+    <form method="post" class="live-form">{% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}<div class="form-field"><label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</div>{% endfor %}
+        <div class="page-actions"><button class="button button--primary" type="submit">ثبت اطلاعات</button></div>
+    </form>
+</section>
+{% endif %}
+{% for table in tables %}
+<section class="panel data-panel">
+    <div class="panel-heading"><h2>{{ table.title }}</h2><label class="table-search"><input type="search" aria-label="جستجو در {{ table.title }}" placeholder="جستجو…" data-table-search></label></div>
+    <div class="table-wrap"><table class="data-table"><thead><tr>{% for column in table.columns %}<th scope="col">{{ column }}</th>{% endfor %}{% if table.has_actions %}<th scope="col">عملیات</th>{% endif %}</tr></thead>
+    <tbody>{% for row in table.rows %}<tr>{% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}{% if table.has_actions %}<td>{% if row.action %}<button type="button" class="table-action" data-enrollment-action="{{ row.action }}" data-record-id="{{ row.id }}">{{ row.action_label }}</button>{% endif %}</td>{% endif %}</tr>
+    {% empty %}<tr><td colspan="20" class="empty-state">اطلاعاتی برای نمایش ثبت نشده است.</td></tr>{% endfor %}</tbody></table></div>
+</section>
+{% endfor %}
+{% if links %}<div class="page-actions">{% for slug,label in links %}<a class="button button--soft" href="{% url 'core:section' slug %}{{ query_suffix }}">{{ label }}</a>{% endfor %}</div>{% endif %}
+{% if printable %}<div class="page-actions"><button class="button button--soft" type="button" data-print>چاپ / ذخیره PDF</button></div>{% endif %}

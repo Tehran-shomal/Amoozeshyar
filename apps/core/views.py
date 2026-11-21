@@ -1,3 +1,2 @@
-from django.views.generic import TemplateView
-class HomeView(TemplateView):
-    template_name = 'core/home.html'
+"""Compatibility imports for the existing URL names."""
+from .frontend.views import HomeView, LoginPreviewView, PortalSectionView, PortalLogoutView

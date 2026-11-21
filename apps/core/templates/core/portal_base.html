@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block body_class %}portal-body portal-body--{{ active_slug }}{% endblock %}
+
+{% block content %}
+{{ api_profile|json_script:"api-profile" }}
+<!-- پوستهٔ مشترک صفحه‌های پورتال؛ عنوان‌ها و پیوندها از داده‌های PDF می‌آیند. -->
+<div class="portal-shell">
+    <aside class="sidebar" id="portal-sidebar" aria-label="منوی اصلی">
+        <a class="brand" href="{% url 'core:home' %}{{ query_suffix }}">
+            <span class="brand-copy">
+                <strong>آموزشیار</strong>
+                <small>دانشگاه آزاد اسلامی</small>
+            </span>
+            <img class="university-logo" src="{% static 'core/azad-logo.png' %}" alt="">
+        </a>
+
+        <nav class="sidebar-nav" aria-label="بخش‌های سامانه">
+            {% for group in nav_groups %}
+                {% if group.title %}
+                    <details class="nav-group" data-nav-group="{{ group.title }}" {% if group.title == section.group %}open{% endif %}>
+                        <summary>{{ group.title }}<span aria-hidden="true">⌄</span></summary>
+                        <div class="nav-group-items">
+                            {% for item in group.items %}
+                                <a class="nav-link{% if active_slug == item.slug %} is-active{% endif %}"
+                                   href="{% url 'core:section' item.slug %}{{ query_suffix }}">
+                                    <span>{{ item.label }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </details>
+                {% else %}
+                    {% for item in group.items %}
+                        <a class="nav-link nav-link--dashboard{% if is_home %} is-active{% endif %}" href="{% url 'core:home' %}{{ query_suffix }}">
+                            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+                            <span>{{ item.label }}</span>
+                        </a>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </nav>
+
+        <div class="sidebar-footer-links">
+            {% for item in sidebar_footer %}
+                {% if item.action %}
+                    <form action="{% url 'core:web-logout' %}" method="post" class="logout-form" data-api-logout-form>{% csrf_token %}<button type="submit" data-api-logout><span aria-hidden="true">{{ item.icon }}</span>{{ item.label }}</button></form>
+                {% else %}
+                    <a href="{% url 'core:section' item.slug %}{{ query_suffix }}"><span aria-hidden="true">{{ item.icon }}</span>{{ item.label }}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </aside>
+
+    <div class="sidebar-backdrop" data-sidebar-close aria-hidden="true"></div>
+
+    <div class="portal-main">
+        <div class="inline-notice" data-api-status role="status" aria-live="polite" hidden>
+            <span aria-hidden="true">!</span><p></p>
+        </div>
+        <header class="topbar">
+            <div class="topbar-profile">
+                <span class="avatar" aria-hidden="true">{{ student.avatar_initials }}</span>
+                <div class="topbar-title">
+                    <strong>دانشجوی گرامی، خوش آمدید</strong>
+                    <small>پنل کاربری دانشجو</small>
+                </div>
+                <button class="icon-button menu-toggle" type="button" data-menu-toggle aria-label="باز کردن منو">☰</button>
+            </div>
+
+            <label class="global-search">
+                <span aria-hidden="true">⌕</span>
+                <input type="search" placeholder="جستجو در سامانه..." aria-label="جستجو در سامانه" data-global-search>
+            </label>
+
+            <div class="term-picker" aria-label="نیمسال تحصیلی">
+                <button class="term-picker-button" type="button" data-term-dialog-open {% if not term_options %}disabled{% endif %}>انتخاب نیمسال</button>
+                <span class="term-picker-current"><small>نیمسال تحصیلی:</small><strong>{{ term_display_code }}</strong></span>
+            </div>
+        </header>
+
+        <dialog class="term-selection-dialog" data-term-dialog aria-labelledby="term-dialog-title">
+            <div class="term-dialog-heading">
+                <h2 id="term-dialog-title">انتخاب نیمسال تحصیلی</h2>
+                <button class="term-dialog-close" type="button" data-term-dialog-close aria-label="بستن">×</button>
+            </div>
+            <form class="term-selection-form" method="get">
+                {% if current_student %}<input type="hidden" name="student_code" value="{{ current_student.student_code }}">{% endif %}
+                <fieldset class="term-option-list">
+                    <legend class="sr-only">نیمسال موردنظر را انتخاب کنید</legend>
+                    {% for option in term_options %}
+                        <label class="term-option">
+                            <input type="radio" name="term" value="{{ option.value }}" {% if option.selected %}checked{% endif %} required>
+                            <span>{{ option.display_label }}</span>
+                        </label>
+                    {% empty %}
+                        <p class="empty-state">نیمسالی برای انتخاب ثبت نشده است.</p>
+                    {% endfor %}
+                </fieldset>
+                <p class="term-selection-note">برنامه و وضعیت‌های تحصیلی با نیمسال انتخاب‌شده نمایش داده می‌شوند.</p>
+                <button class="term-picker-submit" type="submit" {% if not term_options %}disabled{% endif %}>انتخاب و بستن</button>
+            </form>
+        </dialog>
+
+        <main class="workspace">
+            {% if profile_notice %}<div class="inline-notice" role="status"><p>{{ profile_notice }}</p></div>{% endif %}
+            {% for message in messages %}<div class="inline-notice" role="status"><p>{{ message }}</p></div>{% endfor %}
+            {% block portal_content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}
