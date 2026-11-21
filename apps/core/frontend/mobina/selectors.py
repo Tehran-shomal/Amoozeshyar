@@ -1,6 +1,6 @@
 """داده‌های واقعی داشبورد و انتخاب واحد؛ شناسهٔ ارائه مستقیم به API فرستاده می‌شود."""
 from apps.core import models as m
-from ..common import table, display, enrollments_table, enrollment_rows
+from ..common import table, display, enrollments_table, active_enrollment_rows
 
 
 def build(slug, student, term, request):
@@ -19,7 +19,7 @@ def build(slug, student, term, request):
             offer.teacher.person.full_name, offer.lesson.theory_units+offer.lesson.practical_units,
             f"{offer.day_of_week or ''} {offer.start_time:%H:%M}–{offer.end_time:%H:%M}", offer.remaining_capacity],
             "id": offer.pk, "action": "register", "action_label": "انتخاب درس"})
-    selected = enrollment_rows(student, term).exclude(status__code__in=["dropped", "cancelled", "withdrawn"])
+    selected = active_enrollment_rows(student, term)
     selected_units = sum(row.offering.lesson.theory_units + row.offering.lesson.practical_units
                          for row in selected)
     return {"tables": [enrollments_table(student, term, queryset=selected), available],
@@ -31,7 +31,7 @@ def dashboard(student, term, person):
                ("مقطع", display(student.educational_level))] if student else []
     classes = []
     if student:
-        for row in enrollment_rows(student, term).exclude(status__code__in=["dropped", "cancelled", "withdrawn"]):
+        for row in active_enrollment_rows(student, term):
             offer = row.offering
             classes.append({"day_time": f"{offer.day_of_week or ''} {offer.start_time:%H:%M}",
                 "name": offer.lesson.title, "teacher": offer.teacher.person.full_name,

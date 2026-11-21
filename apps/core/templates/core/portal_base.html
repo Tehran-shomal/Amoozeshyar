@@ -44,7 +44,7 @@
         <div class="sidebar-footer-links">
             {% for item in sidebar_footer %}
                 {% if item.action %}
-                    <form action="{% url 'core:web-logout' %}" method="post" class="logout-form" data-api-logout-form>{% csrf_token %}<button type="submit" data-api-logout><span aria-hidden="true">{{ item.icon }}</span>{{ item.label }}</button></form>
+                    <form action="{% url 'core:web-logout' %}" method="post" class="logout-form" data-api-logout-form data-login-redirect="{% url 'core:login-preview' %}">{% csrf_token %}<button type="submit" data-api-logout><span aria-hidden="true">{{ item.icon }}</span>{{ item.label }}</button></form>
                 {% else %}
                     <a href="{% url 'core:section' item.slug %}{{ query_suffix }}"><span aria-hidden="true">{{ item.icon }}</span>{{ item.label }}</a>
                 {% endif %}
@@ -72,6 +72,23 @@
                 <span aria-hidden="true">⌕</span>
                 <input type="search" placeholder="جستجو در سامانه..." aria-label="جستجو در سامانه" data-global-search>
             </label>
+
+            {% if profiles|length > 1 %}
+                {# The account can own multiple study profiles; only its own records appear here. #}
+                <form class="profile-picker" method="get" aria-label="انتخاب پروندهٔ دانشجویی">
+                    {% if selected_term %}<input type="hidden" name="term" value="{{ selected_term.term_code }}">{% endif %}
+                    <label for="student-profile-select">پروندهٔ دانشجویی</label>
+                    <select id="student-profile-select" name="student_code" required>
+                        <option value="" {% if not current_student %}selected{% endif %} disabled>انتخاب پرونده</option>
+                        {% for profile in profiles %}
+                            <option value="{{ profile.student_code }}" {% if current_student.pk == profile.pk %}selected{% endif %}>
+                                {{ profile.student_code }} · {{ profile.educational_level }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">نمایش</button>
+                </form>
+            {% endif %}
 
             <div class="term-picker" aria-label="نیمسال تحصیلی">
                 <button class="term-picker-button" type="button" data-term-dialog-open {% if not term_options %}disabled{% endif %}>انتخاب نیمسال</button>

@@ -3,7 +3,7 @@
 from django.db.models import Q
 
 from apps.core import models as m
-from ..common import display, enrollment_rows, form_for, table, term_code_display
+from ..common import active_enrollment_rows, display, form_for, table, term_code_display
 from .forms import (
     CertificateForm,
     GraduationReviewForm,
@@ -52,9 +52,7 @@ def _omid_page(slug, student, term, request):
               x.attendance_status, x.description) for x in rows))]}
 
     if slug == "academic-activities":
-        active_enrollments = list(enrollment_rows(student, term).exclude(
-            status__code__in=["dropped", "cancelled", "withdrawn"]
-        ).select_related("offering__lesson"))
+        active_enrollments = list(active_enrollment_rows(student, term).select_related("offering__lesson"))
         changes = m.EducationalChangeLog.objects.filter(student=student).select_related(
             "change_type").order_by("-changed_at")[:8]
         return {
@@ -79,13 +77,7 @@ def _omid_page(slug, student, term, request):
         }
 
     if slug == "exam-card":
-        active_enrollments = m.Enrollment.objects.filter(student=student)
-        if term:
-            active_enrollments = active_enrollments.filter(offering__term=term)
-        else:
-            active_enrollments = active_enrollments.none()
-        active_enrollments = active_enrollments.exclude(
-            status__code__in=["dropped", "cancelled", "withdrawn"])
+        active_enrollments = active_enrollment_rows(student, term)
         evaluated_ids = m.TeacherSurvey.objects.filter(
             enrollment__in=active_enrollments).values_list("enrollment_id", flat=True)
         unfinished_evaluation = active_enrollments.exclude(pk__in=evaluated_ids).exists()

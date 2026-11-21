@@ -1,5 +1,5 @@
 from apps.core import models as m
-from ..common import display, enrollment_rows, enrollments_table, table, form_for
+from ..common import active_enrollment_rows, display, enrollments_table, table, form_for
 from .forms import GradeAppealForm
 
 
@@ -11,8 +11,7 @@ def build(slug, student, term, request):
                   ((x.enrollment.offering.lesson.title, x.appeal_reason, x.appeal_date, x.appeal_status) for x in rows))]}
     if slug in {"add-drop", "emergency-drop"}:
         # Only active enrollments get a real record ID and a drop action.
-        rows = list(enrollment_rows(student, term).exclude(
-            status__code__in=["dropped", "cancelled", "withdrawn"]))
+        rows = list(active_enrollment_rows(student, term))
         courses = table("انتخاب درس‌ها", ["نام درس", "کد درس", "واحد", "استاد",
             "زمان برگزاری", "زمان امتحان", "عملیات"], [])
         courses["has_actions"] = True

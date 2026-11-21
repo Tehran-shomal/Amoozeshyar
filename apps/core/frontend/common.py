@@ -5,6 +5,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from apps.core import models as m
+from apps.core.enrollment.services import INACTIVE_ENROLLMENT_CODES, active_enrollments
 
 
 def display(value):
@@ -45,6 +46,11 @@ def enrollment_rows(student, term=None):
     return rows.filter(offering__term=term) if term else rows.none()
 
 
+def active_enrollment_rows(student, term=None):
+    """Apply the same inactive status rules used by the enrollment API."""
+    return active_enrollments(enrollment_rows(student, term))
+
+
 def enrollments_table(student, term, action=None, queryset=None):
     result = table("دروس ثبت‌نام‌شده", ["کد درس", "درس", "استاد", "واحد", "زمان", "وضعیت"], [])
     rows = queryset if queryset is not None else enrollment_rows(student, term)
@@ -53,7 +59,7 @@ def enrollments_table(student, term, action=None, queryset=None):
         item = {"cells": [offer.lesson.lesson_code, offer.lesson.title,
             offer.teacher.person.full_name, offer.lesson.theory_units + offer.lesson.practical_units,
             f"{offer.day_of_week or ''} {offer.start_time:%H:%M}–{offer.end_time:%H:%M}", display(row.status)]}
-        if action and (not row.status or row.status.code not in {"dropped", "cancelled", "withdrawn"}):
+        if action and (not row.status or row.status.code.casefold() not in INACTIVE_ENROLLMENT_CODES):
             item.update(action=action, id=row.pk, action_label="حذف درس")
         result["rows"].append(item)
     result["has_actions"] = bool(action)

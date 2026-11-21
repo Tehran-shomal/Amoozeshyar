@@ -87,5 +87,6 @@
 
 - [x] Document the exact page ownership, five navigation groups, and five code modules.
 - [x] Run frontend, account, scheduling, enrollment, and request tests; run `manage.py check` and migration dry-run.
-- [ ] Review the staged file list and diff; commit with `refactor: define frontend pages by team`.
-- [ ] Push `feature/frontend-team-structure` to `origin` and verify the published branch head.
+- [x] Resolve review findings: send logout to the login page, allow choosing among owned student profiles, and reuse the API's case-insensitive inactive-enrollment rule in frontend pages.
+- [x] Review the branch diff, run Django/template/JavaScript/migration checks, and commit the structure plus review fixes.
+- [x] Push `feature/frontend-team-structure` to `origin` and verify the published branch head.

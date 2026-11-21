@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
         event.preventDefault();
         const button = form.querySelector("button");
         button.disabled = true;
-        try { await window.PortalApi.logout(); window.location.assign(form.action); }
+        try { await window.PortalApi.logout(); window.location.assign(form.dataset.loginRedirect); }
         catch (error) { window.PortalUI.showStatus(window.PortalUI.errorMessage(error)); }
         finally { button.disabled = false; }
     }));

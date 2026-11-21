@@ -1,5 +1,5 @@
 from apps.core import models as m
-from ..common import table, display, form_for, enrollment_rows
+from ..common import table, display, form_for, active_enrollment_rows
 from .forms import InternshipForm, SettingsForm
 
 
@@ -16,7 +16,7 @@ def build(slug, student, term, request):
         return {"form": SettingsForm(request.POST if request.method == "POST" else None,
                                      student=student, person=request.user, term=term)}
     if slug == "schedule":
-        rows = enrollment_rows(student, term).exclude(status__code__in=["dropped", "cancelled", "withdrawn"])
+        rows = active_enrollment_rows(student, term)
         return {"printable": True, "tables": [table("برنامه هفتگی", ["درس", "استاد", "روز", "شروع", "پایان", "کلاس"],
             ((x.offering.lesson.title, x.offering.teacher.person.full_name, x.offering.day_of_week,
               x.offering.start_time, x.offering.end_time, x.offering.classroom) for x in rows))]}
