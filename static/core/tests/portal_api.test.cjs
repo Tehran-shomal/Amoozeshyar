@@ -244,6 +244,45 @@ test("testBaseLoadsApiClientBeforePortalHandlers", () => {
     assert.ok(apiScript < portalScript, "API client must execute before portal handlers");
 });
 
+test("testRenderedPortalShellLoadsItsPageDataThroughThePageApi", async () => {
+    const source = fs.readFileSync(path.join(__dirname, "../live_portal.js"), "utf8");
+    const calls = [];
+    let onReady;
+    const shell = {
+        dataset: { pageApiUrl: "/api/portal/pages/transcript/", portalLoading: "true" },
+        setAttribute() {},
+        querySelector() { return null; },
+    };
+    const document = {
+        addEventListener(type, callback) {
+            if (type === "DOMContentLoaded") onReady = callback;
+        },
+        querySelector(selector) {
+            return selector === ".portal-shell[data-page-api-url]" ? shell : null;
+        },
+        body: { classList: { remove() {} } },
+    };
+    const window = {
+        location: { search: "?student_code=S1", assign() {} },
+        PortalApi: {
+            async portalPage(url) {
+                calls.push(url);
+                throw new Error("Stop after observing the page API request.");
+            },
+        },
+        PortalUI: {
+            errorMessage: () => "Request observed",
+            showStatus() {},
+        },
+    };
+
+    vm.runInNewContext(source, { document, window, URLSearchParams });
+    assert.equal(typeof onReady, "function");
+    await onReady();
+
+    assert.deepEqual(calls, ["/api/portal/pages/transcript/?student_code=S1"]);
+});
+
 test("testBrowserGlobalIsAReadyToUseApiClient", () => {
     const source = fs.readFileSync(path.join(__dirname, "../portal_api.js"), "utf8");
     const browserGlobal = {

@@ -74,12 +74,22 @@ class LiveFrontendTests(TestCase):
             response = self.client.get(f"/portal/{slug}/")
             self.assertEqual(response.status_code, 200, slug)
             self.assertContains(response, 'data-portal-loading="true"', msg_prefix=slug)
+            self.assertContains(
+                response,
+                f'data-page-api-url="/api/portal/pages/{slug}/"',
+                msg_prefix=slug,
+            )
             self.assertNotContains(response, self.users[0].full_name, msg_prefix=slug)
             self.assertNotContains(response, "ali.mohammadi@example.edu")
             api_response = self.client.get(f"/api/portal/pages/{slug}/")
             self.assertEqual(api_response.status_code, 200, slug)
             self.assertNotIn("ali.mohammadi@example.edu", api_response.json()["html"])
-        self.assertNotContains(self.client.get("/"), "دانشجو0")
+        home_shell = self.client.get("/")
+        self.assertContains(
+            home_shell,
+            'data-page-api-url="/api/portal/pages/home/"',
+        )
+        self.assertNotContains(home_shell, "دانشجو0")
         self.assertIn("دانشجو0", self.client.get("/api/portal/pages/home/").json()["html"])
 
     def test_student_and_exam_cards_use_page_specific_real_data_templates(self):

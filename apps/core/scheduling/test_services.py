@@ -149,6 +149,25 @@ class SchedulingServiceTests(SchedulingFixtures):
 
 
 class SchedulingAPITests(SchedulingFixtures):
+    def setUp(self):
+        self.client.force_login(self.active_offering.teacher.person)
+
+    def test_read_endpoints_require_an_authenticated_session(self):
+        self.client.logout()
+
+        for path in (
+            "/api/scheduling/active-term/",
+            "/api/scheduling/offerings/",
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+
+                self.assertEqual(response.status_code, 401)
+                self.assertEqual(
+                    response.json()["error"]["code"],
+                    "authentication_required",
+                )
+
     def test_active_term_endpoint_returns_safe_term_fields(self):
         response = self.client.get("/api/scheduling/active-term/")
 
