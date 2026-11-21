@@ -1,0 +1,125 @@
+{% extends "core/portal_base.html" %}
+{% block portal_content %}
+{% with data=dashboard %}
+<!-- سربرگ داشبورد و میان‌برها: اطلاعات از selector و رکوردهای پایگاه داده می‌آیند. -->
+<section class="dashboard-hero" aria-labelledby="dashboard-title">
+    <div class="welcome-copy">
+        <h1 id="dashboard-title">{{ data.welcome }}</h1>
+        <p>{{ data.intro }}</p>
+    </div>
+    <div class="welcome-art" aria-hidden="true">
+        <span class="welcome-orbit welcome-orbit--one"></span>
+        <span class="welcome-orbit welcome-orbit--two"></span>
+        <span class="welcome-book">▤</span>
+    </div>
+    <div class="welcome-university">{{ data.university }}</div>
+</section>
+
+<nav class="dashboard-quick-links quick-grid" aria-label="دسترسی سریع">
+    {% for action in data.quick_actions %}
+        <a class="quick-card" href="{% url 'core:section' action.slug %}{{ query_suffix }}">
+            <span class="quick-icon quick-icon--blue" aria-hidden="true">{{ action.icon }}</span>
+            <span class="quick-copy"><strong>{{ action.title }}</strong></span>
+            <span class="quick-arrow" aria-hidden="true">←</span>
+        </a>
+    {% endfor %}
+</nav>
+
+<!-- ستون کناری شامل پروفایل و وضعیت مالی است تا فضای خالی داشبورد استفاده شود. -->
+<div class="dashboard-layout">
+    <aside class="dashboard-side-column" aria-label="خلاصه پرونده و مالی">
+        <section class="student-summary-card">
+            <div class="student-summary-head"><span>اطلاعات دانشجو</span></div>
+            <div class="student-summary-profile">
+                <span class="avatar avatar--large" aria-hidden="true">{{ student.avatar_initials|default:"د" }}</span>
+                <h2>{{ student.name }}</h2>
+                <p>دانشجوی گرامی</p>
+                <span class="student-number">شماره دانشجویی: {{ student.student_code }}</span>
+            </div>
+            <div class="summary-divider"></div>
+            <dl class="student-summary-details">
+                {% for label,value in data.student_details %}
+                    <div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+                {% empty %}
+                    <div><dt>پرونده</dt><dd>پروندهٔ دانشجویی در دسترس نیست.</dd></div>
+                {% endfor %}
+            </dl>
+        </section>
+
+        <section class="panel home-financial-panel" aria-labelledby="financial-title">
+            <div class="panel-heading">
+                <h2 id="financial-title">{{ data.financial_title }}</h2>
+                <a class="text-link" href="{% url 'core:section' 'tuition' %}{{ query_suffix }}">سوابق پرداخت <span aria-hidden="true">←</span></a>
+            </div>
+            <div class="financial-summary-list">
+                {% for item in data.financial_summary %}
+                    <div class="financial-summary-row">
+                        <div><span>{{ item.label }}</span><strong>{{ item.value }}</strong></div>
+                        <span class="financial-status financial-status--{{ item.state }}">{{ item.status }}</span>
+                    </div>
+                {% empty %}
+                    <p class="empty-state">برای این پرونده اطلاعات مالی ثبت نشده است.</p>
+                {% endfor %}
+            </div>
+            <p class="financial-summary-note">{{ data.financial_note }}</p>
+        </section>
+    </aside>
+
+    <div class="dashboard-content-column">
+        <div class="home-overview-grid">
+            <section class="panel home-table-panel" aria-labelledby="classes-title">
+                <div class="panel-heading">
+                    <h2 id="classes-title">{{ data.classes_title }}</h2>
+                    <a class="text-link" href="{% url 'core:section' 'schedule' %}{{ query_suffix }}">{{ data.classes_link }} <span aria-hidden="true">←</span></a>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table dashboard-class-table">
+                        <thead><tr>{% for column in data.classes_columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr></thead>
+                        <tbody>
+                            {% for row in data.classes %}
+                                <tr><td>{{ row.day_time }}</td><td>{{ row.name }}</td><td>{{ row.teacher }}</td><td>{{ row.room }}</td></tr>
+                            {% empty %}
+                                <tr><td colspan="4" class="empty-state">برای این نیمسال کلاسی ثبت نشده است.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="panel home-notices-panel" aria-labelledby="notices-title">
+                <div class="panel-heading">
+                    <h2 id="notices-title">{{ data.notices_title }}</h2>
+                    <a class="text-link" href="{% url 'core:section' 'announcements' %}{{ query_suffix }}">{{ data.notices_link }} <span aria-hidden="true">←</span></a>
+                </div>
+                <div class="home-notice-list">
+                    {% for notice in data.notices %}
+                        <article class="home-notice-row"><strong>{{ notice.title }}</strong><time>{{ notice.date }}</time></article>
+                    {% empty %}
+                        <p class="empty-state">اعلانی برای نمایش ثبت نشده است.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+
+        <section class="panel home-academic-panel" aria-labelledby="academic-title">
+            <div class="panel-heading">
+                <h2 id="academic-title">{{ data.academic_title }}</h2>
+                <a class="text-link" href="{% url 'core:section' 'transcript' %}{{ query_suffix }}">{{ data.academic_link }} <span aria-hidden="true">←</span></a>
+            </div>
+            <div class="academic-summary-content">
+                {% if data.academic_summary %}
+                    <div class="average-ring"><strong>{{ data.academic_summary.0.1 }}</strong><small>{{ data.academic_average_label }}</small></div>
+                    <dl class="summary-rows">
+                        {% for label,value in data.academic_summary %}
+                            <div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+                        {% endfor %}
+                    </dl>
+                {% else %}
+                    <p class="empty-state">اطلاعات تحصیلی پرونده در دسترس نیست.</p>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endwith %}
+{% endblock %}

@@ -1,0 +1,90 @@
+/* Full viewport shell. Tables scroll within their panel, never across the page. */
+html, body { width: 100%; min-height: 100%; margin: 0; overflow-x: hidden; }
+*, *::before, *::after { box-sizing: border-box; }
+.portal-shell { width: 100%; max-width: none; min-height: 100vh; min-height: 100dvh; }
+.portal-main { width: 100%; min-width: 0; }
+.portal-main .topbar, .portal-main .workspace { width: 100%; max-width: none; margin: 0; }
+.portal-main .workspace { padding: clamp(16px, 2vw, 36px); }
+.topbar { flex-wrap: wrap; gap: 16px; }
+.sidebar { height: 100vh; height: 100dvh; }
+.workspace > *, .panel, .feature-module, .home-overview-grid > *, .home-summary-grid > * { min-width: 0; }
+.table-wrap { max-width: 100%; overflow-x: auto; }
+.live-context-picker { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; max-width: 100%; background: transparent; }
+.live-context-picker label { display: grid; gap: 4px; font-size: 12px; min-width: 0; }
+.live-context-picker select { max-width: 240px; min-height: 36px; border: 1px solid #dbe3f0; border-radius: 8px; background: white; padding: 6px; font: inherit; }
+.live-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.live-form .form-field { min-width: 0; }
+.live-form input:not([type=checkbox]), .live-form select, .live-form textarea { width: 100%; min-width: 0; border: 1px solid #cdd8e8; border-radius: 9px; padding: 10px; font: inherit; background: white; }
+.live-form textarea { min-height: 100px; resize: vertical; }
+.live-form .page-actions, .live-form > .errorlist { grid-column: 1 / -1; }
+.errorlist { color: #a51f38; padding-inline-start: 20px; }
+.empty-state { text-align: center; padding: 25px; color: #687891; }
+.panel-heading { flex-wrap: wrap; gap: 10px; }
+.table-search input { width: min(100%, 230px); padding: 8px; border: 1px solid #dbe3f0; border-radius: 8px; font: inherit; }
+.sidebar-footer-links .logout-form { margin: 0; }
+.sidebar-footer-links .logout-form button { display: flex; align-items: center; gap: 7px; min-height: 29px; width: 100%; padding: 0; border: 0; color: #e1e9f8; background: transparent; text-align: right; font: inherit; cursor: pointer; }
+.login-page {
+    display: grid;
+    min-height: 100vh;
+    min-height: 100dvh;
+    place-items: center;
+    padding: clamp(12px, 3vw, 48px);
+}
+/* Keep the PDF's centered login card while the page itself fills the viewport. */
+.login-card {
+    width: min(100%, 1000px);
+    max-width: 1000px;
+    min-height: min(590px, calc(100dvh - clamp(24px, 6vw, 96px)));
+}
+.login-options .login-recovery { color: #2869d6; font-size: inherit; text-decoration: none; }
+.login-form .button--primary { color: #fff; background: linear-gradient(110deg, #102a5b, #2f6fe0); box-shadow: none; }
+.login-support-link { display: block; margin-top: 3px; }
+@media (min-width: 681px) {
+    .login-brand-copy { transform: translateY(-15px); }
+    .login-art { inset: 40% 0 -78px; }
+    .login-art-circle { left: 40%; }
+    .login-art-circle--one { width: 410px; height: 410px; }
+    .login-form-panel { top: 45px; }
+    .login-form .form-field + .form-field { margin-top: 16px; }
+    .login-form .login-options { margin: 12px 0 0; }
+    .login-form .button { margin-top: 10px; }
+    .login-warning { margin-top: 14px; }
+}
+button:disabled { opacity: .6; cursor: wait; }
+[hidden] { display: none !important; }
+@media (max-width: 900px) {
+    .portal-shell { display: block; }
+    .portal-main { margin: 0; }
+    .portal-main .topbar { padding: 16px; }
+    .global-search { width: 100%; max-width: none; }
+    .live-context-picker { width: 100%; }
+    .live-context-picker label { flex: 1 1 160px; }
+    .live-context-picker select { width: 100%; max-width: none; }
+    .home-overview-grid, .home-summary-grid { grid-template-columns: minmax(0, 1fr); }
+    .home-overview-grid > *, .home-summary-grid > * { grid-column: auto; grid-row: auto; }
+    .login-card { width: min(440px, 100%); max-width: 440px; min-height: 0; grid-template-columns: minmax(0, 1fr); }
+    .login-brand-panel { min-height: 180px; padding: 24px; }
+    .login-brand-copy { margin-top: 0; transform: none; }
+    .login-art { inset: 0 24% 0 0; opacity: .45; }
+    .login-art-circle { left: 50%; }
+    .login-art-circle--one { width: 220px; height: 220px; }
+    .login-art-circle--two { width: 150px; height: 150px; }
+    .login-form-panel { top: 0; padding: 25px 24px; }
+}
+@media (max-width: 680px) {
+    .login-card { width: min(440px, 100%); max-width: 440px; min-height: 0; }
+}
+@media (max-width: 600px) {
+    .live-form { grid-template-columns: minmax(0, 1fr); }
+    .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .login-card { display: flex; flex-direction: column; min-height: 0; border-radius: 16px; }
+    .login-brand-panel { min-height: auto; padding: 24px; }
+    .login-form-panel { padding: 24px; }
+    .login-art { display: none; }
+}
+@media print {
+    .sidebar, .topbar, .page-actions, .live-form-panel, [data-api-status], .table-search { display: none !important; }
+    .portal-shell { display: block; }
+    .portal-main .workspace { padding: 0; }
+    .table-wrap { overflow: visible; }
+}

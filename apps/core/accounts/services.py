@@ -46,19 +46,39 @@ def _normalize_role(role_name):
 
 
 def _login_identity(username):
-    """Resolve the Person username first, then fall back to a role alias.
+    """Resolve a Person username, role alias, or a student's student code.
 
     All aliases for one Person share the earliest active role account as their
     lockout record, so switching role aliases cannot reset consecutive failures.
     Person usernames take precedence when malformed legacy data collides across
     the two independently unique username columns.
     """
+    username = username.strip()
     person = Person.objects.select_for_update().filter(username=username).first()
-    is_alias = person is None
+    identity_kind = "person" if person is not None else None
     if person is None:
         alias = UserAccount.objects.filter(username=username).only("person_id").first()
         if alias is not None:
             person = Person.objects.select_for_update().filter(pk=alias.person_id).first()
+            identity_kind = "alias"
+
+    if person is None:
+        # The PDF asks for a student number. Normalize localized digits so
+        # Persian and Arabic numerals resolve to the ASCII seeded code.
+        digit_translation = str.maketrans(
+            "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩",
+            "01234567890123456789",
+        )
+        student_code = username.translate(digit_translation)
+        student_person_id = (
+            Student.objects.select_for_update()
+            .filter(student_code=student_code)
+            .values_list("person_id", flat=True)
+            .first()
+        )
+        if student_person_id is not None:
+            person = Person.objects.select_for_update().filter(pk=student_person_id).first()
+            identity_kind = "student_code"
 
     if person is None:
         return None, None, None
@@ -70,7 +90,7 @@ def _login_identity(username):
         .order_by("pk")
     )
     selected_account = None
-    if is_alias:
+    if identity_kind == "alias":
         selected_account = next(
             (account for account in accounts if account.username == username), None
         )

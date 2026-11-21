@@ -149,6 +149,25 @@ class SchedulingServiceTests(SchedulingFixtures):
 
 
 class SchedulingAPITests(SchedulingFixtures):
+    def setUp(self):
+        self.client.force_login(self.active_offering.teacher.person)
+
+    def test_read_endpoints_require_an_authenticated_session(self):
+        self.client.logout()
+
+        for path in (
+            "/api/scheduling/active-term/",
+            "/api/scheduling/offerings/",
+        ):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+
+                self.assertEqual(response.status_code, 401)
+                self.assertEqual(
+                    response.json()["error"]["code"],
+                    "authentication_required",
+                )
+
     def test_active_term_endpoint_returns_safe_term_fields(self):
         response = self.client.get("/api/scheduling/active-term/")
 
@@ -176,4 +195,19 @@ class SchedulingAPITests(SchedulingFixtures):
         self.assertEqual(payload[0]["id"], self.active_offering.pk)
         self.assertEqual(payload[0]["lesson_code"], "SCH-ACTIVE")
         self.assertEqual(payload[0]["remaining_capacity"], 20)
+
+    def test_offerings_endpoint_can_read_a_selected_historical_term(self):
+        response = self.client.get(
+            "/api/scheduling/offerings/?term=S-14041"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()["offerings"]
+        self.assertEqual([item["id"] for item in payload], [self.old_offering.pk])
+
+    def test_offerings_endpoint_rejects_unknown_term_codes(self):
+        response = self.client.get("/api/scheduling/offerings/?term=missing")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["error"]["code"], "term_not_found")
 

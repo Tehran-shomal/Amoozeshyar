@@ -148,7 +148,9 @@ def run():
                 'gender': Constant.objects.get(category='gender', code='male' if i%2==0 else 'female'),
             }
         )
-        if created: person.set_password("password123"); person.save()
+        if created or not person.has_usable_password():
+            person.set_password("password123")
+            person.save(update_fields=["password"])
         student, _ = Student.objects.get_or_create(
             person=person, educational_level=Constant.objects.get(category='educational_level', code='bachelor'),
             defaults={
