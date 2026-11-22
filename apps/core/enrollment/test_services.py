@@ -21,6 +21,7 @@ from apps.core.models import (
     Prerequisite,
     Role,
     Student,
+    SystemSetting,
     Teacher,
     Term,
     UserAccount,
@@ -427,6 +428,54 @@ class EnrollmentServiceTests(EnrollmentFixtures):
         )
         prior_enrollment = self.make_enrollment(self.student, prerequisite_offering)
         Grade.objects.create(enrollment=prior_enrollment, score=Decimal("10.00"))
+
+        enrollment = self.register(offering=offering)
+
+        self.assertEqual(enrollment.status.code, "registered")
+
+    def test_custom_minimum_passing_grade_is_read_from_system_settings(self):
+        decimal_type, _ = Constant.objects.get_or_create(
+            category="data_type",
+            code="decimal",
+            defaults={"label": "عدد اعشاری"},
+        )
+
+        SystemSetting.objects.update_or_create(
+            setting_key="minimum_passing_grade",
+            defaults={
+                "setting_value": "10.5",
+                "data_type": decimal_type,
+            },
+        )
+
+        offering = self.create_offering()
+        prerequisite_offering = self.create_offering(
+            term=self.create_past_term(),
+            day="monday",
+        )
+
+        Prerequisite.objects.create(
+            lesson=offering.lesson,
+            prerequisite_lesson=prerequisite_offering.lesson,
+            prerequisite_type=self.constant("prerequisite_type", "prerequisite"),
+        )
+
+        prior_enrollment = self.make_enrollment(
+            self.student,
+            prerequisite_offering,
+        )
+        grade = Grade.objects.create(
+            enrollment=prior_enrollment,
+            score=Decimal("10.00"),
+        )
+
+        with self.assertRaises(api.APIError) as raised:
+            self.register(offering=offering)
+
+        self.assertEqual(raised.exception.code, "prerequisite_not_met")
+
+        grade.score = Decimal("10.50")
+        grade.save(update_fields=["score"])
 
         enrollment = self.register(offering=offering)
 

@@ -36,6 +36,9 @@ FEATURES = (
     'reports',
     'internship',
     'scholarships',
+    'curriculum',
+    'communication',
+    'system_settings',
 )
 
 urlpatterns = [

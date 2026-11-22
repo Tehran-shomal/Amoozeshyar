@@ -530,9 +530,6 @@ class UserAccount(models.Model):
         verbose_name = "حساب کاربری"
         verbose_name_plural = "حساب‌های کاربری"
 
-    class Meta:
-        verbose_name = "حساب کاربری"
-        verbose_name_plural = "حساب‌های کاربری"
 
 
 # ==========================================
@@ -577,13 +574,6 @@ class Classroom(models.Model):
 
     def __str__(self):
         return f"{self.building_name} - {self.room_number}"
-
-    def __str__(self):
-        return f"{self.building_name} - {self.room_number}"
-
-    class Meta:
-        verbose_name = "کلاس"
-        verbose_name_plural = "کلاس‌ها"
 
 
 # ==========================================
@@ -752,14 +742,6 @@ class Attendance(models.Model):
     class Meta:
         verbose_name = "حضور و غیاب"
         verbose_name_plural = "حضور و غیاب‌ها"
-
-    def __str__(self):
-        return f"{self.enrollment_id} - جلسه {self.session_number}"
-
-    class Meta:
-        verbose_name = "حضور و غیاب"
-        verbose_name_plural = "حضور و غیاب‌ها"
-
 
 # ==========================================
 # دسته‌بندی تیکت
