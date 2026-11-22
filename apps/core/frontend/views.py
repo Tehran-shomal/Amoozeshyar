@@ -11,7 +11,10 @@ from django.utils import timezone
 from django.views import View
 from apps.core import models as m
 from apps.core.api import APIError
-from apps.core.accounts.services import authenticate_person
+from apps.core.accounts.services import (
+    authenticate_person,
+    store_authenticated_account,
+)
 from .common import term_code_display
 from .registry import PAGES, NAV_GROUPS, SIDEBAR_FOOTER, LOGIN_COPY, build_page
 from .mobina.selectors import dashboard
@@ -45,6 +48,7 @@ class LoginPreviewView(View):
             person = authenticate_person(request.POST.get("username", ""), request.POST.get("password", ""), request)
             if person is not None:
                 login(request, person)
+                store_authenticated_account(request)
                 request.session.set_expiry(None if request.POST.get("remember_me") == "on" else 0)
                 return redirect("core:home")
             error = "نام کاربری یا گذرواژه نادرست است."

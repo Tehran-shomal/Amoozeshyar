@@ -1476,3 +1476,70 @@ class Field(models.Model):
 
     def __str__(self):
         return f"{self.field_name} ({self.department.department_name})"
+
+
+# ==========================================
+# محدوده مدیریتی ساختار آموزشی
+# ==========================================
+class AcademicManagementScope(models.Model):
+    user_account = models.OneToOneField(
+        UserAccount,
+        on_delete=models.CASCADE,
+        related_name="academic_management_scope",
+        verbose_name="حساب کاربری مدیر",
+    )
+    faculty = models.ForeignKey(
+        Faculty,
+        on_delete=models.PROTECT,
+        related_name="management_scopes",
+        verbose_name="دانشکده تحت مدیریت",
+        null=True,
+        blank=True,
+    )
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.PROTECT,
+        related_name="management_scopes",
+        verbose_name="گروه آموزشی تحت مدیریت",
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="تاریخ ایجاد",
+    )
+
+    class Meta:
+        verbose_name = "محدوده مدیریتی"
+        verbose_name_plural = "محدوده‌های مدیریتی"
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(faculty__isnull=False, department__isnull=True)
+                    | models.Q(faculty__isnull=True, department__isnull=False)
+                ),
+                name="academic_scope_exactly_one_target",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+
+        if self.faculty_id and self.department_id:
+            raise ValidationError(
+                "محدوده مدیریتی نمی‌تواند هم‌زمان دانشکده و گروه آموزشی داشته باشد."
+            )
+
+        if not self.faculty_id and not self.department_id:
+            raise ValidationError(
+                "باید دانشکده یا گروه آموزشی مشخص شود."
+            )
+
+        if self.department_id and self.faculty_id is None:
+            self.faculty_id = None
+
+    def __str__(self):
+        if self.faculty_id:
+            return f"{self.user_account.username} - {self.faculty.faculty_name}"
+
+        return f"{self.user_account.username} - {self.department.department_name}"
