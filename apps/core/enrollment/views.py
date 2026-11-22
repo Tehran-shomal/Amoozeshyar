@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
 from apps.core.api import APIError, error_response, read_json
-from apps.core.accounts.permissions import role_required
+from apps.core.accounts.permissions import account_role_required
 from apps.core.accounts.services import current_student
 from apps.core.enrollment.services import (
     drop_enrollment,
@@ -43,7 +43,7 @@ def _request_student(request):
 
 
 @require_POST
-@role_required("student")
+@account_role_required("student")
 def register_view(request, offering_id):
     try:
         student = _request_student(request)
@@ -57,7 +57,7 @@ def register_view(request, offering_id):
 
 
 @require_POST
-@role_required("student")
+@account_role_required("student")
 def drop_view(request, enrollment_id):
     try:
         student = _request_student(request)

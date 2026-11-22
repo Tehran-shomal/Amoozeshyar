@@ -7,8 +7,11 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.core.api import APIError, error_response, read_json
-from apps.core.accounts.services import authenticate_person, role_codes_for
-
+from apps.core.accounts.services import (
+    authenticate_person,
+    role_codes_for,
+    store_authenticated_account,
+)
 
 @require_GET
 @ensure_csrf_cookie
@@ -57,6 +60,7 @@ def login_view(request):
         )
 
     auth_login(request, user)
+    store_authenticated_account(request)
     request.session.set_expiry(None if remember_me else 0)
     return JsonResponse({"user": _user_payload(user)})
 

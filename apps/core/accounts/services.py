@@ -8,8 +8,13 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.core.api import APIError
-from apps.core.models import Person, Student, Teacher, UserAccount
-
+from apps.core.models import (
+    AcademicManagementScope,
+    Person,
+    Student,
+    Teacher,
+    UserAccount,
+)
 
 ROLE_ALIASES = {
     "student": {"student", "دانشجو"},
@@ -209,7 +214,12 @@ def authenticate_person(username, password, request=None):
                 person_lockout.failed_login_count = 0
                 person_lockout.locked_until = None
                 person_lockout.save(update_fields=["failed_login_count", "locked_until"])
-
+    # Preserve the exact role account selected during authentication.
+    # The login views will copy this identifier into the authenticated session.
+    if user is not None and request is not None:
+        request._authenticated_user_account_id = (
+            selected_account.pk if selected_account is not None else None
+        )
     # Raising outside atomic preserves the saved lockout state on the threshold attempt.
     if pending_error:
         raise pending_error
@@ -261,3 +271,105 @@ def current_student(person, student_code=None):
             400,
         )
     return records[0]
+# ==========================================
+# حساب نقش‌محور انتخاب‌شده در نشست کاربر
+# ==========================================
+
+USER_ACCOUNT_SESSION_KEY = "user_account_id"
+
+
+def store_authenticated_account(request):
+    """
+    Store the exact UserAccount selected during successful authentication.
+    Must be called after Django login().
+    """
+    account_id = getattr(
+        request,
+        "_authenticated_user_account_id",
+        None,
+    )
+
+    if account_id is None:
+        request.session.pop(USER_ACCOUNT_SESSION_KEY, None)
+        return
+
+    request.session[USER_ACCOUNT_SESSION_KEY] = account_id
+
+
+def current_user_account(request):
+    """
+    Resolve the active role account belonging to the authenticated Person.
+    Never select an arbitrary account with .first().
+    """
+    if not request.user.is_authenticated:
+        return None
+
+    account_id = request.session.get(USER_ACCOUNT_SESSION_KEY)
+
+    if account_id is None:
+        return None
+
+    account = (
+        UserAccount.objects
+        .select_related("role", "person")
+        .filter(
+            pk=account_id,
+            person=request.user,
+            is_active=True,
+            role__is_active=True,
+        )
+        .first()
+    )
+
+    if account is None:
+        request.session.pop(USER_ACCOUNT_SESSION_KEY, None)
+
+    return account
+
+
+def current_account_role(request):
+    """Return the canonical role of the exact active session account."""
+    account = current_user_account(request)
+
+    if account is None:
+        return None
+
+    return _normalize_role(account.role.role_name)
+
+
+def current_academic_management_scope(request):
+    """
+    Return a valid management scope for the exact session account.
+
+    Faculty managers must have a faculty scope.
+    Department managers must have a department scope.
+    """
+    account = current_user_account(request)
+
+    if account is None:
+        return None
+
+    role_code = _normalize_role(account.role.role_name)
+
+    if role_code not in {"faculty_manager", "department_manager"}:
+        return None
+
+    scope = (
+        AcademicManagementScope.objects
+        .select_related("faculty", "department", "department__faculty")
+        .filter(user_account=account)
+        .first()
+    )
+
+    if scope is None:
+        return None
+
+    if role_code == "faculty_manager":
+        if scope.faculty_id is None or scope.department_id is not None:
+            return None
+
+    elif role_code == "department_manager":
+        if scope.department_id is None or scope.faculty_id is not None:
+            return None
+
+    return scope

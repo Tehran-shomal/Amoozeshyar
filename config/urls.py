@@ -37,6 +37,7 @@ FEATURES = (
     'internship',
     'scholarships',
     'curriculum',
+    'academic_structure',
     'communication',
     'system_settings',
 )

@@ -6,7 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.core.api import APIError
-from apps.core.accounts.services import user_has_any_role
+from apps.core.accounts.services import _normalize_role
 from apps.core.models import (
     Constant,
     CreditTransferRequest,
@@ -20,6 +20,7 @@ from apps.core.models import (
     ThesisProgressReport,
     TransferRequest,
     UserAccount,
+    Person,
 )
 
 
@@ -80,12 +81,52 @@ def _status_category(model, field_name):
     choices = field.get_limit_choices_to()
     return choices.get("category")
 
+def _resolve_reviewer_account(reviewer):
+    """
+    Resolve a single active reviewer account.
 
+    A UserAccount is preferred. For backward compatibility, a Person
+    is accepted only when exactly one active account exists.
+    """
+    if isinstance(reviewer, UserAccount):
+        account = (
+            UserAccount.objects
+            .select_related("role", "person")
+            .filter(
+                pk=reviewer.pk,
+                is_active=True,
+                role__is_active=True,
+            )
+            .first()
+        )
+        return account
+
+    if isinstance(reviewer, Person):
+        accounts = list(
+            UserAccount.objects
+            .select_related("role", "person")
+            .filter(
+                person=reviewer,
+                is_active=True,
+                role__is_active=True,
+            )
+            .order_by("pk")[:2]
+        )
+        if len(accounts) == 1:
+            return accounts[0]
+
+    return None
 @transaction.atomic
 def transition_request(instance, target_status, reviewer=None):
     """Move a supported request from submission/review into a valid next state."""
     definition = _definition_for_instance(instance)
-    if reviewer is None or not user_has_any_role(reviewer, definition.reviewer_roles):
+    reviewer_account = _resolve_reviewer_account(reviewer)
+
+    if (
+        reviewer_account is None
+        or _normalize_role(reviewer_account.role.role_name)
+        not in definition.reviewer_roles
+    ):
         raise APIError("permission_denied", "Permission denied.", 403)
 
     if not isinstance(target_status, str):
@@ -134,10 +175,6 @@ def transition_request(instance, target_status, reviewer=None):
     setattr(current, status_field, target)
     update_fields = [status_field]
     if definition.model is Internship and target_code in {"approved", "rejected"}:
-        reviewer_account = UserAccount.objects.filter(
-            person=reviewer,
-            is_active=True,
-        ).order_by("pk").first()
         current.reviewed_by = reviewer_account
         current.reviewed_at = timezone.now()
         update_fields.extend(["reviewed_by", "reviewed_at"])
