@@ -5,7 +5,13 @@ from django.http import Http404
 
 from apps.core import models as m
 from ..common import active_enrollment_rows, form_for, term_code_display
-from .forms import EVALUATION_CRITERIA, MessageForm, SupportForm, SurveyForm
+from .forms import (
+    EVALUATION_CRITERIA,
+    EVALUATION_FORM_FIELDS,
+    MessageForm,
+    SupportForm,
+    SurveyForm,
+)
 
 
 def build(slug, student, term, request):
@@ -74,8 +80,8 @@ def build(slug, student, term, request):
             "evaluation_completed_count": len(survey_by_enrollment),
             "evaluation_term_code": term_code_display(term),
             "evaluation_notice": (
-                "هر معیار ارزشیابی از ۱ تا ۵ است. پاسخ‌ها به ثبت‌نام دانشجو پیوند دارند "
-                "و ناشناس بودن تضمین نشده است."
+                "schema فعلی فقط امتیاز کلی، کیفیت تدریس و رفتار استاد را ذخیره می‌کند. "
+                "پاسخ‌ها به ثبت‌نام دانشجو پیوند دارند و ناشناس بودن تضمین نشده است."
             ),
         }
 
@@ -121,7 +127,7 @@ def build(slug, student, term, request):
                 teacher_surveys__isnull=False
             ),
             "evaluation_rating_fields": (
-                [(label, form[name]) for name, label in EVALUATION_CRITERIA]
+                [(label, form[name]) for name, label in EVALUATION_FORM_FIELDS]
                 if form is not None else []
             ),
             "evaluation_submitted_ratings": (

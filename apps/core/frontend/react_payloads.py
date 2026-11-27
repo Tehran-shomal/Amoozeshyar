@@ -157,7 +157,7 @@ def _current_profile(student):
 def _timestamp(value):
     if value is None:
         return {"iso": None, "display": ""}
-    if timezone.is_aware(value):
+    if isinstance(value, datetime) and timezone.is_aware(value):
         value = timezone.localtime(value)
     return {
         "iso": value.isoformat(),
@@ -168,7 +168,7 @@ def _timestamp(value):
 def _date_display(value, format_string="%Y/%m/%d"):
     if value is None:
         return "—"
-    if timezone.is_aware(value):
+    if isinstance(value, datetime) and timezone.is_aware(value):
         value = timezone.localtime(value)
     return value.strftime(format_string)
 
@@ -304,14 +304,12 @@ def _evaluation_enrollment(enrollment):
 def _evaluation_survey(survey):
     if survey is None:
         return None
-    rating_fields = (
-        "content_mastery_rating", "explanation_clarity_rating",
-        "class_organization_rating", "student_interaction_rating",
-        "assessment_alignment_rating",
-    )
     return {
         "overall_rating": survey.overall_rating,
-        "ratings": {name: getattr(survey, name) for name in rating_fields},
+        "ratings": {
+            "teaching_quality": survey.teaching_quality,
+            "behavior": survey.behavior,
+        },
         "comment": str(survey.comment or ""),
     }
 

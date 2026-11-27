@@ -12,13 +12,10 @@
 <section class="panel evaluation-submitted-panel">
     <h2>ارزشیابی نهایی ثبت شده است</h2>
     <p class="evaluation-submitted-summary">امتیاز کلی ثبت‌شده: {{ evaluation_selected_survey.overall_rating }} از ۵</p>
-    {% if evaluation_selected_survey.content_mastery_rating or evaluation_selected_survey.explanation_clarity_rating or evaluation_selected_survey.class_organization_rating or evaluation_selected_survey.student_interaction_rating or evaluation_selected_survey.assessment_alignment_rating %}
+    {% if evaluation_selected_survey.teaching_quality or evaluation_selected_survey.behavior %}
     <dl class="evaluation-submitted-ratings">
         {% for label, score in evaluation_submitted_ratings %}<div><dt>{{ label }}</dt><dd>{{ score|default:"—" }}</dd></div>{% endfor %}
     </dl>
-    {% else %}
-    <p class="evaluation-legacy-note">این پاسخ پیش از ثبت جزئیات پنج‌گانه ذخیره شده است؛ دادهٔ قبلی حفظ شده و فرم قابل ویرایش نیست.</p>
-    {% endif %}
     {% if evaluation_selected_survey.comment %}<p class="evaluation-submitted-comment">{{ evaluation_selected_survey.comment }}</p>{% endif %}
 </section>
 {% else %}

@@ -44,17 +44,14 @@ export function EvaluationFormPage({ payload, bootstrap }: { payload: PagePayloa
 function SubmittedEvaluation({ survey, bootstrap }: { survey: Record<string, unknown>; bootstrap: PortalBootstrap }) {
   const ratings = asObject(survey.ratings);
   const criteria: Array<[string, string]> = [
-    ["content_mastery_rating", "تسلط استاد بر محتوای درس"],
-    ["explanation_clarity_rating", "بیان روشن و قابل فهم مطالب"],
-    ["class_organization_rating", "نظم در برگزاری کلاس‌ها"],
-    ["student_interaction_rating", "پاسخ‌گویی و تعامل با دانشجو"],
-    ["assessment_alignment_rating", "تناسب تکالیف و شیوه ارزشیابی"],
+    ["teaching_quality", "کیفیت تدریس"],
+    ["behavior", "رفتار استاد"],
   ];
   const hasRatings = criteria.some(([key]) => ratings[key] !== null && ratings[key] !== undefined && ratings[key] !== "");
   return <section className="panel evaluation-submitted-panel">
     <h2>ارزشیابی نهایی ثبت شده است</h2>
     <p className="evaluation-submitted-summary">امتیاز کلی ثبت‌شده: {displayText(survey.overall_rating)} از ۵</p>
-    {hasRatings ? <dl className="evaluation-submitted-ratings">{criteria.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{displayText(ratings[key])}</dd></div>)}</dl> : <p className="evaluation-legacy-note">این پاسخ پیش از ثبت جزئیات پنج‌گانه ذخیره شده است؛ دادهٔ قبلی حفظ شده و فرم قابل ویرایش نیست.</p>}
+    {hasRatings ? <dl className="evaluation-submitted-ratings">{criteria.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{displayText(ratings[key])}</dd></div>)}</dl> : null}
     {survey.comment ? <p className="evaluation-submitted-comment">{displayText(survey.comment, "")}</p> : null}
     <div className="page-actions"><a className="button button--soft" href={portalPageHref("evaluation", bootstrap)}>بازگشت به فهرست</a></div>
   </section>;

@@ -1,5 +1,12 @@
 # بررسی ادامهٔ مهاجرت React — ۲۰۲۶-۱۱-۲۶
 
+## اصلاح بازبینی پیش از PR — ۲۰۲۶-۱۱-۲۷
+
+- serializer تاریخ اکنون `date` و `datetime` را جداگانه مدیریت می‌کند؛ فرم‌های نامعتبر همان نمونهٔ bindشده و خطاهای save را به React برمی‌گردانند.
+- endpoint قدیمی حذف درس پنجرهٔ عادی یا اضطراری را می‌پذیرد؛ endpoint اختصاصی emergency فقط پنجرهٔ اضطراری را قبول می‌کند.
+- migration جدید امتیازهای پنج‌گانه حذف شد تا شرط «بدون تغییر schema» رعایت شود. فرم فقط `overall_rating`, `teaching_quality`, `behavior` موجود را ذخیره می‌کند؛ تفاوت پنج معیار PDF با schema باز است.
+- Regressionهای مربوطه اضافه/به‌روز شدند اما اجرا نشدند؛ اجرای suite طبق درخواست برای QA بعدی deferred است.
+
 این بخش فقط شواهد ایستا و build مهاجرت React را ثبت می‌کند؛ تست‌های خودکار عمداً اجرا نشده‌اند و وضعیت آن‌ها به PASS تغییر نمی‌کند.
 
 - پیش‌فرض runtime: ورود و ۳۳ route پورتال به پوستهٔ React می‌روند؛ `?legacy=1` مسیر قالب‌های Django را برای سازگاری نگه می‌دارد.
@@ -24,7 +31,7 @@
 
 > **گزارش تاریخی:** نتایج اجرای تست زیر مربوط به قبل از تغییر اخیر مالکیت هفت‌گانه و جابه‌جایی selector/form/templateهاست؛ آن‌ها را PASS نسخهٔ فعلی تلقی نکن. برای نسخهٔ جاری، مرور تصویری ترتیبی تا صفحهٔ ۱۴ و GETهای read-only صفحات ۹ و ۱۴ ثبت شده‌اند. source صفحات ۱۵–۱۹ پیش رفته، اما capture جاری/API مجاز در دسترس نیست. صفحهٔ ۱۷ پنج معیار مستقل دارد و migration جدید اجرا نشده؛ صفحهٔ ۱۸ typeهای واقعی را فیلتر می‌کند؛ صفحهٔ ۱۹ فقط فیلدهای موجود Person را ذخیره می‌کند و کانال‌های بدون provider را وعده نمی‌دهد. suite، mutationها و browser/workflow QA کامل طبق درخواست کاربر برای فاز بعد هستند.
 
-تغییرهای جدید تستی نیز تا اجرای فاز بعد **NOT RUN** هستند؛ از جمله `test_guide_contains_actionable_instructions_and_real_page_links`، رگرسیون اجباری‌بودن نوع درخواست در کارآموزی/خدمات/گواهی، `test_selected_courses_matches_pdf_columns_and_hides_offerings_until_requested`، `test_attendance_page_summarizes_sessions_by_active_course`، `test_calendar_page_renders_month_grid_and_real_term_events`، `test_announcements_use_owned_announcement_communications_and_mark_read`، `test_evaluation_form_matches_five_criteria_and_persists_final_response`، `test_evaluation_form_does_not_accept_another_students_enrollment`، `test_notifications_filter_by_owned_type_and_mark_only_owned_records_read`، `test_settings_page_renders_only_profile_backed_preferences`، `test_settings_post_updates_only_the_logged_in_person` و تغییر سناریوی seeded فارغ‌التحصیلی.
+تغییرهای جدید تستی نیز تا اجرای فاز بعد **NOT RUN** هستند؛ از جمله `test_guide_contains_actionable_instructions_and_real_page_links`، رگرسیون اجباری‌بودن نوع درخواست در کارآموزی/خدمات/گواهی، `test_selected_courses_matches_pdf_columns_and_hides_offerings_until_requested`، `test_attendance_page_summarizes_sessions_by_active_course`، `test_calendar_page_renders_month_grid_and_real_term_events`، `test_announcements_use_owned_announcement_communications_and_mark_read`، `test_evaluation_form_uses_existing_survey_fields_and_persists_response`، `test_react_validation_response_keeps_form_errors_from_failed_save`، `test_evaluation_form_does_not_accept_another_students_enrollment`، `test_date_payload_formatter_accepts_plain_date_values`، `test_notifications_filter_by_owned_type_and_mark_only_owned_records_read`، `test_settings_page_renders_only_profile_backed_preferences`، `test_settings_post_updates_only_the_logged_in_person` و تغییر سناریوی seeded فارغ‌التحصیلی.
 
 ادامهٔ ممیزی صفحات ۶۰–۶۱: assertions هشدار مهلت/پیوست صفحهٔ اعتراض نمره به تست موجود افزوده شد؛ regression فعالیت‌های آموزشی نیز scope تاریخچه به Student جاری و چهار مقصد لینک را پوشش می‌دهد. هر دو **NOT RUN** هستند؛ هیچ تستی در این ادامه اجرا نشده است.
 
@@ -50,7 +57,7 @@
 
 ادامهٔ صفحات ۴۱–۴۶: assertions نتیجهٔ تنظیمات/اعتراض/تسهیلات/درخواست/گواهی به تست‌های موجود افزوده شدند؛ تست تیکت `test_support_submission_uses_the_active_open_status` نیز redirect شناسه‌دار، نتیجهٔ واقعی، نبود پیوست و عدم افشای تیکت حساب دیگر را پوشش می‌دهد. همه **NOT RUN** هستند و نتیجهٔ تاریخی تست‌ها گواه این تغییرها نیست.
 
-صفحات ۴۹–۵۴: آزمون ارزشیابی بازبینی شد تا render پنج score واقعی را هم مطالبه کند؛ تست تنظیمات فارسی/English افزوده شد؛ آزمون مرحلهٔ اول ثبت‌نام و هم‌زمانی add/drop و endpoint emergency-only نیز نوشته شد. آزمون‌های service/API/JS/template این checkpoint همگی **NOT RUN** هستند.
+صفحات ۴۹–۵۴: آزمون ارزشیابی به فیلدهای فعلی schema محدود شد؛ تست تنظیمات فارسی/English افزوده شد؛ آزمون مرحلهٔ اول ثبت‌نام، سازگاری endpoint قدیمی drop با هر دو پنجره و endpoint اختصاصی emergency-only نیز نوشته شد. آزمون‌های service/API/JS/template این checkpoint همگی **NOT RUN** هستند.
 
 صفحهٔ ۵۵: `test_registration_status_summarizes_persisted_stages_without_claiming_final_approval` برای تعداد enrollment، بدهی پرونده، لینک مالی و نبود ادعای approval اضافه شد؛ **NOT RUN**.
 

@@ -37,7 +37,7 @@ Last updated: 2026-11-26
 | `/portal/exam-card/` | `ExamCardPage` | Explicit student and active-enrollment exam fields; missing seat number/card issuance remain disclosed and unavailable. |
 | `/portal/schedule/` | `SchedulePage` | Active selected-term courses, weekly time grid, conflict summary, and browser print; read-only. |
 | `/portal/evaluation/` | `EvaluationPage` | Scoped active-term course/survey status; route parameters retained when opening a course form. |
-| `/portal/evaluation-form/` | `EvaluationFormPage` | Existing five required ratings plus optional comment; Django validation/submit remains authoritative and no post-submit edits are offered. Anonymity is not promised. |
+| `/portal/evaluation-form/` | `EvaluationFormPage` | Existing `overall_rating` (required), `teaching_quality` and `behavior` (optional), plus comment; Django validation/submit remains authoritative and no post-submit edits are offered. The five independent PDF criteria are not represented in the existing schema. |
 | `/portal/grade-appeal/` | `GradeAppealPage` | Existing grade-bearing enrollment choices, request form, status/result table; deadline and attachment limitations remain disclosed. |
 | `/portal/internship/` | `StudentServicePage` | Existing internship fields and owner-scoped history/result; external university submission and approval are not claimed. |
 | `/portal/guest-request/` | `StudentServicePage` | Destination-only transfer form and scoped request history; missing PDF fields remain disclosed. |

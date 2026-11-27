@@ -4,10 +4,10 @@
 
 - `pages.py`: manifest هفت route؛ `evaluation-form` از منوی اصلی پنهان است و از فهرست ارزشیابی با enrollment مشخص باز می‌شود.
 - `selectors.py`: queryهای پیام، اعلان، ارزشیابی و تیکت را به حساب/پرونده محدود می‌کند؛ فهرست ارزشیابی وضعیت واقعی enrollmentهای فعال را می‌سازد و اطلاعیه‌های استاد فقط از Communicationهای type=`announcement` دریافت‌شده می‌آیند.
-- `forms.py`: ارزشیابی پنج‌معیاره، پیام استاد، ایجاد Ticket.
+- `forms.py`: فرم ارزشیابی بر پایهٔ فیلدهای موجود `overall_rating`, `teaching_quality`, `behavior`، پیام استاد و ایجاد Ticket.
 - `templates/miri/messages.html`: استادهای ثبت‌نام فعال همان نیمسال، ارسال پیام و تاریخچهٔ مکاتبات حساب جاری؛ thread و تحویل بیرونی در مدل نیست.
-- `templates/miri/evaluation.html` و `evaluation_form.html`: وضعیت درس‌ها، فرم پنج معیار و نتیجهٔ read-only.
-- `TeacherSurvey` پنج فیلد مستقل دارد؛ migration `0006_teacher_survey_pdf_ratings` باید در مرحلهٔ مجاز migration اجرا شود. رکوردهای قدیمی بدون امتیازهای پنج‌گانه حفظ و read-only می‌مانند.
+- `templates/miri/evaluation.html` و `evaluation_form.html`: وضعیت درس‌ها، فیلدهای موجود ارزشیابی و نتیجهٔ read-only.
+- `TeacherSurvey` پنج معیار مستقل PDF را در schema ندارد؛ این بخش فقط ستون‌های فعلی را ذخیره می‌کند و هیچ migration یا دادهٔ ساختگی اضافه نمی‌کند.
 - `templates/miri/notifications.html`: مرکز اعلان‌ها با شمارش/فیلتر براساس typeهای واقعی همان حساب؛ POST فقط همان Notification را mark-read می‌کند و query فیلتر را نگه می‌دارد.
 - `templates/miri/announcements.html`: کارت‌های مکاتبهٔ نوع announcement؛ POST فقط communication دریافتی حساب را mark-read می‌کند.
 - `templates/miri/guide.html`: چهار کارت FAQ و CTA مطابق صفحهٔ ۲۸ PDF؛ مقصدها routeهای واقعی‌اند. اختلاف API حذف اضطراری دربارهٔ حداقل واحد آشکار است؛ قواعد رسمی جدید جعل نشده‌اند.

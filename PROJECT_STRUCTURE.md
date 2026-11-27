@@ -94,7 +94,7 @@ All 43 current model classes are defined in apps/core/models.py; there are no fe
 | InternshipRequest | internship_request_id, student -> Student, organization_name, start_date, status -> Constant |
 | ThesisProgressReport | report_id, student -> Student, teacher -> Teacher, report_content, review_status -> Constant |
 | Notification | user -> UserAccount, title, message, related_exam -> Exam, notification_type -> Constant, sent_at, is_read, read_at, created_at |
-| TeacherSurvey | enrollment -> Enrollment, overall_rating, legacy teaching_quality/behavior, five PDF ratings (`content_mastery_rating`, `explanation_clarity_rating`, `class_organization_rating`, `student_interaction_rating`, `assessment_alignment_rating`), submitted_at, comment, created_at |
+| TeacherSurvey | enrollment -> Enrollment, overall_rating, teaching_quality, behavior, submitted_at, comment, created_at |
 | Internship | student -> Student, request_type -> Constant, company_name, intern_start_date, duration_hours, status -> Constant, reviewed_by -> UserAccount, reviewed_at, created_at |
 | Faculty | faculty_name, faculty_code, is_active, created_at |
 | Department | faculty -> Faculty, department_name, department_code, is_active, created_at |

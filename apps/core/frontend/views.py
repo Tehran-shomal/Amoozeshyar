@@ -251,6 +251,7 @@ class PortalView(LoginRequiredMixin, View):
             form = context.get("form")
             if form is None:
                 return HttpResponseNotAllowed(["GET"])
+            self.submitted_form = form
             if form.is_valid():
                 try:
                     with transaction.atomic():

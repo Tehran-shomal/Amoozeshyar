@@ -61,7 +61,7 @@ def register_view(request, offering_id):
 def drop_view(request, enrollment_id):
     try:
         student = _request_student(request)
-        enrollment = drop_enrollment(student, enrollment_id, window="add-drop")
+        enrollment = drop_enrollment(student, enrollment_id, window="either")
     except APIError as error:
         return error_response(error.code, error.message, error.status_code)
     return JsonResponse({"enrollment": _enrollment_payload(enrollment)})

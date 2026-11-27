@@ -8,44 +8,36 @@ from ..common import OwnedModelForm, active_enrollment_rows
 
 
 RATING_CHOICES = tuple((value, str(value)) for value in range(1, 6))
+EVALUATION_FORM_FIELDS = (
+    ("overall_rating", "امتیاز کلی"),
+    ("teaching_quality", "کیفیت تدریس"),
+    ("behavior", "رفتار استاد"),
+)
 EVALUATION_CRITERIA = (
-    ("content_mastery_rating", "تسلط استاد بر محتوای درس"),
-    ("explanation_clarity_rating", "بیان روشن و قابل فهم مطالب"),
-    ("class_organization_rating", "نظم در برگزاری کلاس‌ها"),
-    ("student_interaction_rating", "پاسخ‌گویی و تعامل با دانشجو"),
-    ("assessment_alignment_rating", "تناسب تکالیف و شیوه ارزشیابی"),
+    ("teaching_quality", "کیفیت تدریس"),
+    ("behavior", "رفتار استاد"),
 )
 
 
 class SurveyForm(OwnedModelForm):
-    content_mastery_rating = forms.TypedChoiceField(
+    overall_rating = forms.TypedChoiceField(
         choices=RATING_CHOICES,
         coerce=int,
-        label="تسلط استاد بر محتوای درس",
+        label="امتیاز کلی",
         widget=forms.RadioSelect(attrs={"class": "evaluation-rating-input"}),
     )
-    explanation_clarity_rating = forms.TypedChoiceField(
+    teaching_quality = forms.TypedChoiceField(
         choices=RATING_CHOICES,
         coerce=int,
-        label="بیان روشن و قابل فهم مطالب",
+        required=False,
+        label="کیفیت تدریس",
         widget=forms.RadioSelect(attrs={"class": "evaluation-rating-input"}),
     )
-    class_organization_rating = forms.TypedChoiceField(
+    behavior = forms.TypedChoiceField(
         choices=RATING_CHOICES,
         coerce=int,
-        label="نظم در برگزاری کلاس‌ها",
-        widget=forms.RadioSelect(attrs={"class": "evaluation-rating-input"}),
-    )
-    student_interaction_rating = forms.TypedChoiceField(
-        choices=RATING_CHOICES,
-        coerce=int,
-        label="پاسخ‌گویی و تعامل با دانشجو",
-        widget=forms.RadioSelect(attrs={"class": "evaluation-rating-input"}),
-    )
-    assessment_alignment_rating = forms.TypedChoiceField(
-        choices=RATING_CHOICES,
-        coerce=int,
-        label="تناسب تکالیف و شیوه ارزشیابی",
+        required=False,
+        label="رفتار استاد",
         widget=forms.RadioSelect(attrs={"class": "evaluation-rating-input"}),
     )
 
@@ -53,11 +45,9 @@ class SurveyForm(OwnedModelForm):
         model = m.TeacherSurvey
         fields = [
             "enrollment",
-            "content_mastery_rating",
-            "explanation_clarity_rating",
-            "class_organization_rating",
-            "student_interaction_rating",
-            "assessment_alignment_rating",
+            "overall_rating",
+            "teaching_quality",
+            "behavior",
             "comment",
         ]
         labels = {"enrollment": "درس و استاد"}
@@ -90,8 +80,6 @@ class SurveyForm(OwnedModelForm):
         m.Enrollment.objects.select_for_update().get(pk=self.instance.enrollment_id)
         if m.TeacherSurvey.objects.filter(enrollment=self.instance.enrollment).exists():
             raise forms.ValidationError("ارزشیابی این درس قبلاً ثبت شده است.")
-        ratings = [self.cleaned_data[name] for name, _ in EVALUATION_CRITERIA]
-        self.instance.overall_rating = (sum(ratings) + 2) // 5
         return super().save(commit=commit)
 
 

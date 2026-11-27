@@ -13,7 +13,7 @@
 | صفحه | URL | API | وضعیت |
 |---|---|---|---|
 | ارزشیابی | `/portal/evaluation/` | GET صفحه | وضعیت هر درس از TeacherSurvey؛ فرم فقط برای درس‌های باز |
-| فرم ارزشیابی | `/portal/evaluation-form/` | GET/POST صفحه | پنج معیار ۱–۵، نظر اختیاری، ثبت نهایی read-only |
+| فرم ارزشیابی | `/portal/evaluation-form/` | GET/POST صفحه | امتیاز کلی اجباری و دو معیار موجود اختیاری (۱–۵)، نظر اختیاری، ثبت نهایی read-only؛ پنج معیار PDF در schema نیست |
 | پیام به استاد | `/portal/messages/` | GET/POST صفحه | گیرنده به استادهای مربوط محدود |
 | اطلاعیه | `/portal/announcements/` | GET/POST صفحه | Communication نوع announcement؛ receiver-scoped mark-read؛ بدون FK درس/ترم |
 | اعلان | `/portal/notifications/` | GET/POST صفحه | فیلتر شمارشی بر اساس type واقعی؛ Notification متعلق به حساب جاری؛ mark-read |
@@ -26,7 +26,7 @@
 
 ### 5. API و داده
 
-API صفحه: `GET|POST /api/portal/pages/<slug>/`. فرم ارزشیابی پنج معیار را در TeacherSurvey/Enrollment ثبت می‌کند و امتیاز کلی را سرور محاسبه می‌کند؛ پیام و اطلاعیه از Communication و UserAccount، اعلان از Notification همان حساب با فیلترهای type موجود، support از Ticket creator همان حساب خوانده می‌شود. CSRF برای mutation الزامی است. Communication اطلاعیه در schema به term/course وصل نیست.
+API صفحه: `GET|POST /api/portal/pages/<slug>/`. فرم ارزشیابی فقط فیلدهای موجود `overall_rating`, `teaching_quality`, `behavior` را در TeacherSurvey/Enrollment ثبت می‌کند؛ پیام و اطلاعیه از Communication و UserAccount، اعلان از Notification همان حساب با فیلترهای type موجود، support از Ticket creator همان حساب خوانده می‌شود. CSRF برای mutation الزامی است. Communication اطلاعیه در schema به term/course وصل نیست.
 
 نمونهٔ علامت‌گذاری اعلان خود کاربر به‌عنوان خوانده‌شده (شناسه نمایشی):
 
@@ -42,7 +42,7 @@ X-CSRFToken: <csrf-token>
 
 ### 6. مجوز و validation
 
-فرم ارزشیابی فقط enrollment فعال همان دانشجو/ترم را می‌پذیرد؛ پنج rating اجباری ۱–۵ و duplicate رد می‌شود؛ بعد از ثبت، ویرایش ندارد. migration فیلدهای پنج‌گانه به source افزوده شده اما اجرا نشده است. گیرندهٔ پیام از استادهای مرتبط است. Notification و Communication اطلاعیه فقط توسط صاحب/گیرندهٔ حساب mark-read می‌شوند. Ticket creator از session می‌آید و category باید فعال باشد.
+فرم ارزشیابی فقط enrollment فعال همان دانشجو/ترم را می‌پذیرد؛ امتیاز کلی اجباری و دو فیلد قدیمی اختیاری‌اند؛ duplicate رد می‌شود و بعد از ثبت ویرایش ندارد. migration schema در این شاخه اضافه نمی‌شود؛ پنج معیار PDF با ستون‌های موجود قابل ذخیره نیستند. گیرندهٔ پیام از استادهای مرتبط است. Notification و Communication اطلاعیه فقط توسط صاحب/گیرندهٔ حساب mark-read می‌شوند. Ticket creator از session می‌آید و category باید فعال باشد.
 
 ### 7. فایل‌های فنی
 

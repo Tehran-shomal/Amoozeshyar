@@ -130,13 +130,12 @@ def portal_page_api(request, slug):
             return JsonResponse({"redirect": _portal_redirect(slug, response.url)})
         if response.status_code == 400:
             if REACT_ACCEPT in request.headers.get("Accept", ""):
-                error_context = view.context(request, page_slug)
                 return JsonResponse({
                     "error": {
                         "code": "validation_error",
                         "message": "فرم را بررسی و خطاها را اصلاح کنید.",
                     },
-                    "form": serialize_form(error_context.get("form")),
+                    "form": serialize_form(getattr(view, "submitted_form", None)),
                 }, status=400)
             return JsonResponse({
                 "error": {

@@ -3,6 +3,8 @@ from datetime import date, timedelta
 from contextlib import redirect_stdout
 from io import StringIO
 import json
+from unittest.mock import patch
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.test import SimpleTestCase
 from django.test import tag
@@ -12,6 +14,11 @@ import re
 
 
 class FrontendTeamStructureTests(SimpleTestCase):
+    def test_date_payload_formatter_accepts_plain_date_values(self):
+        from apps.core.frontend.react_payloads import _date_display
+
+        self.assertEqual(_date_display(date(2026, 11, 27)), "2026/11/27")
+
     def test_team_manifests_cover_each_portal_page_once(self):
         from apps.core.frontend.registry import GROUPS, PAGES
 
@@ -965,7 +972,7 @@ class LiveFrontendTests(TestCase):
             student=student, offering=offering, status=status
         ), teacher_person
 
-    def test_evaluation_form_matches_five_criteria_and_persists_final_response(self):
+    def test_evaluation_form_uses_existing_survey_fields_and_persists_response(self):
         self.client.force_login(self.users[0])
         enrollment, teacher_person = self._make_evaluation_enrollment(self.students[0], "1")
         url = (
@@ -980,23 +987,15 @@ class LiveFrontendTests(TestCase):
         self.assertIn('class="evaluation-form-panel"', html)
         self.assertIn("ساختمان داده‌ها", html)
         self.assertIn(teacher_person.full_name, html)
-        for name in (
-            "content_mastery_rating",
-            "explanation_clarity_rating",
-            "class_organization_rating",
-            "student_interaction_rating",
-            "assessment_alignment_rating",
-        ):
+        for name in ("overall_rating", "teaching_quality", "behavior"):
             self.assertIn(f'name="{name}"', html)
         self.assertIn("پاسخ‌ها محرمانه هستند", html)
 
         payload = {
             "enrollment": enrollment.pk,
-            "content_mastery_rating": 5,
-            "explanation_clarity_rating": 4,
-            "class_organization_rating": 3,
-            "student_interaction_rating": 2,
-            "assessment_alignment_rating": 1,
+            "overall_rating": 3,
+            "teaching_quality": 4,
+            "behavior": 2,
             "comment": "بازخورد اختیاری",
         }
         response = self.client.post(
@@ -1007,18 +1006,68 @@ class LiveFrontendTests(TestCase):
         self.assertIn(f"enrollment={enrollment.pk}", response.json()["redirect"])
         survey = m.TeacherSurvey.objects.get(enrollment=enrollment)
         self.assertEqual(survey.overall_rating, 3)
-        self.assertEqual(survey.content_mastery_rating, 5)
-        self.assertEqual(survey.explanation_clarity_rating, 4)
-        self.assertEqual(survey.class_organization_rating, 3)
-        self.assertEqual(survey.student_interaction_rating, 2)
-        self.assertEqual(survey.assessment_alignment_rating, 1)
+        self.assertEqual(survey.teaching_quality, 4)
+        self.assertEqual(survey.behavior, 2)
         self.assertEqual(survey.comment, "بازخورد اختیاری")
 
         submitted = self.client.get(url).json()["html"]
         self.assertIn("ارزشیابی نهایی ثبت شده است", submitted)
         self.assertNotIn('class="live-form evaluation-live-form"', submitted)
-        for score in range(1, 6):
-            self.assertIn(f"<dd>{score}</dd>", submitted)
+        self.assertIn("<dd>4</dd>", submitted)
+        self.assertIn("<dd>2</dd>", submitted)
+
+    def test_react_validation_response_keeps_form_errors_from_failed_save(self):
+        from apps.core.frontend.views import PortalView
+
+        self.client.force_login(self.users[0])
+        enrollment, _ = self._make_evaluation_enrollment(self.students[0], "7")
+        url = (
+            f"/api/portal/pages/evaluation-form/?student_code=S0&term=T1"
+            f"&enrollment={enrollment.pk}"
+        )
+        original_context = PortalView.context
+        context_calls = 0
+
+        def context_without_rebuilt_form(view, request, slug=None):
+            nonlocal context_calls
+            context = original_context(view, request, slug)
+            context_calls += 1
+            if request.method == "POST" and context_calls == 2:
+                context["form"] = None
+            return context
+
+        with patch(
+            "apps.core.frontend.miri.forms.SurveyForm.save",
+            side_effect=ValidationError("ارزشیابی این درس قبلاً ثبت شده است."),
+        ), patch.object(
+            PortalView, "context", autospec=True, side_effect=context_without_rebuilt_form
+        ):
+            response = self.client.post(
+                url,
+                data=json.dumps({
+                    "enrollment": enrollment.pk,
+                    "overall_rating": 4,
+                    "teaching_quality": 5,
+                    "behavior": 3,
+                    "comment": "ورودی حفظ‌شده",
+                }),
+                content_type="application/json",
+                HTTP_ACCEPT="application/vnd.amoozeshyar.react+json",
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIsNotNone(response.json()["form"])
+        self.assertIn(
+            "ارزشیابی این درس قبلاً ثبت شده است.",
+            response.json()["form"]["non_field_errors"],
+        )
+        self.assertEqual(
+            next(
+                field["value"] for field in response.json()["form"]["fields"]
+                if field["name"] == "comment"
+            ),
+            "ورودی حفظ‌شده",
+        )
 
     def test_evaluation_form_does_not_accept_another_students_enrollment(self):
         self.client.force_login(self.users[0])
@@ -1029,11 +1078,9 @@ class LiveFrontendTests(TestCase):
             url,
             data=json.dumps({
                 "enrollment": foreign_enrollment.pk,
-                "content_mastery_rating": 5,
-                "explanation_clarity_rating": 5,
-                "class_organization_rating": 5,
-                "student_interaction_rating": 5,
-                "assessment_alignment_rating": 5,
+                "overall_rating": 5,
+                "teaching_quality": 5,
+                "behavior": 5,
                 "comment": "",
             }),
             content_type="application/json",
@@ -1050,11 +1097,8 @@ class LiveFrontendTests(TestCase):
         m.TeacherSurvey.objects.create(
             enrollment=completed,
             overall_rating=4,
-            content_mastery_rating=4,
-            explanation_clarity_rating=4,
-            class_organization_rating=4,
-            student_interaction_rating=4,
-            assessment_alignment_rating=4,
+            teaching_quality=4,
+            behavior=4,
         )
 
         response = self.client.get("/api/portal/pages/evaluation/?term=T1")
@@ -1063,7 +1107,7 @@ class LiveFrontendTests(TestCase):
         html = response.json()["html"]
         self.assertIn("2 درس ثبت‌شده", html)
         self.assertIn("1 ارزشیابی تکمیل‌شده", html)
-        self.assertIn("هر معیار ارزشیابی از ۱ تا ۵ است", html)
+        self.assertIn("schema فعلی فقط امتیاز کلی، کیفیت تدریس و رفتار استاد را ذخیره می‌کند", html)
         self.assertIn("پاسخ‌ها به ثبت‌نام دانشجو پیوند دارند و ناشناس بودن تضمین نشده است", html)
         self.assertIn(f"enrollment={pending.pk}", html)
         self.assertNotIn(f"enrollment={completed.pk}", html)

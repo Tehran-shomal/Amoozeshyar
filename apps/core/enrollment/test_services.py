@@ -656,6 +656,25 @@ class EnrollmentAPITests(EnrollmentFixtures):
         self.assertEqual(dropped.status_code, 200)
         self.assertEqual(dropped.json()["enrollment"]["status"], "dropped")
 
+    def test_legacy_drop_endpoint_still_accepts_the_emergency_window(self):
+        offering = self.create_offering()
+        enrollment = self.make_enrollment(self.student, offering)
+        self.assertTrue(self.client.login(username=self.person.username, password="Person@Password1"))
+
+        now = timezone.now()
+        self.term.add_drop_start = now - timedelta(days=2)
+        self.term.add_drop_end = now - timedelta(days=1)
+        self.term.emergency_drop_start = now - timedelta(hours=1)
+        self.term.emergency_drop_end = now + timedelta(hours=1)
+        self.term.save(update_fields=[
+            "add_drop_start", "add_drop_end", "emergency_drop_start", "emergency_drop_end"
+        ])
+
+        response = self.client.post(f"/api/enrollment/drop/{enrollment.pk}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["enrollment"]["status"], "dropped")
+
     def test_emergency_drop_api_requires_the_emergency_window(self):
         offering = self.create_offering()
         enrollment = self.make_enrollment(self.student, offering)
