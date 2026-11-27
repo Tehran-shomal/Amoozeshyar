@@ -42,10 +42,11 @@ OMID_PAGES = {
         "template": "academic_services/transcript.html",
     },
     "attendance": {
-        "title": "حضور و غیاب درس‌ها",
-        "subtitle": "",
-        "group": "برنامه آموزشی و امتحانات",
-    },
+    "title": "حضور و غیاب درس‌ها",
+    "subtitle": "",
+    "group": "برنامه آموزشی و امتحانات",
+    "template": "academic_services/attendance.html",
+},
     "exam-card": {
         "title": "کارت ورود به جلسه امتحان",
         "subtitle": "برنامهٔ امتحانات، شماره صندلی و شرایط دریافت کارت",
