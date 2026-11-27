@@ -1,0 +1,31 @@
+{% if profile_notice %}<div class="inline-notice"><p>{{ profile_notice }}</p></div>{% elif notice %}<div class="inline-notice"><p>{{ notice }}</p></div>{% else %}
+<section class="calendar-overview-grid" aria-label="خلاصهٔ تقویم ترم">
+    <article class="calendar-overview-card"><span>نیمسال تحصیلی</span><strong>{{ calendar_term_code }}</strong><small>{{ selected_term }}</small></article>
+    <article class="calendar-overview-card"><span>بازهٔ کلاس‌ها</span><strong>{{ calendar_term_range }}</strong><small>بر اساس تاریخ‌های ثبت‌شدهٔ ترم</small></article>
+    <article class="calendar-overview-card"><span>مهلت پیش‌رو</span>{% if calendar_next_deadline %}<strong>{{ calendar_next_deadline.date_label }}</strong><small>{{ calendar_next_deadline.title }}{% if calendar_next_deadline.time_label %} • {{ calendar_next_deadline.time_label }}{% endif %}</small>{% else %}<strong>—</strong><small>مهلت آینده‌ای ثبت نشده است</small>{% endif %}</article>
+</section>
+
+<div class="calendar-layout">
+    <section class="panel calendar-month-panel" aria-labelledby="calendar-month-heading">
+        <div class="panel-heading"><h2 id="calendar-month-heading">{{ calendar_month_label }}</h2><span class="calendar-calendar-note">هجری شمسی</span></div>
+        <div class="calendar-weekdays" aria-hidden="true"><span>شنبه</span><span>یکشنبه</span><span>دوشنبه</span><span>سه‌شنبه</span><span>چهارشنبه</span><span>پنجشنبه</span><span>جمعه</span></div>
+        <div class="calendar-month-grid" role="grid" aria-label="روزهای ماه {{ calendar_month_label }}">
+            {% for day in calendar_days %}{% if day %}<div class="calendar-day{% if day.is_event_day %} is-event-day{% endif %}{% if day.is_today %} is-today{% endif %}" role="gridcell" data-calendar-day="{{ day.number }}" data-date="{{ day.iso_date }}" aria-label="{{ day.iso_date }}">{{ day.number }}</div>{% else %}<div class="calendar-day" aria-hidden="true"></div>{% endif %}{% endfor %}
+        </div>
+    </section>
+
+    <section class="panel calendar-events-panel" aria-labelledby="calendar-events-heading">
+        <div class="panel-heading"><h2 id="calendar-events-heading">رویدادهای آموزشی</h2></div>
+        <div class="calendar-event-list">
+            {% for event in calendar_events %}<article><strong>{{ event.date_label }}{% if event.time_label %} • {{ event.time_label }}{% endif %}</strong><span>{{ event.title }}{% if event.detail %} — {{ event.detail }}{% endif %}</span></article>
+            {% empty %}<p class="calendar-empty-state">برای این ماه رویدادی در پروندهٔ ترم ثبت نشده است.</p>{% endfor %}
+        </div>
+    </section>
+</div>
+
+<section class="panel calendar-summary-panel" aria-labelledby="calendar-summary-heading">
+    <div class="panel-heading"><h2 id="calendar-summary-heading">خلاصهٔ نیمسال {{ calendar_term_code }}</h2></div>
+    <dl class="calendar-summary-list">{% for label,value in calendar_summary %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>{% endfor %}</dl>
+</section>
+<p class="calendar-data-note">رویدادها فقط از تاریخ‌های ترم، امتحان‌های درس‌های فعال و جلسات ثبت‌شده استخراج می‌شوند؛ تقویم مناسبت‌های عمومی در دادهٔ سامانه موجود نیست.</p>
+{% endif %}

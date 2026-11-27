@@ -24,6 +24,7 @@
                 {% if group.title %}
                     <details class="nav-group" data-nav-group="{{ group.title }}" {% if group.title == section.group %}open{% endif %}>
                         <summary>{{ group.title }}<span aria-hidden="true">⌄</span></summary>
+                        <span class="nav-group-reference" aria-hidden="true"><span>{{ group.title }}</span><span>‹</span></span>
                         <div class="nav-group-items">
                             {% for item in group.items %}
                                 <a class="nav-link{% if active_slug == item.slug %} is-active{% endif %}"
@@ -123,7 +124,7 @@
                         <p class="empty-state">نیمسالی برای انتخاب ثبت نشده است.</p>
                     {% endfor %}
                 </fieldset>
-                <p class="term-selection-note">برنامه و وضعیت‌های تحصیلی با نیمسال انتخاب‌شده نمایش داده می‌شوند.</p>
+                <p class="term-selection-note">داده‌های این پیش‌نمایش تنها برای نیمسال 4051 تکمیل شده‌اند.</p>
                 <button class="term-picker-submit" type="submit" {% if not term_options %}disabled{% endif %}>انتخاب و بستن</button>
             </form>
         </dialog>

@@ -51,7 +51,7 @@ def register_view(request, offering_id):
     except APIError as error:
         return error_response(error.code, error.message, error.status_code)
     return JsonResponse(
-        {"enrollment": _enrollment_payload(enrollment)},
+        {"enrollment": _enrollment_payload(enrollment), "created": created},
         status=201 if created else 200,
     )
 
@@ -61,7 +61,18 @@ def register_view(request, offering_id):
 def drop_view(request, enrollment_id):
     try:
         student = _request_student(request)
-        enrollment = drop_enrollment(student, enrollment_id)
+        enrollment = drop_enrollment(student, enrollment_id, window="add-drop")
+    except APIError as error:
+        return error_response(error.code, error.message, error.status_code)
+    return JsonResponse({"enrollment": _enrollment_payload(enrollment)})
+
+
+@require_POST
+@role_required("student")
+def emergency_drop_view(request, enrollment_id):
+    try:
+        student = _request_student(request)
+        enrollment = drop_enrollment(student, enrollment_id, window="emergency-drop")
     except APIError as error:
         return error_response(error.code, error.message, error.status_code)
     return JsonResponse({"enrollment": _enrollment_payload(enrollment)})

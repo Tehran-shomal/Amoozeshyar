@@ -98,6 +98,9 @@ test("testExistingEndpointsUseTheirDocumentedPaths", async () => {
         if (url === "/api/enrollment/drop/31/") {
             return jsonResponse({ enrollment: { id: 31 } });
         }
+        if (url === "/api/enrollment/emergency-drop/32/") {
+            return jsonResponse({ enrollment: { id: 32 } });
+        }
         throw new Error(`Unexpected request: ${url}`);
     };
     const client = apiModule().createPortalApi({ fetchImpl, cookieReader: () => "" });
@@ -107,6 +110,7 @@ test("testExistingEndpointsUseTheirDocumentedPaths", async () => {
     await client.offerings();
     await client.register(27, { student_code: "S-1" });
     await client.drop(31);
+    await client.emergencyDrop(32);
     await client.logout();
 
     const byUrl = new Map(calls.map((call) => [call.url, call.options]));
@@ -116,6 +120,7 @@ test("testExistingEndpointsUseTheirDocumentedPaths", async () => {
     for (const path of [
         "/api/enrollment/register/27/",
         "/api/enrollment/drop/31/",
+        "/api/enrollment/emergency-drop/32/",
         "/api/accounts/logout/",
     ]) {
         assert.equal(byUrl.get(path).method, "POST");

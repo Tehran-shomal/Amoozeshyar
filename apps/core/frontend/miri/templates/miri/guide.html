@@ -1,0 +1,21 @@
+{% if guide_topics %}
+<section class="portal-card-list-panel portal-card-list-panel--guide" aria-label="راهنمای خدمات پرتال">
+    <div class="portal-card-list">
+        {% for topic in guide_topics %}
+        <article class="portal-card-row guide-topic">
+            <div class="portal-card-copy">
+                <strong>{{ topic.title }}</strong>
+                <p>{{ topic.description }}</p>
+                {% if topic.implementation_note %}<small class="guide-topic-note">{{ topic.implementation_note }}</small>{% endif %}
+            </div>
+            <a class="button button--soft" href="{% url 'core:section' topic.slug %}{{ query_suffix }}">{{ topic.link_label }}</a>
+        </article>
+        {% endfor %}
+    </div>
+    <div class="portal-card-list-actions">
+        <a class="button button--primary" href="{% url 'core:section' guide_support_slug %}{{ query_suffix }}">تماس با پشتیبانی</a>
+    </div>
+</section>
+{% else %}
+<section class="panel"><p class="empty-state">راهنمایی برای نمایش ثبت نشده است.</p></section>
+{% endif %}

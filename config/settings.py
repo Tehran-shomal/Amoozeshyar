@@ -169,7 +169,9 @@ AUTH_LOCKOUT_SECONDS = 900
 LEGACY_DATETIME_TIME_ZONE = env("LEGACY_DATETIME_TIME_ZONE", default="")
 
 # Register only team folders that contain real page templates or interactions.
-FRONTEND_TEMPLATE_TEAMS = ("mobina", "shaghayegh", "academic_services", "parsa", "neyousha_pouya")
+FRONTEND_TEMPLATE_TEAMS = (
+    "mobina", "shaghayegh", "parsa", "omid", "niousha", "shahsvand", "miri"
+)
 FRONTEND_STATIC_TEAMS = ("mobina", "shaghayegh")
 FRONTEND_ROOT = BASE_DIR / "apps" / "core" / "frontend"
 for team in FRONTEND_TEMPLATE_TEAMS:

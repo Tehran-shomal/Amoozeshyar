@@ -13,7 +13,7 @@ Audit and complete the existing Django student portal against the PDF, connect o
 
 ## Architecture and compatibility constraints
 
-- Keep the existing Django monolith and the five frontend ownership groups.
+- Keep the existing Django monolith and use the replacement seven frontend ownership groups in `2076-05-07-seven-team-full-pages-design.md`; the prior five-group structure is superseded.
 - Keep model declarations in `apps/core/models.py` and admin registrations in `apps/core/admin.py` unless an explicit project decision supersedes that rule.
 - Preserve the same-origin session/CSRF API boundary and student/profile ownership checks.
 - Do not add dependencies, sample transactions, invented grades, fabricated identifiers, or fake external-service success.

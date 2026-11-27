@@ -158,12 +158,18 @@ async function loadActiveTerm(shell) {
 
 async function loadCourseOfferings(shell) {
     const table = shell.querySelector("[data-offerings-api-table]");
-    if (!table) return;
+    const courseModal = shell.querySelector("[data-course-modal]");
+    if (!table && !courseModal) return;
     const selectedTerm = shell.dataset.selectedTermCode || new URLSearchParams(window.location.search).get("term");
     try {
         const payload = await window.PortalApi.offerings(selectedTerm || undefined);
-        renderOfferings(shell, payload.offerings || []);
+        const offerings = payload.offerings || [];
+        if (table) renderOfferings(shell, offerings);
+        document.dispatchEvent(new CustomEvent("portal:offerings-loaded", {
+            detail: { offerings, termCode: selectedTerm || "" },
+        }));
     } catch (error) {
+        document.dispatchEvent(new CustomEvent("portal:offerings-error", { detail: { error } }));
         window.PortalUI.showStatus(window.PortalUI.errorMessage(error));
     }
 }

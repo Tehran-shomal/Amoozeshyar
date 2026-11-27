@@ -1,11 +1,11 @@
 # کارنامه دانشجویی
 
-- مالک/route: Omid؛ `/portal/transcript/`; `academic_services/transcript.html`; Omid selector.
+- مالک/route: Omid؛ `/portal/transcript/`; `omid/transcript.html`; `omid.selectors`.
 - مرجع: PDF صفحهٔ ۶۲.
-- هدف/کنترل: معدل کل/واحد گذرانده/وضعیت و gradeهای درس‌های term جاری مرتب‌شده با کد درس.
-- داده/API: Student, Grade, Enrollment, CourseOffering, Lesson؛ GET API صفحه؛ write ندارد.
+- هدف/کنترل: خلاصهٔ واحدهای فعال نیمسال جاری، معدل کل ثبت‌شده، واحد گذرانده و وضعیت؛ جدول تمام Enrollmentهای فعال با واحد/نمرهٔ موجود/وضعیت؛ پیوند اعتراض نمره و چارت دروس و چاپ.
+- داده/API: Student, Grade, Enrollment, CourseOffering, Lesson؛ GET API صفحه؛ write ندارد. نمره از تنها فیلد `Grade.score` خوانده می‌شود.
 - اعتبارسنجی/مجوز: فقط دانشجوی جاری؛ term از query/active Term؛ نمره‌ای که DB ندارد ساخته نمی‌شود.
-- خطا/empty: profile/term و DB error طبق قرارداد مشترک؛ نبود grade خالی نمایش داده می‌شود.
-- navigation: activity dashboard/links؛ چاپ در PDF مستقل برای این route مستند نشده.
+- خطا/empty: profile/term و DB error طبق قرارداد مشترک؛ درس‌های بی‌نمره با «ثبت نشده» نشان داده می‌شوند و دروس خالی state مستقل دارند.
+- navigation: اعتراض به نمره و چارت دروس؛ چاپ مرورگر نیز موجود است.
 - آزمون/وابستگی: `apps/core/test_frontend.py`; selector تخصصی و Transcript template.
-- وضعیت: خواندن DB-backed؛ رندر smoke، نه تست گستردهٔ grading lifecycle؛ screenshot تازه باز.
+- وضعیت: صفحه با ستون‌های PDF (درس/واحد/نمره/وضعیت) و actionهایش تطبیق داده شد. تفاوت schema آشکار است: میان‌ترم و پایان‌ترم تفکیک نشده و معدل همین نیمسال محاسبه نمی‌شود؛ فقط معدل کل ثبت‌شده نشان داده می‌شود. regression مالکیت/درس بدون نمره نوشته شد، اجرا نشده؛ capture جاری در دسترس نیست.

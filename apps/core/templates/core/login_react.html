@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block body_class %}login-body{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/react-build/style.css' %}">{% endblock %}
+
+{% block content %}
+    {{ login_bootstrap|json_script:"portal-bootstrap-data" }}
+    <form id="portal-csrf-token" hidden aria-hidden="true">{% csrf_token %}</form>
+    <div id="portal-react-root" data-page="login" aria-live="polite"></div>
+    <noscript><main class="portal-page-loading" role="alert"><p>برای ورود با نسخهٔ سازگار، جاوااسکریپت را فعال کنید یا صفحهٔ بدون React را باز کنید.</p><a href="/login/?legacy=1">ورود با نسخهٔ سازگار</a></main></noscript>
+{% endblock %}
+
+{% block portal_scripts %}
+    <script type="module" src="{% static 'core/react-build/app.js' %}"></script>
+{% endblock %}

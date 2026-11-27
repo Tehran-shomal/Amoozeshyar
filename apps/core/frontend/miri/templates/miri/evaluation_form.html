@@ -1,0 +1,88 @@
+{% if profile_notice %}
+<div class="inline-notice"><p>{{ profile_notice }}</p></div>
+{% elif evaluation_selected_enrollment %}
+<div class="evaluation-course-info" aria-label="اطلاعات درس و ارزشیابی">
+    <span>{{ evaluation_selected_enrollment.offering.lesson.title }}</span>
+    <span>{{ evaluation_selected_enrollment.offering.teacher.person.full_name }}</span>
+    <span>نیمسال {{ term_display_code }}</span>
+    <span>پاسخ‌ها محرمانه هستند.</span>
+</div>
+
+{% if evaluation_selected_survey %}
+<section class="panel evaluation-submitted-panel">
+    <h2>ارزشیابی نهایی ثبت شده است</h2>
+    <p class="evaluation-submitted-summary">امتیاز کلی ثبت‌شده: {{ evaluation_selected_survey.overall_rating }} از ۵</p>
+    {% if evaluation_selected_survey.content_mastery_rating or evaluation_selected_survey.explanation_clarity_rating or evaluation_selected_survey.class_organization_rating or evaluation_selected_survey.student_interaction_rating or evaluation_selected_survey.assessment_alignment_rating %}
+    <dl class="evaluation-submitted-ratings">
+        {% for label, score in evaluation_submitted_ratings %}<div><dt>{{ label }}</dt><dd>{{ score|default:"—" }}</dd></div>{% endfor %}
+    </dl>
+    {% else %}
+    <p class="evaluation-legacy-note">این پاسخ پیش از ثبت جزئیات پنج‌گانه ذخیره شده است؛ دادهٔ قبلی حفظ شده و فرم قابل ویرایش نیست.</p>
+    {% endif %}
+    {% if evaluation_selected_survey.comment %}<p class="evaluation-submitted-comment">{{ evaluation_selected_survey.comment }}</p>{% endif %}
+</section>
+{% else %}
+<section class="panel evaluation-form-panel">
+    <form method="post" class="live-form evaluation-live-form">
+        {% csrf_token %}
+        {{ form.enrollment }}
+        {{ form.non_field_errors }}
+        <div class="evaluation-questions">
+            <header class="evaluation-panel-heading">
+                <h2>میزان موافقت خود را مشخص کنید</h2>
+                <p class="evaluation-rating-key">۱ بسیار کم&nbsp;&nbsp; ۲ کم&nbsp;&nbsp; ۳ متوسط&nbsp;&nbsp; ۴ زیاد&nbsp;&nbsp; ۵ بسیار زیاد</p>
+            </header>
+            {% for label, rating_field in evaluation_rating_fields %}
+            <fieldset class="evaluation-question">
+                <legend><span class="evaluation-question-number">{{ forloop.counter }}</span>{{ label }}</legend>
+                <div class="evaluation-rating-options">
+                    {% for choice in rating_field %}
+                    <label class="evaluation-rating-option">
+                        {{ choice.tag }}<span>{{ choice.choice_label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% for error in rating_field.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </fieldset>
+            {% endfor %}
+        </div>
+
+        <label class="evaluation-comment" for="{{ form.comment.id_for_label }}">
+            <span>{{ form.comment.label }} (اختیاری)</span>
+            {{ form.comment }}
+            {% for error in form.comment.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
+        </label>
+
+        <p class="evaluation-action-note">✓ پاسخ‌ها محرمانه هستند. پس از ثبت نهایی، ویرایش امکان‌پذیر نیست.</p>
+        {% url 'core:section' 'evaluation' as evaluation_list_url %}
+        <div class="page-actions evaluation-form-actions">
+            <button class="button button--primary" type="submit">ثبت نهایی ارزشیابی</button>
+            <a class="button button--soft" href="{{ evaluation_list_url }}{{ query_suffix }}">بازگشت به فهرست</a>
+        </div>
+    </form>
+</section>
+{% endif %}
+{% elif evaluation_enrollment_options %}
+<section class="panel evaluation-list-panel" aria-labelledby="evaluation-select-title">
+    <div class="panel-heading"><h2 id="evaluation-select-title">درس موردنظر را انتخاب کنید</h2></div>
+    <div class="evaluation-course-list">
+        {% for enrollment in evaluation_enrollment_options %}
+        {% url 'core:section' 'evaluation-form' as evaluation_form_url %}
+        <article class="evaluation-course-row">
+            <div class="evaluation-course-copy">
+                <strong>{{ enrollment.offering.lesson.title }}</strong>
+                <small>{{ enrollment.offering.teacher.person.full_name }}</small>
+            </div>
+            <span class="evaluation-course-status">تکمیل‌نشده</span>
+            <a class="button button--primary" href="{{ evaluation_form_url }}{{ query_suffix }}{% if query_suffix %}&amp;{% else %}?{% endif %}enrollment={{ enrollment.pk }}">انتخاب درس</a>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="panel evaluation-empty-panel">
+    <p>برای این نیمسال ارزشیابی تکمیل‌نشده‌ای ثبت نشده است.</p>
+    {% url 'core:section' 'evaluation' as evaluation_list_url %}
+    <a class="button button--soft" href="{{ evaluation_list_url }}{{ query_suffix }}">بازگشت به فهرست</a>
+</section>
+{% endif %}

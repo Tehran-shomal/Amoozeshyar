@@ -1,0 +1,44 @@
+{# Render only active registrations; missing seat or exam facts are never invented. #}
+{% if current_student %}
+{% if exam_card.blockers %}
+<div class="inline-notice exam-card-warning" role="status"><span aria-hidden="true">!</span><p>{{ exam_card.blockers|join:"، " }}</p></div>
+{% else %}
+<div class="inline-notice exam-card-warning" role="status"><span aria-hidden="true">i</span><p>این برنامه از درس‌های ثبت‌شده خوانده شده است؛ برای حضور در جلسه، کارت رسمی و مدرک شناسایی لازم است.</p></div>
+{% endif %}
+
+<section class="panel exam-card-student">
+    <h2>{{ current_student.person.full_name }}</h2>
+    <dl>
+        <div><dt>شماره دانشجویی</dt><dd>{{ current_student.student_code }}</dd></div>
+        <div><dt>رشته و مقطع</dt><dd>{{ current_student.field.field_name|default:"—" }} / {{ current_student.educational_level|default:"—" }}</dd></div>
+        <div><dt>نیمسال</dt><dd>{{ term_display_code }}</dd></div>
+        <div><dt>وضعیت تحصیلی</dt><dd>{{ current_student.status|default:"—" }}</dd></div>
+    </dl>
+</section>
+
+<section class="panel data-panel exam-card-table">
+    <div class="panel-heading"><h2>برنامهٔ امتحان‌های ثبت‌شده</h2></div>
+    <div class="table-wrap"><table class="data-table">
+        <thead><tr><th scope="col">درس</th><th scope="col">تاریخ / ساعت</th><th scope="col">محل / صندلی</th><th scope="col">وضعیت</th></tr></thead>
+        <tbody>
+            {% for enrollment in exam_card.enrollments %}
+            <tr>
+                <td>{{ enrollment.offering.lesson.title }}</td>
+                <td>{% if enrollment.offering.exam_date %}{{ enrollment.offering.exam_date|date:"Y/m/d" }}{% if enrollment.offering.exam_time %}، {{ enrollment.offering.exam_time|time:"H:i" }}{% endif %}{% else %}ثبت نشده{% endif %}</td>
+                <td>{{ enrollment.offering.classroom }} • شماره صندلی: در سامانه ثبت نشده</td>
+                <td>{{ enrollment.status|default:"ثبت‌شده" }}</td>
+            </tr>
+            {% empty %}<tr><td colspan="4" class="empty-state">برای این نیمسال ثبت‌نام فعالی وجود ندارد.</td></tr>{% endfor %}
+        </tbody>
+    </table></div>
+</section>
+
+<p class="action-note exam-card-note">برای ورود به جلسه، کارت معتبر و مدرک شناسایی همراه داشته باشید و ۳۰ دقیقه پیش از شروع آزمون در محل حاضر شوید. شمارهٔ صندلی یا صدور کارت رسمی از سرویس دانشگاه در دسترس نیست.</p>
+<div class="page-actions exam-card-actions">
+    <a class="button button--primary" href="{% url 'core:section' 'secure-payment' %}{{ query_suffix }}">پرداخت بدهی</a>
+    <a class="button button--primary" href="{% url 'core:section' 'evaluation' %}{{ query_suffix }}">تکمیل ارزشیابی</a>
+    <button class="button button--disabled" type="button" disabled>صدور کارت رسمی در دسترس نیست</button>
+</div>
+{% else %}
+<section class="panel"><p class="empty-state">برای مشاهدهٔ برنامهٔ امتحانات، پروندهٔ دانشجویی را انتخاب کنید.</p></section>
+{% endif %}

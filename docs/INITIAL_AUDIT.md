@@ -2,6 +2,8 @@
 
 تاریخ ممیزی: ۲۰۷۶-۰۵-۰۷
 
+> این فایل snapshot تاریخی قبل از تغییر مالکیت هفت‌گانه است؛ فهرست گروه‌های آن وضعیت زمان ممیزی اولیه را نشان می‌دهد، نه ساختار فعال فعلی. مرجع فعلی: [TEAM_OWNERSHIP.md](TEAM_OWNERSHIP.md).
+
 ## محدوده و Git
 
 - مخزن: `https://github.com/Tehran-shomal/Amoozeshyar.git`
@@ -18,7 +20,7 @@
 
 - Django monolith با Django `5.2.18`، Python `3.12` برای اجراهای این ممیزی، SQLite توسعه و JavaScript بدون framework.
 - ۱۸ اپ دامنه ثبت شده‌اند. مدل‌ها در `apps/core/models.py` متمرکزند و admin در `apps/core/admin.py` ثبت می‌شود؛ موجودی ۴۳ مدل در `PROJECT_STRUCTURE.md` آمده است.
-- پنج گروه فرانت‌اند موجودند: Mobina، Shaghayegh، Academic Services (Omid/Shahsavand)، Parsa و Neyousha/Pouya.
+- در ممیزی اولیه، فرانت‌اند پنج ماژول با مالکیت ترکیبی داشت؛ این ساختار در تقسیم‌بندی جدید جایگزین شد.
 - registry شامل ۳۲ slug صفحهٔ پرتال است؛ علاوه بر آن ورود، داشبورد، انتخاب نیمسال و گروه‌های منو اجزای مشترک‌اند.
 - APIهای قابل استفاده: حساب/CSRF و نشست، نیمسال/ارائه‌ها، ثبت‌نام/حذف درس، بازبینی درخواست‌های موجود و API عمومی محتوای صفحهٔ پرتال. همهٔ صفحه‌های دامنه از API هم‌مبدأ صفحه داده می‌گیرند؛ فرم‌ها با Django forms اعتبارسنجی و ذخیره می‌شوند.
 - ۱۴ namespace دامنه URL اختصاصی ندارند: attendance، grading، counseling، classroom، tuition، tickets، student_services، thesis، scholarships، people، reports، online_exam، internship و notifications. بعضی داده‌های این حوزه‌ها از API عمومی صفحه یا selectorها خوانده می‌شوند؛ این را نباید با API دامنه‌ای مستقل اشتباه گرفت.

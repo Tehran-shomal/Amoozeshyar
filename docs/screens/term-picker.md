@@ -1,11 +1,13 @@
 # انتخاب نیمسال (جزء مشترک)
 
-- مالک: لید مشترک Neyousha/Pouya؛ در `portal_base.html` و `static/core/live_portal.js`.
-- مرجع: PDF صفحهٔ ۳؛ component است و URL مستقل ندارد.
-- هدف/کنترل‌ها: انتخاب رکورد Term و reload محتوای صفحه با `?term=<term_code>`؛ کد کامل برای query حفظ و label نمایشی کوتاه می‌شود.
-- داده/API: فهرست `Term` در payload HTML صفحه؛ `GET /api/scheduling/active-term/` فقط فعال‌بودن/tooltip را می‌دهد؛ offeringها در صفحه‌های مرتبط از scheduling API می‌آیند.
-- ورودی/اعتبارسنجی: term code باید در DB موجود باشد؛ term ناموجود در API صفحه 404 `page_data_not_found` و در offerings 404 `term_not_found`.
-- مجوز/خطا: session لازم؛ CSRF برای عمل تغییردهنده‌ای در خود picker نیست؛ خطای خواندن از پیام مشترک UI.
-- مسیر: انتخاب نیمسال همان صفحه را با query جدید بارگیری می‌کند؛ رکورد یا داده‌ای را تغییر نمی‌دهد.
-- آزمون/وابستگی: `apps/core/test_frontend.py`, `apps/core/scheduling/test_services.py`, `static/core/tests/portal_bindings.test.cjs`; Term model و shell JS.
-- وضعیت: انتخاب query-backed؛ فهرست term ثابت یا route مستقل نیست؛ تست viewport تازه باز است.
+- مالک: Niousha به‌عنوان Frontend Lead؛ مؤلفهٔ مشترک در `apps/core/templates/core/portal_base.html` و `static/core/live_portal.js`.
+- مرجع: PDF صفحهٔ ۳؛ جزء سربرگ است و route مستقل ندارد.
+- شاهد هم‌اندازهٔ ۷۵۶×۴۴۱: [تصویر PDF](page-03-reference.png) و [رندر فعلی](page-03-current.png). رندر فعلی از HTML واقعی `GET /api/portal/pages/home/` با دادهٔ DB ساخته و فقط دیالوگ برای مقایسه جدا شده است.
+- کنترل‌ها: عنوان «انتخاب نیمسال تحصیلی»، گزینه‌های radio از `Term`, توضیح کوتاه و دکمهٔ «انتخاب و بستن». دیالوگ با Escape و کلیک backdrop بسته می‌شود؛ دکمهٔ × در مرجع دیده نمی‌شود و از نمای بصری حذف شده است.
+- اصلاح ظاهری این مرحله: عرض مؤلفه، تایپوگرافی، فاصله‌ها و دکمهٔ چپ‌چین بزرگ‌تر شدند؛ قاب، سایه، کارت‌های گزینه و backdrop تیره حذف شدند. گزینهٔ فعال فقط در ترتیب نمایش اول می‌آید؛ هیچ رکوردی جابه‌جا یا ویرایش نشده است.
+- داده/API: `GET /api/portal/pages/home/?term=<term_code>` دادهٔ صفحه را می‌سازد؛ `GET /api/scheduling/active-term/` فعال‌بودن ترم را می‌دهد. خود انتخاب یک GET همان صفحه با query جدید است و mutation ندارد.
+- اعتبارسنجی دستی با Client احراز‌شده: ترم‌های معتبر هر دو `200` دادند و radio انتخاب‌شده با query مطابق بود؛ ترم نامعتبر `404 page_data_not_found`؛ active-term احراز‌شده `200` و ناشناس `401`.
+- اختلاف داده با PDF، بدون تغییر DB: دادهٔ محلی دو ترم `14051` و `14052` دارد (نمایش کوتاه `4051` و `4052`)، اما PDF فقط `4051` را نشان می‌دهد. شمار offeringهای محلی برای `14051` برابر ۲ و برای `14052` برابر ۰ است؛ برچسب نیمسال محلی «مهر»/«بهمن» است، درحالی‌که PDF «نیمسال اول» می‌نویسد. برای پنهان‌کردن رکورد یا جعل برچسب تغییری انجام نشد.
+- مجوز/خطا: session لازم؛ API صفحه برای درخواست ناشناس `401` می‌دهد. در خود انتخاب عملیات تغییردهنده‌ای وجود ندارد.
+- آزمون/وابستگی: `apps/core/test_frontend.py`, `apps/core/scheduling/test_services.py`, `static/core/tests/portal_bindings.test.cjs`; suite خودکار طبق درخواست کاربر برای فاز بعد نگه داشته شده است.
+- وضعیت: مرجع و UI/API بازبینی شدند؛ چیدمان نزدیک شد، اما تفاوت محتوای ترم و برچسب DB باقی است و مستند شد.

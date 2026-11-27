@@ -1,0 +1,44 @@
+{# Owner-scoped graduation facts; issuance remains unavailable without an official provider. #}
+{% if current_student %}
+{% if notice %}<div class="inline-notice graduation-warning" role="status"><p>{{ notice }}</p></div>{% endif %}
+
+<section class="panel graduation-certificate-summary">
+    <div class="panel-heading"><h2>وضعیت پروندهٔ {{ current_student.person.full_name }}</h2></div>
+    <dl class="key-value-list">
+        <div><dt>شماره دانشجویی</dt><dd>{{ current_student.student_code }}</dd></div>
+        <div><dt>رشته و مقطع</dt><dd>{{ current_student.field.field_name }} · {{ current_student.educational_level|default:"—" }}</dd></div>
+        <div><dt>وضعیت فعلی</dt><dd>{{ current_student.status|default:"—" }}</dd></div>
+        <div><dt>واحد گذرانده در پرونده</dt><dd>{{ current_student.passed_units }} واحد</dd></div>
+        <div><dt>واحدهای چارت فعال</dt><dd>{{ certificate_curriculum_units }}</dd></div>
+        <div><dt>ماندهٔ بدهی پرونده</dt><dd>{{ current_student.tuition_debt|floatformat:"0" }} ریال</dd></div>
+    </dl>
+    <p>شرط‌های رسمی فراغت و تسویهٔ کتابخانه در این صفحه به‌طور مستقل قابل تأیید نیستند؛ برای ارزیابی معتبر به آموزش مراجعه کنید.</p>
+</section>
+
+<section class="panel graduation-certificate-documents">
+    <div class="panel-heading"><h2>مدارک و شرایط</h2></div>
+    <p>فهرست مدارک لازم و بارگذاری تصویر/رسید در مدل فعلی ثبت نمی‌شود. پس از احراز شرایط، نوع مدرک قابل دریافت باید از آموزش تأیید شود.</p>
+    {% if tables.0.rows %}
+    <h3>آخرین بررسی‌های ثبت‌شده</h3>
+    <div class="table-wrap"><table class="data-table">
+        <thead><tr>{% for column in tables.0.columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr></thead>
+        <tbody>{% for row in tables.0.rows %}<tr>{% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<p class="empty-state">بررسی رسمی برای این پرونده ثبت نشده است.</p>{% endif %}
+</section>
+
+<div class="page-actions graduation-certificate-actions">
+    <a class="button button--primary" href="{% url 'core:section' 'graduation' %}{{ query_suffix }}">بررسی شرایط فراغت</a>
+    <a class="button button--soft" href="{% url 'core:section' 'curriculum' %}{{ query_suffix }}">چارت دروس</a>
+</div>
+
+<section class="panel graduation-certificate-workflow" aria-labelledby="graduation-certificate-workflow-title">
+    <div class="panel-heading"><h2 id="graduation-certificate-workflow-title">مسیر صدور مدرک</h2></div>
+    <ol>
+        {% for step in certificate_steps %}<li><strong>{{ step.title }}</strong><span>{{ step.status }}</span></li>{% endfor %}
+    </ol>
+    <p>هیچ مرحله‌ای با نمایش این مسیر تأیید نمی‌شود؛ درخواست معتبر صدور و سرویس رسمی متصل نیست.</p>
+</section>
+{% else %}
+<section class="panel"><p class="empty-state">برای مشاهدهٔ وضعیت مدرک، ابتدا پروندهٔ دانشجویی را انتخاب کنید.</p></section>
+{% endif %}

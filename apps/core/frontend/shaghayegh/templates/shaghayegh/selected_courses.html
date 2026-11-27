@@ -1,0 +1,90 @@
+{# Current registrations are visible first; offerings remain available from their GET API. #}
+{% if current_student %}
+<section class="panel student-course-summary">
+    <dl class="summary-rows">
+        <div><dt>نام و نام خانوادگی</dt><dd>{{ current_student.person.full_name }}</dd></div>
+        <div><dt>شماره دانشجویی</dt><dd>{{ current_student.student_code }}</dd></div>
+        <div><dt>رشته و مقطع</dt><dd>{{ current_student.field.field_name|default:"—" }} · {{ current_student.educational_level|default:"—" }}</dd></div>
+        <div><dt>نیمسال و وضعیت</dt><dd>{{ term_display_code }} · {{ current_student.status|default:"—" }}</dd></div>
+    </dl>
+</section>
+
+<div class="course-warning-panel">
+    <div>
+        {% if current_student.tuition_debt %}
+        <p>در پروندهٔ دانشجو بدهی شهریهٔ {{ current_student.tuition_debt|floatformat:"0" }} ریال ثبت شده است.</p>
+        {% else %}
+        <p>ثبت نهایی هر درس پس از بررسی قوانین آموزشی و ظرفیت از سوی سامانه انجام می‌شود.</p>
+        {% endif %}
+        <small>سقف مجاز این نیمسال: {{ maximum_allowed_units }} واحد · وضعیت ثبت‌نام از دادهٔ سامانه خوانده می‌شود.</small>
+    </div>
+    <button class="button button--primary" type="button" data-open-course-offerings data-course-modal-opener
+        aria-controls="course-offerings-modal" aria-expanded="false">انتخاب درس‌ها</button>
+</div>
+
+<section class="panel data-panel course-list-panel course-current-panel">
+    <div class="panel-heading"><h2>{{ tables.0.title }}</h2></div>
+    <div class="table-wrap"><table class="data-table">
+        <thead><tr>{% for column in tables.0.columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr></thead>
+        <tbody>
+            {% for row in tables.0.rows %}<tr>{% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}</tr>
+            {% empty %}<tr><td colspan="7" class="empty-state">برای این نیمسال درس ثبت‌شده‌ای وجود ندارد.</td></tr>{% endfor %}
+        </tbody>
+    </table></div>
+</section>
+
+<section class="course-totals" aria-label="خلاصه واحدهای انتخاب‌شده">
+    <div><span>مجموع واحدها</span><strong>{{ selected_units }}</strong></div>
+    <div><span>شهریه ثابت (تومان)</span><strong>—</strong></div>
+    <div><span>شهریه متغیر (تومان)</span><strong>—</strong></div>
+    <div><span>جمع کل (تومان)</span><strong>—</strong></div>
+    {% if not tuition_breakdown_available %}
+    <p class="course-totals-note">تعرفهٔ شهریه برای این نیمسال در داده‌های سامانه ثبت نشده است؛ مبلغی حدس زده نمی‌شود.</p>
+    {% endif %}
+</section>
+
+<div class="page-actions course-page-actions">
+    <a class="button button--soft" href="{% url 'core:section' 'enrollment' %}{{ query_suffix }}">بازگشت به اطلاعات</a>
+</div>
+
+<div id="course-offerings-modal" class="modal-backdrop" data-course-modal hidden>
+    <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="course-modal-title">
+        <section class="course-modal-list" data-course-modal-list>
+            <header class="modal-heading">
+                <div><h2 id="course-modal-title">انتخاب درس‌ها</h2>
+                    <p>نیمسال {{ term_display_code }} · {{ current_student.field.field_name|default:"رشتهٔ دانشجو" }}</p>
+                </div>
+                <button type="button" data-course-modal-close aria-label="بستن پنجرهٔ انتخاب درس">بستن ×</button>
+            </header>
+            <p class="modal-instruction">برای مشاهدهٔ استادان و زمان‌های ارائه، گروه درس را انتخاب کنید.</p>
+            <div class="course-choice-list" data-course-modal-courses aria-live="polite">
+                <p class="empty-state">دروس نیمسال در حال دریافت است…</p>
+            </div>
+            <p class="action-note">ثبت نهایی هر درس پس از بررسی قوانین آموزشی و ظرفیت توسط API انجام می‌شود.</p>
+        </section>
+
+        <section data-course-detail hidden aria-labelledby="course-detail-title">
+            <header class="modal-heading">
+                <div><h2 id="course-detail-title" data-course-modal-title></h2>
+                    <p class="course-modal-meta">کد درس: <span data-course-modal-code>—</span> · <span data-course-modal-units>—</span> واحد</p>
+                </div>
+                <button type="button" data-course-modal-close aria-label="بستن پنجرهٔ انتخاب درس">بستن ×</button>
+            </header>
+            <p class="course-modal-meta">شهریهٔ هر درس: —</p>
+            <p class="course-modal-meta" data-course-modal-exam></p>
+            <p class="course-totals-note">تعرفهٔ هر درس در داده‌های سامانه ثبت نشده است؛ مبلغی حدس زده نمی‌شود.</p>
+            <div class="course-group-options" data-course-modal-groups aria-label="ارائه‌های قابل انتخاب"></div>
+            <p class="selected-group-note" data-course-modal-group-note>شمارهٔ گروه در داده‌های سامانه ثبت نشده است؛ ارائه را بر اساس استاد و زمان انتخاب کنید.</p>
+            <p class="selected-group-note" data-course-modal-status role="status" aria-live="polite" hidden></p>
+            <div class="page-actions">
+                <button class="button button--primary" type="button" data-enrollment-action="register" data-record-id="" disabled>افزودن درس</button>
+                <button class="button button--soft" type="button" data-course-modal-back>بازگشت به فهرست</button>
+            </div>
+        </section>
+    </section>
+</div>
+
+{% include "shaghayegh/partials/tuition_debt_modal.html" %}
+{% else %}
+<section class="panel"><p class="empty-state">برای نمایش دروس، پروندهٔ دانشجویی را از نوار بالای صفحه انتخاب کنید.</p></section>
+{% endif %}

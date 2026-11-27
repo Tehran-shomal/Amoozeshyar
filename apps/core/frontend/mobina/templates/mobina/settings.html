@@ -1,0 +1,79 @@
+<div class="settings-page">
+    {% if settings_save_result %}
+    <section class="panel settings-save-result" role="status" aria-live="polite">
+        <div class="panel-heading"><h2>نتیجهٔ عملیات</h2></div>
+        <p>تنظیمات در حساب شما ذخیره شد.</p>
+        <p>زبان انتخابی: {{ request.user.preferred_language|default:"—" }} · ترجیح کلی اعلان: {% if request.user.is_notification_enabled %}فعال{% else %}غیرفعال{% endif %}</p>
+        <p class="settings-channel-notice">این صفحه تنظیمات را در حساب محلی ذخیره می‌کند؛ ترجیح اعلان فقط ذخیره شده است و سرویس اعلان فعلی آن را اعمال نمی‌کند. کانال پیامک/رایانامه تنظیم‌پذیر نیست.</p>
+        <a class="button button--primary" href="{% url 'core:section' 'settings' %}{{ query_suffix }}">متوجه شدم</a>
+    </section>
+    {% endif %}
+    <form method="post" class="settings-form live-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <section class="panel settings-language-panel">
+            <div class="panel-heading"><h2>زبان و نمایش</h2></div>
+            <div class="settings-language-row">
+                <strong>زبان رابط کاربری</strong>
+                <div class="settings-language-options" role="radiogroup" aria-label="زبان رابط کاربری">
+                    {% for choice in form.preferred_language %}
+                    <label class="settings-language-option{% if choice.data.selected %} is-selected{% endif %}">
+                        {{ choice.tag }}<span>{{ choice.choice_label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {{ form.preferred_language.errors }}
+            <p>زبان انتخاب‌شده پس از ذخیره در حساب کاربری ثبت می‌شود.</p>
+        </section>
+
+        <section class="panel settings-notifications-panel">
+            <div class="panel-heading"><h2>روش دریافت اعلان‌ها</h2></div>
+            <div class="settings-notification-grid" role="table" aria-label="وضعیت پشتیبانی کانال‌های اعلان">
+                <div class="settings-notification-header" role="row">
+                    <span role="columnheader">دستهٔ اعلان</span>
+                    <span role="columnheader">داخل سامانه</span>
+                    <span role="columnheader">پیامک</span>
+                    <span role="columnheader">رایانامه</span>
+                </div>
+                {% for category in notification_categories %}
+                <div class="settings-notification-row" role="row">
+                    <strong role="cell">{{ category }}</strong>
+                    <span role="cell">ترجیح کلی ذخیره‌شده</span>
+                    <span class="settings-channel-unavailable" role="cell">تنظیم‌پذیر نیست</span>
+                    <span class="settings-channel-unavailable" role="cell">تنظیم‌پذیر نیست</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="settings-notification-toggle">
+                {{ form.is_notification_enabled }}
+                <label for="{{ form.is_notification_enabled.id_for_label }}">{{ form.is_notification_enabled.label }}</label>
+                {{ form.is_notification_enabled.errors }}
+            </div>
+            <p class="settings-channel-notice" role="note">
+                این گزینه فقط در اطلاعات حساب ذخیره می‌شود و فعلاً سرویس اعلان آن را اعمال نمی‌کند. تنظیم جداگانهٔ پیامک/رایانامه و شمارهٔ همراه نیز در مدل فعلی وجود ندارد؛ ارسال پیام بیرونی فعال یا تضمین نمی‌شود.
+            </p>
+        </section>
+
+        <section class="panel settings-contact-panel">
+            <div class="panel-heading"><h2>اطلاعات حساب</h2></div>
+            <div class="settings-contact-grid">
+                <div class="form-field">
+                    <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                    {{ form.email }}{{ form.email.errors }}
+                </div>
+                <div class="form-field">
+                    <label for="{{ form.address.id_for_label }}">{{ form.address.label }}</label>
+                    {{ form.address }}{{ form.address.errors }}
+                </div>
+            </div>
+            <p class="settings-channel-notice" role="note">شمارهٔ همراه در مدل فعلی قابل ثبت یا ویرایش نیست.</p>
+        </section>
+
+        <div class="page-actions settings-page-actions">
+            <button class="button button--primary" type="submit">ذخیره تنظیمات</button>
+            <a class="button button--soft" href="{% url 'core:section' 'notifications' %}{{ query_suffix }}">مرکز اعلان‌ها</a>
+        </div>
+    </form>
+</div>

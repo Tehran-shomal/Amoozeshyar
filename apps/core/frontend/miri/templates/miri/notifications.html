@@ -1,0 +1,38 @@
+{% url 'core:section' 'notifications' as notifications_url %}
+{% url 'core:section' 'settings' as settings_url %}
+
+<nav class="notification-filters" aria-label="فیلتر اعلان‌ها">
+    <a class="notification-filter{% if not notification_filter_code %} is-active{% endif %}" href="{{ notifications_url }}{{ query_suffix }}" aria-current="{% if not notification_filter_code %}page{% else %}false{% endif %}">همه ({{ notification_count }})</a>
+    {% for filter in notification_type_filters %}
+    <a class="notification-filter{% if notification_filter_code == filter.code %} is-active{% endif %}" href="{{ notifications_url }}{{ query_suffix }}{% if query_suffix %}&amp;{% else %}?{% endif %}notification_type={{ filter.code|urlencode }}" aria-current="{% if notification_filter_code == filter.code %}page{% else %}false{% endif %}">{{ filter.label }} ({{ filter.count }})</a>
+    {% endfor %}
+</nav>
+
+<section class="notification-center-list" aria-label="فهرست اعلان‌های حساب شما">
+    {% for notification in notifications %}
+    <article class="notification-center-card{% if notification.is_read %} is-read{% endif %}">
+        <div class="notification-center-copy">
+            <strong class="notification-center-type">{{ notification.notification_type.label|default:"بدون نوع" }}{% if not notification.is_read %}<span>· خوانده‌نشده</span>{% endif %}</strong>
+            <h2>{{ notification.title }}</h2>
+            <p>{{ notification.message }}</p>
+        </div>
+        <div class="notification-center-actions">
+            {% if notification.is_read %}
+            <span class="notification-read-label">خوانده‌شده</span>
+            {% else %}
+            <form method="post" class="live-form">
+                {% csrf_token %}
+                <input type="hidden" name="notification_id" value="{{ notification.pk }}">
+                <button class="button button--soft" type="submit" aria-label="مشاهده و علامت‌گذاری اعلان {{ notification.title }}">مشاهده</button>
+            </form>
+            {% endif %}
+        </div>
+    </article>
+    {% empty %}
+    <div class="panel notification-center-empty">{% if notification_filter_code %}اعلانی با این نوع در حساب شما ثبت نشده است.{% else %}اعلانی برای حساب شما ثبت نشده است.{% endif %}</div>
+    {% endfor %}
+</section>
+
+<div class="page-actions notification-center-footer">
+    <a class="button button--primary" href="{{ settings_url }}{{ query_suffix }}">تنظیمات اعلان‌ها</a>
+</div>

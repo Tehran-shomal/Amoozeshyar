@@ -1,61 +1,62 @@
-# ارائهٔ گروه نیوشا — برنامه و تجربهٔ responsive
+# ارائهٔ ۰۵ — نیوشا: برنامه و کلاس‌ها، Frontend Lead
 
 ### 1. معرفی بخش
 
-صفحه‌های زمان‌بندی و اعلان‌ها و بخشی از تنظیمات پرتال. نقش Frontend Lead در پیوست شامل هماهنگی UI و بررسی responsive تمام گروه‌هاست.
+نمایش برنامهٔ هفتگی، تقویم ترم، حضور و غیاب و برنامهٔ امتحان‌ها. نیوشا Frontend Lead است و هماهنگی consistency و responsive همهٔ گروه‌ها را بررسی می‌کند.
 
 ### 2. مسئولیت عضو
 
-پیوست صفحات ۱۴–۱۵ و ۲۱–۲۲ را برای حضور، تقویم، کارت امتحان و برنامه هفتگی نام می‌برد. در کد فعلی گروه `neyousha_pouya` مشترک است و مالک `calendar`, `schedule`, `settings`, `internship`, `notifications`, و `announcements` است؛ `attendance` و `exam-card` در manifest Omid قرار دارند. گزارش responsive این شاخه در [TEST_REPORT.md](../TEST_REPORT.md) آمده است.
+routeهای برنامه/کلاس و term picker مشترک. صفحات ذکرشده در Master: ۱۴–۱۵ و ۲۱–۲۲؛ فایل PDF مرجع در clone حاضر نیست و بازبینی بصری به بعد منتقل می‌شود.
 
-### 3. صفحات پیاده‌سازی‌شده
+### 3. صفحه‌ها و URLها
 
-| صفحه | PDF | URL | مالکیت/وضعیت واقعی |
-|---|---:|---|---|
-| تقویم آموزشی | 15 | `/portal/calendar/` | گروه مشترک؛ فقط تاریخ‌های Term، نه grid رویداد PDF |
-| برنامه هفتگی | 22 | `/portal/schedule/` | گروه مشترک؛ جدول Enrollmentهای فعال و چاپ مرورگر |
-| اعلان‌ها | 18 | `/portal/notifications/` | گروه مشترک؛ read و mark-read متعلق به شخص |
-| اطلاعیه‌ها | 16 | `/portal/announcements/` | گروه مشترک؛ feed مشترک Notification، انتشار ندارد |
-| تنظیمات | 19 | `/portal/settings/` | گروه مشترک؛ ویرایش فیلدهای Person |
-| انتخاب نیمسال | 3 | dialog در shell | جزء مشترک، query را در URL نگه می‌دارد |
-| حضور و غیاب / کارت امتحان | 14 / 21 | `/portal/attendance/` / `/portal/exam-card/` | route واقعی اما manifest Omid؛ attendance فقط خواندنی، صدور رسمی نیست |
+| صفحه | URL | API | وضعیت |
+|---|---|---|---|
+| برنامه هفتگی | `/portal/schedule/` | GET صفحه | شبکهٔ روز×ساعت از Enrollment/Offering فعال؛ جمع واحد و جلسه و بررسی overlap؛ چاپ مرورگر |
+| تقویم ترم | `/portal/calendar/` | GET صفحه | تاریخ‌های ذخیره‌شده Term |
+| حضور و غیاب | `/portal/attendance/` | GET صفحه | فقط Attendance موجود؛ no staff write |
+| کارت امتحان | `/portal/exam-card/` | GET صفحه | برنامهٔ ثبت‌شده؛ صندلی/صدور رسمی ناموجود |
+| انتخاب نیمسال | در header هر صفحه | `GET /api/scheduling/active-term/` | component مشترک |
 
-### 4. طراحی و عملکرد
+### 4. جریان رابط
 
-صفحات زمان‌بندی از Term و Enrollment/Offering واقعی می‌خوانند. تقویم رویداد مستقل در schema وجود ندارد؛ دادهٔ خالی را به رویداد فرضی تبدیل نمی‌کنیم. اعلان فقط وقتی متعلق به Person جاری باشد خوانده علامت می‌خورد. تنظیمات فقط Person احرازشده را ویرایش می‌کند.
+انتخاب ترم query صفحه را تغییر می‌دهد؛ schedule/attendance/exam-card همان term را می‌خوانند. چاپ از مرورگر است و خروجی backend جداگانه ندارد. صفحهٔ calendar فقط بازه‌هایی را نشان می‌دهد که Term در DB دارد.
 
-### 5. APIهای مرتبط
+### 5. API و داده
 
-- `GET /api/portal/pages/calendar/`, `/schedule/`, `/notifications/`, `/announcements/`, `/settings/`
-- `GET /api/scheduling/active-term/` برای نیمسال فعال
-- `POST /api/portal/pages/notifications/` با شناسهٔ اعلان؛ فقط اعلان متعلق به همان حساب
-- `POST /api/portal/pages/settings/` با `email`, `address`, `is_notification_enabled`, `preferred_language`
+هر route از `GET /api/portal/pages/<slug>/` استفاده می‌کند. shared active-term endpoint برای نشان‌دادن ترم فعال است؛ صفحه بر اساس `term` انتخابی load می‌شود. داده از Enrollment، CourseOffering، Attendance و Term است.
 
-نمونهٔ قراردادی تنظیمات: `POST /api/portal/pages/settings/` پس از CSRF، JSON فیلدهای فرم؛ 200 با `{ "redirect": "/portal/settings/?…" }`. فرم نامعتبر 400 و دسترسی به شخص دیگر 403 است.
+نمونهٔ GET (بدنهٔ `html` خلاصه شده و مقدار term نمایشی است):
 
-### 6. سناریوی عملکرد
+```http
+GET /api/portal/pages/schedule/?student_code=S10001&term=TERM-1
+Accept: application/json
+Cookie: sessionid=<session>
+```
 
-session → portal shell → انتخاب نیمسال از dialog → API صفحه → selector و model query → render. تغییر نیمسال GET-only است؛ notification POST در transaction فقط حالت همان اعلان را تغییر می‌دهد. آزمون مرورگر شاخهٔ ممیزی term switching واقعی را با تغییر query مشاهده کرد.
+پاسخ HTTP 200 با شکل `{"page":"schedule","html":"<section>…</section>","profile":{"student_code":"S10001"},"term":{"term_code":"TERM-1","display_label":"1405"}}`. این گروه API نوشتن حضور یا ساخت کارت رسمی ارائه نمی‌کند.
 
-### 7. ارتباط با سایر بخش‌ها
+### 6. امنیت و محدودیت
 
-shell/term picker با تمام مالکان route مشترک است. schedule به ثبت‌نام‌های Mobina/Shaghayegh و Calendar به Term وابسته است؛ اعلان‌ها در dashboard نیز خلاصه می‌شوند. assignmentهای attendance و exam-card در کد با Omid است.
+queryها برای Student متعلق به حساب هستند. شمارهٔ صندلی، کارت امتحان رسمی، attendance marking توسط staff و تقویم رویداد مستقل در مدل/provider جاری نیستند. دکمهٔ چاپ، مدرک رسمی تولید نمی‌کند.
 
-### 8. ساختار فنی
+### 7. فایل‌های فنی
 
-- `apps/core/frontend/neyousha_pouya/pages.py`, `selectors.py`, `forms.py`
-- `apps/core/frontend/neyousha_pouya/templates/neyousha_pouya/notifications.html`
-- `static/core/live_portal.js`, `apps/core/templates/core/portal_base.html`
-- مدل‌ها: `Term`, `Enrollment`, `CourseOffering`, `Notification`, `Person`.
+- `apps/core/frontend/niousha/{pages.py,selectors.py}` و `COMPONENTS`
+- `apps/core/frontend/niousha/templates/niousha/exam_card.html`
+- shell: `apps/core/templates/core/portal_base.html`; picker logic: `static/core/live_portal.js`
+- [Screens](../screens/schedule.md), [calendar](../screens/calendar.md), [attendance](../screens/attendance.md), [exam-card](../screens/exam-card.md), [term picker](../screens/term-picker.md)
 
-### 9. تست‌ها
+### 8. مسئولیت lead و cross-team
 
-در مرورگر محلی: ورود، dashboard، تغییر term از `14051` به `14052`، مسیر صفحهٔ دروس، خواندن API و logout اجرا شد. viewportهای هدف نیز capture شدند؛ در 768 پیکسل باگ قاب دوگانهٔ search اصلاح شد. اجرای کامل: ۱۰۱ تست Python و ۱۴ Node؛ هر دو پاس. جزئیات در [TEST_REPORT.md](../TEST_REPORT.md).
+layout مرکزی و CSS مشترک در `static/core/` است. Lead به معنی تغییر مالکیت routeهای دیگر نیست؛ وظیفه، مرور سازگاری UI و گزارش موردهای ناهماهنگ است. Miri هماهنگ‌کنندهٔ API/docs مشترک است.
 
-### 10. راهنمای ارائه به استاد
+### 9. تست و QA
 
-1. dialog نیمسال را باز و تغییر URL را نشان دهید.
-2. برنامه هفتگی و تقویم را کنار هم باز کنید و منبع دادهٔ متفاوتشان را توضیح دهید.
-3. اعلان را نشان دهید و مالکیت Person را در selector بررسی کنید.
-4. نسخهٔ موبایل/تبلت و فایل responsive CSS را بازبینی کنید.
-5. اعلام کنید چرا تقویم رویداد یا حضور کارمند بدون schema/API ساخته نشده است.
+تست/browser در فاز بعد است. viewportهای 1920×1080 تا 390×844 و focus/RTL/table overflow باید آنجا بررسی شوند. تا آن زمان responsive complete علامت نمی‌خورد.
+
+### 10. سناریوی ارائه
+
+۱) ترم فعال را از header نشان دهید. ۲) schedule و چاپ را باز کنید. ۳) حضورهای ثبت‌شده و حالت empty را نشان دهید. ۴) کارت امتحان را باز و محدودیت seat number را توضیح دهید. ۵) به تقویم term بروید.
+
+مالکیت و API: [TEAM_OWNERSHIP](../TEAM_OWNERSHIP.md)، [contracts](../API_CONTRACTS.md).

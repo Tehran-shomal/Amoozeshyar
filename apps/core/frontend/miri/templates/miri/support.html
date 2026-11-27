@@ -1,0 +1,61 @@
+{% if support_submission_result %}
+<section class="panel support-submission-result" id="support-submission-result" role="status" aria-labelledby="support-result-title">
+    <div class="panel-heading"><h2 id="support-result-title">نتیجهٔ ثبت تیکت</h2></div>
+    <p>تیکت زیر در سامانه ثبت شده است؛ این پیام به‌تنهایی تأیید دریافت یا پاسخ‌گویی واحد پشتیبانی نیست.</p>
+    <dl class="support-result-details">
+        <div><dt>کد تیکت</dt><dd>{{ support_submission_result.pk }}</dd></div>
+        <div><dt>موضوع</dt><dd>{{ support_submission_result.subject }}</dd></div>
+        <div><dt>وضعیت</dt><dd>{{ support_submission_result.status|default:"ثبت‌شده" }}</dd></div>
+        <div><dt>زمان ثبت</dt><dd>{{ support_submission_result.created_at|date:"Y/m/d H:i" }}</dd></div>
+    </dl>
+    <p class="support-attachment-note">فایل پیوست در این نسخه پشتیبانی نمی‌شود و همراه تیکت ارسال نشده است.</p>
+    <a class="button button--secondary" href="/portal/support/{{ query_suffix }}">متوجه شدم</a>
+</section>
+{% endif %}
+
+<section class="panel support-form-panel" aria-labelledby="support-form-title">
+    <div class="panel-heading"><h2 id="support-form-title">ثبت تیکت پشتیبانی</h2></div>
+    <form method="post" class="live-form support-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="support-fields-grid">
+            {% for field in form %}
+            <div class="form-field{% if field.name == 'content' %} support-form-field--content{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}{{ field.errors }}
+            </div>
+            {% endfor %}
+        </div>
+        <p class="support-attachment-note">{{ support_attachment_note }}</p>
+        <div class="page-actions support-form-actions">
+            <button class="button button--primary" type="submit">ارسال تیکت</button>
+        </div>
+    </form>
+</section>
+
+<section class="panel support-history-panel" aria-labelledby="support-history-title">
+    <div class="panel-heading"><h2 id="support-history-title">تیکت‌های اخیر</h2></div>
+    <div class="table-wrap">
+        <table class="data-table support-ticket-list">
+            <thead><tr><th scope="col">کد</th><th scope="col">موضوع</th><th scope="col">آخرین پاسخ</th><th scope="col">وضعیت</th></tr></thead>
+            <tbody>
+                {% for ticket in support_tickets %}
+                <tr>
+                    <td>{{ ticket.pk }}</td>
+                    <td>{{ ticket.subject }}</td>
+                    <td>
+                        {% if ticket.latest_reply %}
+                        <span>{{ ticket.latest_reply.content }}</span>
+                        <small class="support-reply-date">{{ ticket.latest_reply.created_at|date:"Y/m/d" }}</small>
+                        {% else %}پاسخی ثبت نشده{% endif %}
+                    </td>
+                    <td>{{ ticket.status|default:"—" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="empty-state">تیکتی برای حساب شما ثبت نشده است.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+<p class="support-privacy-warning">اطلاعات کارت بانکی و گذرواژه را در پیام یا پیوست ارسال نکنید.</p>

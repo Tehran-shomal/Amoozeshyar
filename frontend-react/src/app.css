@@ -1,0 +1,59 @@
+.portal-react-startup {
+  direction: rtl;
+}
+
+.portal-page-loading {
+  direction: rtl;
+  display: grid;
+  min-height: 50vh;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: #52617a;
+  text-align: center;
+}
+
+.form-choice-group {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.form-choice-group legend {
+  margin-bottom: 7px;
+}
+
+.form-choice {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  gap: 8px;
+  font-weight: 400;
+}
+
+.form-choice input {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+}
+
+.field-errors {
+  margin: 0;
+  padding-inline-start: 19px;
+  color: #a53845;
+  font-size: 10px;
+}
+
+.operation-result {
+  margin-bottom: 15px;
+}
+
+.operation-result h2 {
+  margin-top: 0;
+  color: #283751;
+  font-size: 15px;
+}
+
+.operation-result p {
+  line-height: 1.8;
+}

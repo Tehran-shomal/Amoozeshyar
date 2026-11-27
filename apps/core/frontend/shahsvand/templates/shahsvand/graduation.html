@@ -1,0 +1,42 @@
+{# Render persisted eligibility facts only; unavailable conditions and submission stay explicit. #}
+{% if current_student %}
+{% if notice %}<div class="inline-notice graduation-warning" role="status"><p>{{ notice }}</p></div>{% endif %}
+
+<section class="panel graduation-checklist-panel" data-graduation-audits="{{ graduation_audit_count }}">
+    <div class="panel-heading"><h2>چک‌لیست اطلاعات قابل بررسی</h2></div>
+    <div class="graduation-check-list">
+        {% for check in graduation_checks %}
+        <article class="graduation-check-row graduation-check-row--{{ check.state }}">
+            <strong>{{ check.label }}</strong>
+            <span>{{ check.value }}</span>
+            <small>{{ check.status }}</small>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+{% for table in tables %}
+<section class="panel graduation-history-panel">
+    <div class="panel-heading"><h2>{{ table.title }}</h2></div>
+    <div class="table-wrap">
+        <table class="data-table graduation-audit-table">
+            <thead><tr>{% for column in table.columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for row in table.rows %}
+                <tr>{% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}</tr>
+                {% empty %}<tr><td colspan="5" class="empty-state">بررسی آموزشی برای این پرونده ثبت نشده است.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endfor %}
+
+<div class="page-actions graduation-actions">
+    <a class="button button--primary" href="{% url 'core:section' 'curriculum' %}{{ query_suffix }}">مشاهدهٔ چارت دروس</a>
+    <a class="button button--soft" href="{% url 'core:section' 'tuition' %}{{ query_suffix }}">بررسی مالی</a>
+    <button class="button button--disabled" type="button" disabled aria-describedby="graduation-submit-reason">ثبت نهایی در این نسخه ممکن نیست</button>
+</div>
+<p id="graduation-submit-reason" class="graduation-submit-note">نوع درخواست معتبر و اتصال شرط معدل/کتابخانه به سامانه تعریف نشده است؛ این صفحه نتیجهٔ رسمی فارغ‌التحصیلی صادر نمی‌کند.</p>
+{% else %}
+<section class="panel"><p class="empty-state">برای مشاهدهٔ وضعیت فارغ‌التحصیلی، پروندهٔ دانشجویی را انتخاب کنید.</p></section>
+{% endif %}

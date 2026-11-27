@@ -1,67 +1,69 @@
-# ارائهٔ گروه شقایق — تغییر دروس
+# ارائهٔ ۰۲ — شقایق: ثبت‌نام و تغییر دروس
 
 ### 1. معرفی بخش
 
-صفحه‌های حذف‌واضافه، حذف اضطراری، وضعیت ثبت‌نام و اعتراض نمره. هدف، حفظ ارتباط کنترل‌های مرورگر با سرویس‌های ثبت‌نام و دادهٔ متعلق به دانشجو است.
+مسیر انتخاب واحد و تغییر برنامهٔ درسی. مالکیت شامل مرحلهٔ اطلاعات، جدول انتخاب گروه، حذف و اضافه، حذف اضطراری و مشاهدهٔ وضعیت ثبت‌نام است.
 
 ### 2. مسئولیت عضو
 
-پیوست صفحات ۹–۱۳، ۵۲–۵۹ و ۶۸–۹۶ را در دامنهٔ گروه قرار می‌دهد. در manifest واقعی، `selected-courses` و `enrollment` متعلق به Mobina هستند؛ Shaghayegh مالک `add-drop`, `emergency-drop`, `registration-status`, و `grade-appeal` است. modalهای تأیید حذف در صفحات مالکانهٔ Shaghayegh قرار دارند؛ نتیجه‌های مستقل PDF کامل نیستند.
+ظرفیت، تداخل و تأییدهای عملیات در مسئولیت این بخش‌اند. بازه‌های PDF در پرامپت: ۹–۱۳، ۵۲–۵۹ و ۶۸–۹۶؛ PDF در workspace حاضر نیست و mapping تصویری تأیید نشده است.
 
-### 3. صفحات پیاده‌سازی‌شده
+### 3. صفحه‌ها و URLها
 
-| صفحه/حالت | PDF | URL | وضعیت |
-|---|---:|---|---|
-| دروس انتخاب‌شده/گروه‌ها | 9–13 | `/portal/selected-courses/` | route واقعی، مالک Mobina؛ چند state تصویری مستقل موجود نیست |
-| شروع انتخاب واحد | 52 | `/portal/enrollment/` | route واقعی، مالک Mobina |
-| حذف و اضافه | 53 | `/portal/add-drop/` | route و حذف واقعی؛ افزودن از مسیر انتخاب واحد |
-| حذف اضطراری | 54 | `/portal/emergency-drop/` | route واقعی، پنجرهٔ قواعد در service |
-| وضعیت ثبت‌نام | 55 | `/portal/registration-status/` | نمایش DB-backed |
-| اعتراض نمره | 60 | `/portal/grade-appeal/` | فرم موجود؛ مهلت رسمی در منبع رفتاری نیست |
-| modalهای حذف | 89–96 | داخل add-drop/emergency-drop | تأیید پیش از POST؛ result page مستقل وجود ندارد |
+| صفحه/حالت | URL | API | وضعیت |
+|---|---|---|---|
+| انتخاب واحد | `/portal/enrollment/` | GET API صفحه | اطلاعات واقعی دانشجو/ترم |
+| دروس انتخاب‌شده | `/portal/selected-courses/` | GET صفحه، GET offerings، POST register | شناسهٔ واقعی offering به service می‌رود |
+| حذف و اضافه | `/portal/add-drop/` | GET صفحه، POST drop | افزودن از مرحلهٔ انتخاب واحد؛ حذف با dialog |
+| حذف اضطراری | `/portal/emergency-drop/` | GET صفحه، POST drop | backend بازه و مالکیت را بررسی می‌کند |
+| وضعیت ثبت‌نام | `/portal/registration-status/` | GET API صفحه | خواندن وضعیت‌های ثبت‌شده |
+| dialogs | داخل route والد | همان API دامنه | تأیید انتخاب گروه/حذف، نه URL مستقل |
 
-صفحات 56–59 و 68–88 و 75–78 در mapping به‌عنوان state/modal یا دادهٔ PDF که route مستقل ندارد ثبت شده‌اند؛ به‌جای دادهٔ ساختگی همان وضعیت صریحاً gap می‌ماند.
+### 4. جریان رابط کاربر
 
-### 4. طراحی و عملکرد
+داشبورد → `enrollment` → `selected-courses` → بارگیری offeringها → انتخاب offering یکتا → ثبت → refresh. برای حذف، جدول ثبت‌نام → dialog → تأیید → درخواست حذف → refresh. دکمه‌ها تا دریافت پاسخ غیرفعال می‌شوند.
 
-جدول ثبت‌نام وضعیت فعلی را از صفحه API می‌خواند. حذف از modal تأیید به `enrollment_id` دیتابیسی وصل است؛ service مالکیت پرونده، بازهٔ مجاز و وضعیت را بررسی می‌کند. انتخاب درس در صفحهٔ والد انجام می‌شود. ثبت تکراری و درس دارای تداخل/ظرفیت/پیش‌نیاز نامعتبر باید از پاسخ service منعکس شود.
+### 5. API و قرارداد
 
-### 5. APIهای مرتبط
+- `GET /api/scheduling/offerings/?term=<term_code>` فهرست و ظرفیت باقیمانده را می‌دهد.
+- `POST /api/enrollment/register/<offering_id>/` ثبت را انجام می‌دهد.
+- `POST /api/enrollment/drop/<enrollment_id>/` حذف را انجام می‌دهد.
+- صفحه‌ها از `GET /api/portal/pages/<slug>/` خوانده می‌شوند. تغییرات فرم‌محور، اگر در صفحه تعریف شده باشند، با POST همین path هستند.
 
-| مسیر | روش | داده و نتیجه |
-|---|---|---|
-| `/api/portal/pages/add-drop/` | GET | جدول و context صفحه |
-| `/api/scheduling/offerings/?term=<code>` | GET | فهرست ارائه‌ها/ظرفیت |
-| `/api/enrollment/drop/<enrollment_id>/` | POST | body اختیاری `{student_code}`؛ پاسخ enrollment تازه‌وضعیت‌یافته |
-| `/api/enrollment/register/<offering_id>/` | POST | endpoint ثبت که از صفحهٔ مالک Mobina فراخوانی می‌شود |
-| `/api/portal/pages/grade-appeal/` | GET/POST | POST دادهٔ فرم؛ خطای اعتبارسنجی 400، دسترسی نامعتبر 403 |
+نمونهٔ قراردادی ثبت (شناسه‌ها نمایشی‌اند):
 
-نمونهٔ قراردادی حذف: `POST /api/enrollment/drop/<enrollment_id>/`، JSON اختیاری `{ "student_code": "<کد متعلق به session>" }`؛ پاسخ موفق `{"enrollment":{"id":"…","status":"dropped",…}}`. خطای بسته‌بودن پنجره 400 و شناسهٔ متعلق‌نبودن 403 است.
+```http
+POST /api/enrollment/register/27/
+Content-Type: application/json
+X-CSRFToken: <csrf-token>
 
-### 6. سناریوی عملکرد
+{"student_code":"S10001"}
+```
 
-dashboard → enrollment → selected-courses → offerings API → انتخاب گروه → service ثبت‌نام → transaction دیتابیس → refresh صفحه؛ برای حذف، جدول → modal → service drop → refresh. قواعد در `apps/core/enrollment/services.py` است. ثبت مرورگر روی seed فعلی قابل اجرا نیست: term فعال پنجره‌اش بسته است و term دیگر ارائهٔ ثبت‌شده ندارد؛ suite Python قواعد را با زمان کنترل‌شده آزموده است.
+پاسخ موفق شامل `{"enrollment":{"id":31,"student_code":"S10001","offering_id":27,"lesson_code":"C-101","lesson_title":"عنوان درس","status":"active","enrollment_date":"2026-01-01","drop_date":null}}` است؛ HTTP 201 برای ایجاد و 200 برای نتیجهٔ موجود/idempotent. خطاهای ظرفیت، بازه، پیش‌نیاز و تداخل با کد JSON در API برمی‌گردند.
 
-### 7. ارتباط با سایر بخش‌ها
+### 6. اعتبارسنجی و مجوز
 
-به Mobina برای مسیر enrollment/selected courses، به scheduling برای offering و به مدل‌های مشترک `Enrollment`, `CourseOffering`, `Term`, `Grade`, `Prerequisite` وابسته است. اعتراض نمره با نقش reviewer در API بررسی درخواست، workflow کارمند کامل محسوب نمی‌شود.
+backend مالکیت Student، وضعیت فعال، ظرفیت، بازه، پیش‌نیاز و تداخل را کنترل می‌کند. شناسهٔ معتبر دیتابیسی لازم است؛ نام درس برای mutation استفاده نمی‌شود. قواعدی که منبع رفتاری رسمی ندارند در `BUSINESS_RULES.md` نامعلوم می‌مانند.
 
-### 8. ساختار فنی
+### 7. فایل‌های فنی
 
-- `apps/core/frontend/shaghayegh/pages.py`, `selectors.py`
-- `apps/core/frontend/shaghayegh/templates/shaghayegh/course_changes.html`
-- `apps/core/frontend/shaghayegh/static/shaghayegh/section.js`
-- `apps/core/enrollment/services.py`, `apps/core/enrollment/views.py`
-- `apps/core/models.py`: Enrollment/GradeAppeal/Term/Constant.
+- `apps/core/frontend/shaghayegh/{pages.py,selectors.py,forms.py}`
+- `templates/shaghayegh/{enrollment.html,selected_courses.html,course_changes.html}`
+- `static/shaghayegh/section.js`
+- Backend: `apps/core/enrollment/`, `apps/core/scheduling/`; API client: `static/core/portal_api.js`
+- [Screens](../screens/enrollment.md), [selected courses](../screens/selected-courses.md), [add/drop](../screens/add-drop.md), [dialog](../screens/drop-confirmation.md)
 
-### 9. تست‌ها
+### 8. وابستگی بین بخش‌ها
 
-`apps/core/enrollment/test_services.py` بر قواعد ثبت/حذف، ظرفیت، تداخل، مالکیت، بازه و اعتبارسنجی تمرکز دارد؛ `apps/core/test_frontend.py` رندر و فرم‌ها را می‌سنجد. آخرین اجرای کامل گزارش‌شده: ۱۰۱ Python و ۱۴ Node پاس؛ جزئیات در [گزارش آزمون](../TEST_REPORT.md).
+Term از shell مشترک می‌آید؛ offeringها به scheduling و تغییر وضعیت به enrollment service وابسته‌اند. Omid برای grade appeal از همان Enrollmentهای پرونده در صفحه‌ای جدا استفاده می‌کند.
 
-### 10. راهنمای ارائه به استاد
+### 9. تست و QA
 
-1. صفحهٔ حذف‌واضافه و جدول را باز کنید.
-2. modal حذف را باز کنید و نشان دهید درخواست فقط پس از تأیید ارسال می‌شود.
-3. در `section.js` شناسهٔ `data-record-id` و فراخوانی `PortalApi.drop` را دنبال کنید.
-4. در service قواعد بازه و مالکیت را نشان دهید.
-5. ثبت درس را فقط در test database با term باز انجام دهید؛ seed فعلی به‌عمد خارج از بازه است.
+اجرای تست‌ها طبق درخواست کاربر به فاز بعد موکول است. آزمون‌های دامنه‌ای بعداً باید capacity/window/conflict/ownership و ثبت مجدد را پوشش دهند. از دادهٔ دیتابیس اصلی برای نمایش آزمایشی تغییر وضعیت استفاده نشود.
+
+### 10. سناریوی ارائه
+
+۱) دو مرحلهٔ انتخاب را باز کنید. ۲) درخواست offerings را در Network نشان دهید. ۳) شناسهٔ offering را از JS تا API دنبال کنید. ۴) dialog حذف را باز و بدون تأیید ببندید؛ سپس در محیط تست تأیید کنید. ۵) پاسخ service و refresh صفحه را نشان دهید.
+
+ماتریس routeها: [TEAM_OWNERSHIP](../TEAM_OWNERSHIP.md)؛ قراردادها: [API_CONTRACTS](../API_CONTRACTS.md).

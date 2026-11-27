@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Preserve the existing PDF-matched page structure, Persian content, and five owner modules.
+- Preserve the existing PDF-informed page structure, Persian content, and the current seven-owner assignment in `docs/TEAM_OWNERSHIP.md`.
 - All database-backed page data must arrive after page load through an authenticated same-origin JSON API.
 - Reuse existing selectors and forms; do not add seed records, migrations, or invented domain data.
 - Keep CSRF, profile ownership, and existing API role checks intact.
@@ -93,8 +93,7 @@
 - Modify: `apps/core/frontend/mobina/README.md`
 - Modify: `apps/core/frontend/shaghayegh/README.md`
 - Modify: `apps/core/frontend/parsa/README.md`
-- Modify: `apps/core/frontend/academic_services/README.md`
-- Modify: `apps/core/frontend/neyousha_pouya/README.md`
+- Modify: current owner docs under `apps/core/frontend/omid/`, `niousha/`, `shahsvand/`, and `miri/` (see `docs/TEAM_OWNERSHIP.md`)
 - Modify: `docs/superpowers/specs/2026-11-21-api-driven-portal-data-design.md`
 
 - [x] Document the data flow, available API map, form contract, and reviewer-only API exclusion.

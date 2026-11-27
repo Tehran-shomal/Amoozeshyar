@@ -1,59 +1,67 @@
-# ارائهٔ گروه میری — هماهنگی ارتباط و خدمات عمومی
+# ارائهٔ ۰۷ — میری: ارتباط با استاد و خدمات عمومی
 
 ### 1. معرفی بخش
 
-نقش مشترک و cross-cutting برای هماهنگی ارتباط استاد و دانشجو، اعلان‌ها، راهنما، پشتیبانی و یکپارچگی API.
+ارتباط آموزشی، ارزشیابی، اعلان، راهنمای سامانه و پشتیبانی. Miri Shared Lead است: هماهنگی یکپارچگی بخش‌ها، APIها و مستندات؛ نه ایجاد معماری مستقل.
 
 ### 2. مسئولیت عضو
 
-پیوست میری را Shared Lead معرفی می‌کند: بررسی هماهنگی جریان‌ها، اتصال frontend/backend، مستندات API و آمادگی ارائه. در repository هیچ manifest یا route مستقلی با مالک `Miri` وجود ندارد؛ سند حاضر مالکیت کدی را به او نسبت نمی‌دهد.
+صفحات Master: ۱۶–۱۸، ۲۷–۲۹ و ۳۱–۳۷. PDF در clone حاضر نیست؛ شماره‌ها برای تطبیق تصویری قطعی نیستند.
 
-### 3. صفحات مرتبط در PDF
+### 3. صفحه‌ها و URLها
 
-| موضوع | PDF | URL واقعی | مالک ثبت‌شده در کد |
-|---|---:|---|---|
-| اطلاعیه/اعلان | 16, 18 | `/portal/announcements/`, `/portal/notifications/` | Neyousha/Pouya |
-| ارزشیابی | 17, 31–37 | `/portal/evaluation-form/`, `/portal/evaluation/` | Shahsavand در `academic_services` |
-| ارتباط با استاد | 27 | `/portal/messages/` | Shahsavand |
-| راهنمای سامانه | 28 | `/portal/guide/` | Omid؛ محتوای Q&A هنوز gap است |
-| پشتیبانی | 29 | `/portal/support/` | Omid؛ Ticket lifecycle کامل نیست |
+| صفحه | URL | API | وضعیت |
+|---|---|---|---|
+| ارزشیابی | `/portal/evaluation/` | GET صفحه | وضعیت هر درس از TeacherSurvey؛ فرم فقط برای درس‌های باز |
+| فرم ارزشیابی | `/portal/evaluation-form/` | GET/POST صفحه | پنج معیار ۱–۵، نظر اختیاری، ثبت نهایی read-only |
+| پیام به استاد | `/portal/messages/` | GET/POST صفحه | گیرنده به استادهای مربوط محدود |
+| اطلاعیه | `/portal/announcements/` | GET/POST صفحه | Communication نوع announcement؛ receiver-scoped mark-read؛ بدون FK درس/ترم |
+| اعلان | `/portal/notifications/` | GET/POST صفحه | فیلتر شمارشی بر اساس type واقعی؛ Notification متعلق به حساب جاری؛ mark-read |
+| راهنما | `/portal/guide/` | GET صفحه | راهنمای عملی با لینک routeها؛ Q&A رسمی پویا نیست |
+| پشتیبانی | `/portal/support/` | GET/POST صفحه | ایجاد و فهرست Ticket حساب |
 
-### 4. طراحی و عملکرد
+### 4. جریان UI
 
-تمام صفحات از shell/session مشترک استفاده می‌کنند. اعلان متعلق به Person فقط read/mark-read دارد؛ ارزشیابی رکورد survey می‌سازد؛ پیام، فرم داخلی Communication است؛ ticket فرم ثبت ابتدایی دارد. هیچ‌کدام به‌تنهایی اثبات‌کنندهٔ notification provider، پاسخ تیکت، Q&A کامل یا ارسال ایمیل بیرونی نیستند.
+`live_portal.js` صفحه را load می‌کند، فرم را JSON می‌کند و validation HTML را با همان shell جایگزین می‌کند. اعلان با شناسهٔ فرم POST می‌شود. پیام و تیکت در DB ذخیره می‌شوند؛ تحویل بیرونی یا lifecycle کامل تیکت ادعا نمی‌شود.
 
-### 5. APIهای مرتبط
+### 5. API و داده
 
-- `GET /api/portal/pages/announcements/` و `notifications/`
-- `POST /api/portal/pages/notifications/` برای mark-read مالکانه
-- `GET|POST /api/portal/pages/evaluation/`, `evaluation-form/`, `messages/`, `support/`
-- `GET /api/accounts/me/` برای session جاری
+API صفحه: `GET|POST /api/portal/pages/<slug>/`. فرم ارزشیابی پنج معیار را در TeacherSurvey/Enrollment ثبت می‌کند و امتیاز کلی را سرور محاسبه می‌کند؛ پیام و اطلاعیه از Communication و UserAccount، اعلان از Notification همان حساب با فیلترهای type موجود، support از Ticket creator همان حساب خوانده می‌شود. CSRF برای mutation الزامی است. Communication اطلاعیه در schema به term/course وصل نیست.
 
-نمونهٔ response مشترک GET: `{"page":"support","profile":{"student_code":"…"},"term":{"term_code":"…"},"html":"…"}`؛ writeهای page API پس از CSRF پاسخ redirect داخلی می‌دهند؛ فرم نامعتبر 400 و پروفایل غیرمجاز 403 است. endpoint مختص Miri وجود ندارد.
+نمونهٔ علامت‌گذاری اعلان خود کاربر به‌عنوان خوانده‌شده (شناسه نمایشی):
 
-### 6. سناریوی عملکرد
+```http
+POST /api/portal/pages/notifications/
+Content-Type: application/json
+X-CSRFToken: <csrf-token>
 
-هویت session → registry مالک route را انتخاب می‌کند → selector صفحه دادهٔ scoped می‌خواند → form validation و save در مدل واقعی → پاسخ و refresh. برای مرور بین صفحات، term/profile query حفظ می‌شود و owner/model در registry یا form class باقی می‌ماند؛ یک معماری جداگانه برای Shared Lead ساخته نشده است.
+{"notification_id":42}
+```
 
-### 7. ارتباط با سایر بخش‌ها
+پاسخ موفق HTTP 200: `{"redirect":"/portal/notifications/"}`؛ اعلان متعلق به شخص دیگر تغییر نمی‌کند. برای فرم پیام و تیکت، payloadهای واقعی هر صفحه در جدول `API_CONTRACTS.md` آمده‌اند.
 
-Shared Lead نیازمند هماهنگی با Omid، شاهسوند و Neyousha/Pouya است. API عمومی page برای UI مشترک است، اما جای endpointهای دامنه‌ای کارکنان را نمی‌گیرد. مسئلهٔ assignment مهم برای تصمیم تیم: prompt هفت‌نفره Miri را جدا می‌کند ولی کد فعلی ownership را بین سه گروه تقسیم کرده است.
+### 6. مجوز و validation
 
-### 8. ساختار فنی
+فرم ارزشیابی فقط enrollment فعال همان دانشجو/ترم را می‌پذیرد؛ پنج rating اجباری ۱–۵ و duplicate رد می‌شود؛ بعد از ثبت، ویرایش ندارد. migration فیلدهای پنج‌گانه به source افزوده شده اما اجرا نشده است. گیرندهٔ پیام از استادهای مرتبط است. Notification و Communication اطلاعیه فقط توسط صاحب/گیرندهٔ حساب mark-read می‌شوند. Ticket creator از session می‌آید و category باید فعال باشد.
 
-- `apps/core/frontend/registry.py` و گروه‌های `academic_services`, `neyousha_pouya`
-- `apps/core/frontend/api.py`, `apps/core/frontend/forms.py` در ماژول‌های مالک
-- `static/core/portal_api.js`, `static/core/live_portal.js`
-- مدل‌های `Notification`, `Communication`, `TeacherSurvey`, `Ticket` در `apps/core/models.py`.
+### 7. فایل‌های فنی
 
-### 9. تست‌ها
+- `apps/core/frontend/miri/{pages.py,selectors.py,forms.py}`
+- `apps/core/frontend/miri/templates/miri/notifications.html`
+- `apps/core/frontend/miri/templates/miri/guide.html`
+- API: `apps/core/frontend/{api.py,api_urls.py}`؛ مشترک: `static/core/{portal_api.js,live_portal.js}`
+- [Screens](../screens/evaluation.md), [messages](../screens/messages.md), [notifications](../screens/notifications.md), [guide](../screens/guide.md), [support](../screens/support.md)
 
-`apps/core/test_frontend.py`, `apps/core/requests/test_services.py` و تست‌های client در `static/core/tests/` شواهد اصلی‌اند. آخرین اجرای کامل: ۱۰۱ Python و ۱۴ Node، پاس؛ وضعیت pageهای ناقص و browser smoke در [TEST_REPORT.md](../TEST_REPORT.md) درج شده است.
+### 8. Shared Lead و وابستگی‌ها
 
-### 10. راهنمای ارائه به استاد
+Miri مسئول مرور traceability API و هماهنگی جریان بین مالک‌هاست. اعتبار session و انتخاب term در shell مشترک حفظ می‌شود. ارسال SMS/email، انتشار اطلاعیه از پنل کارمند و پشتیبانی خارجی در این checkout provider ندارند.
 
-1. صفحه‌های اعلان، پیام و پشتیبانی را باز و مالک واقعی هرکدام را از matrix نشان دهید.
-2. flow یک POST داخلی را تا model ذخیره‌شده دنبال کنید.
-3. تفاوت ثبت داخلی با ارسال بیرونی یا lifecycle کامل را توضیح دهید.
-4. guide را نشان دهید و اعلام کنید محتوای Q&A هنوز پیاده نشده.
-5. نقش Miri را به‌عنوان هماهنگی/بازبینی ارائه دهید، نه مالک feature یا endpoint مستقل.
+### 9. تست و QA
+
+اجرای suite و مرورگر طبق درخواست به فاز بعد موکول است. تست‌ها باید شامل owner check، ارسال duplicate survey، notification متعلق به دیگران، receiver نامعتبر، و POST بدون CSRF باشند.
+
+### 10. سناریوی ارائه
+
+۱) survey را برای enrollment قابل انتخاب باز کنید. ۲) پیام به استاد را نشان دهید. ۳) اعلان را mark-read کنید. ۴) تیکت ایجادشده را از همان حساب پیگیری کنید. ۵) محدودیت‌های ارسال خارجی و پاسخ staff را شفاف بگویید.
+
+مستندات API و صفحه‌ها: [API_CONTRACTS](../API_CONTRACTS.md), [SCREEN_API_MATRIX](../SCREEN_API_MATRIX.md), [TEAM_OWNERSHIP](../TEAM_OWNERSHIP.md).

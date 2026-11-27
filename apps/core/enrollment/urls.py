@@ -6,4 +6,5 @@ app_name = "enrollment"
 urlpatterns = [
     path("register/<int:offering_id>/", views.register_view, name="register"),
     path("drop/<int:enrollment_id>/", views.drop_view, name="drop"),
+    path("emergency-drop/<int:enrollment_id>/", views.emergency_drop_view, name="emergency-drop"),
 ]

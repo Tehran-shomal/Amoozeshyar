@@ -129,15 +129,21 @@ def _validate_schedule(student, offering):
             )
 
 
+def maximum_allowed_units(student):
+    """Return the effective cap used by registration for the supplied student."""
+    allowed_units = student.max_allowed_units
+    if student.status and student.status.code.casefold() in PROBATION_STATUS_CODES:
+        allowed_units = min(allowed_units, StudentAcademicRules.MAX_UNITS_PROBATION)
+    return allowed_units
+
+
 def _validate_credit_limit(student, offering, current_term_enrollments):
     current_units = current_term_enrollments.aggregate(
         total=Sum("offering__lesson__theory_units")
         + Sum("offering__lesson__practical_units")
     )["total"] or 0
     requested_units = offering.lesson.theory_units + offering.lesson.practical_units
-    allowed_units = student.max_allowed_units
-    if student.status and student.status.code.casefold() in PROBATION_STATUS_CODES:
-        allowed_units = min(allowed_units, StudentAcademicRules.MAX_UNITS_PROBATION)
+    allowed_units = maximum_allowed_units(student)
     if current_units + requested_units > allowed_units:
         raise EnrollmentError(
             "credit_limit_exceeded", "The course would exceed your allowed credit load."
@@ -228,8 +234,8 @@ def register_student(student, offering_id, now=None):
 
 
 @transaction.atomic
-def drop_enrollment(student, enrollment_id, now=None):
-    """Drop an owned enrollment during add/drop or emergency-drop windows."""
+def drop_enrollment(student, enrollment_id, now=None, window="either"):
+    """Drop an owned enrollment in the requested add/drop window."""
     now = now or timezone.now()
     try:
         enrollment = (
@@ -252,7 +258,13 @@ def drop_enrollment(student, enrollment_id, now=None):
     emergency_drop_open = _is_open(
         term.emergency_drop_start, term.emergency_drop_end, now
     )
-    if not (add_drop_open or emergency_drop_open):
+    if window == "add-drop" and not add_drop_open:
+        raise EnrollmentError("drop_window_closed", "Course dropping is currently closed.")
+    if window == "emergency-drop" and not emergency_drop_open:
+        raise EnrollmentError(
+            "emergency_drop_window_closed", "Emergency course dropping is currently closed."
+        )
+    if window == "either" and not (add_drop_open or emergency_drop_open):
         raise EnrollmentError("drop_window_closed", "Course dropping is currently closed.")
 
     enrollment.status = _enrollment_status("dropped")

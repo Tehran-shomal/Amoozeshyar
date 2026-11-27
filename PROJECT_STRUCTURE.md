@@ -10,7 +10,7 @@ This document began as a snapshot of the master baseline (1896c3c) and is update
     │       ├── management/commands/  seed.py, seed_data.py
     │       ├── migrations/           0001_initial.py–0005_person_failed_login_count_person_locked_until.py
     │       ├── templates/core/       database_unavailable.html, live_content.html, portal_base.html, section.html
-    │       ├── frontend/             shared helpers and five code-group page modules
+    │       ├── frontend/             shared helpers and seven team-owned page modules
     │       ├── admin.py
     │       ├── apps.py
     │       ├── models.py
@@ -94,7 +94,7 @@ All 43 current model classes are defined in apps/core/models.py; there are no fe
 | InternshipRequest | internship_request_id, student -> Student, organization_name, start_date, status -> Constant |
 | ThesisProgressReport | report_id, student -> Student, teacher -> Teacher, report_content, review_status -> Constant |
 | Notification | user -> UserAccount, title, message, related_exam -> Exam, notification_type -> Constant, sent_at, is_read, read_at, created_at |
-| TeacherSurvey | enrollment -> Enrollment, overall_rating, teaching_quality, behavior, submitted_at, comment, created_at |
+| TeacherSurvey | enrollment -> Enrollment, overall_rating, legacy teaching_quality/behavior, five PDF ratings (`content_mastery_rating`, `explanation_clarity_rating`, `class_organization_rating`, `student_interaction_rating`, `assessment_alignment_rating`), submitted_at, comment, created_at |
 | Internship | student -> Student, request_type -> Constant, company_name, intern_start_date, duration_hours, status -> Constant, reviewed_by -> UserAccount, reviewed_at, created_at |
 | Faculty | faculty_name, faculty_code, is_active, created_at |
 | Department | faculty -> Faculty, department_name, department_code, is_active, created_at |
@@ -123,7 +123,7 @@ All 43 models are registered in apps/core/admin.py. The admin customizes Person,
 - The SDD maps requirement codes to features but does not include the original behavioral text. The referenced نیازمندی_های_آموزشیار.md is absent from the repository and searched project workspace, so traceability rows cannot establish all 152 behaviors. SDD §5 now links 19 smaller domain tables under docs/sdd/traceability/; row numbers and identifiers were preserved.
 - Feature model coverage is partial. Existing entities include enrollment, scheduling, grades, attendance, payments/refunds, tickets, online classes, people, service and scholarship applications, counseling, thesis proposals/reports, internships, notifications, and educational history. Missing entities explicitly listed in SSOT include WaitlistEntry, TuitionAccount, Installment, Loan, generic AdminRequest, profile correction/leave/withdrawal/major change/graduation requests, Scholarship, MealReservation, DormRequest, AuditLog, and ErrorLog.
 - Account, enrollment, scheduling, and existing-model request review APIs/services are implemented. Request submission/status-list endpoints, tuition, grading, and remaining domains are not implemented. Automated architecture, account, enrollment, scheduling, and request tests exist.
-- Frontend ownership is split across five code groups; the five navigation groups remain product categories in shared metadata. `academic_services` contains distinct Shahsavand and Omid page lists. Each code group's `pages.py` owns its routes and titles, selectors/forms remain in that group folder, and only pages with custom markup or behavior have module-specific templates/scripts.
+- Frontend ownership is split across seven current code groups defined by `docs/TEAM_OWNERSHIP.md`; `NAV_GROUPS` remains the product navigation and is not a team grouping. Each owner manifest in `apps/core/frontend/<owner>/pages.py` owns its routes; selectors/forms/templates stay with that owner where specialized. Historical five-group design notes are superseded by the 2076-05-07 seven-owner design.
 - ADR-002/003 specify registration services, atomic register/drop, capacity locking, prerequisite/conflict/credit-limit/window checks. The enrollment service now applies those rules; exact-time exam collisions are used because the current model has no exam duration.
 - ADR-005 and SSOT call for role-based access, session timeout/lockout, and hashed passwords. The account API authenticates Person through Django's hashers and requires non-superusers to have an active UserAccount; it does not use the separate UserAccount.password field. Session expiry, 5-attempt/15-minute lockout, and role checks are implemented. TLS, sensitive-field encryption, password-change session invalidation, and production cookie setup remain deployment/security work.
 - `manage.py check --deploy` reports `security.W004` (HSTS is not configured) and `security.W008` (SSL redirect is not enabled). Configure these at deployment after confirming the HTTPS/reverse-proxy topology.

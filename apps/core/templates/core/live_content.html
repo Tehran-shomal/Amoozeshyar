@@ -1,6 +1,16 @@
 {# نمایش مشترک؛ داده و فرم‌ها در پوشهٔ هر گروه ساخته می‌شوند. #}
 {% if notice %}<div class="inline-notice"><p>{{ notice }}</p></div>{% endif %}
 {% if facts %}<section class="panel"><dl class="key-value-list">{% for label,value in facts %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>{% endfor %}</dl></section>{% endif %}
+{% if operation_result %}
+<section class="panel operation-submission-result" role="status" aria-live="polite">
+    <div class="panel-heading"><h2>نتیجهٔ عملیات</h2></div>
+    <h3>{{ operation_result.heading }}</h3>
+    <p>{{ operation_result.message }}</p>
+    <p>وضعیت: {{ operation_result.status }}{% if operation_result.created_at %} · تاریخ ثبت: {{ operation_result.created_at }}{% endif %}</p>
+    <p>{{ operation_result.note }}</p>
+    <a class="button button--primary" href="{% url 'core:section' active_slug %}{{ query_suffix }}">متوجه شدم</a>
+</section>
+{% endif %}
 {% if form %}
 <section class="panel live-form-panel">
     <div class="panel-heading"><h2>{{ form_title|default:"ثبت اطلاعات" }}</h2></div>

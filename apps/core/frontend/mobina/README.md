@@ -1,19 +1,13 @@
-# مبینا
+# مبینا — ورود و چارچوب مشترک
 
-## Page ownership
+مالک ورود `/login/`، داشبورد `/`، تنظیمات حساب `/portal/settings/` و کارت دیجیتال `/portal/student-card/` است. انتخاب واحد و چارت طبق تقسیم جدید به Shaghayegh و Omid تعلق دارند.
 
-- `enrollment` - انتخاب واحد
-- `selected-courses` - دروس انتخاب‌شده
-- `curriculum` - چارت انتخاب واحد
+- `pages.py`: تنظیمات و کارت دیجیتال؛ `SPECIAL_PAGES`: login/dashboard.
+- `selectors.py` و `forms.py`: تنظیمات Person حساب جاری و نمایش پیش‌نمایش کارت Student؛ زبان از lookup موجود انتخاب می‌شود.
+- `templates/mobina/settings.html`: صفحهٔ PDF ۱۹. فقط فیلدهای ذخیره‌شوندهٔ فعلی حساب را می‌فرستد؛ شمارهٔ موبایل و تنظیم تفکیکی SMS/email در schema/provider حاضر نیستند و به‌صورت محدودیت نشان داده می‌شوند.
+- `static/mobina/login.js`: اتصال فرم ورود به Accounts API.
+- `templates/mobina/`: home، login و student card.
+- داشبورد: `GET /api/portal/pages/home/`; تنظیمات: GET/POST `/api/portal/pages/settings/`; کارت: GET `/api/portal/pages/student-card/`; session: `/api/accounts/`.
+- [ارائهٔ مبینا](../../../../docs/presentation/01_Mobina.md) · [ماتریس صفحه/API](../../../../docs/SCREEN_API_MATRIX.md).
 
-Special pages: `login` (`templates/mobina/login.html`) and `dashboard` (`templates/mobina/home.html`).
-
-`pages.py` declares owned slugs and page-specific assets. The browser reads database-backed page content from `/api/portal/pages/<slug>/`; available course offerings are loaded from `/api/scheduling/offerings/?term=<term_code>`. Current registrations and dashboard summaries are returned by the page API using this group's student-scoped selectors. Enrollment actions send real record IDs to the existing enrollment API.
-
-Page-specific files:
-
-- `static/mobina/section.js`
-- `templates/mobina/home.html`
-- `templates/mobina/login.html`
-
-The enrollment flow uses two steps: `enrollment.html` checks the student's saved profile and term, and `selected_courses.html` shows current registrations and eligible offerings. The offerings list is inserted from the scheduling API; both stages use empty states when their records are absent, and no sample courses are created.
+کارت نمایش‌داده‌شده صرفاً پیش‌نمایش است؛ serial/صدور رسمی ساخته نمی‌شود. پوستهٔ مشترک در `apps/core/templates/core/` و `static/core/` نگهداری می‌شود.

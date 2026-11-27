@@ -1,0 +1,57 @@
+{# Only fields present on Internship are submitted; no approval facts are synthesized. #}
+{% if current_student %}
+{% if submission_result %}
+<section class="panel internship-submission-result" role="status" aria-live="polite">
+    <div class="panel-heading"><h2>نتیجهٔ عملیات</h2></div>
+    <p>درخواست کارآموزی «{{ submission_result.company_name }}» با شناسهٔ {{ submission_result.pk }} در سامانه ثبت شد.</p>
+    <p>وضعیت فعلی: {{ submission_result.status|default:"—" }} · تاریخ ثبت: {{ submission_result.created_at|date:"Y/m/d H:i" }}</p>
+    <p class="internship-form-note">این فقط ثبت داخلی درخواست است؛ ارسال به سامانهٔ دانشگاه انجام نشده و به‌معنی تأیید رسمی نیست.</p>
+    <a class="button button--primary" href="{% url 'core:section' 'internship' %}{{ query_suffix }}">متوجه شدم</a>
+</section>
+{% endif %}
+<section class="panel internship-form-panel">
+    <div class="panel-heading">
+        <h2>اطلاعات کارآموزی / نیمسال {{ term_display_code }}</h2>
+    </div>
+    {% if form %}
+    <form method="post" class="live-form internship-application-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="internship-form-grid">
+            {% for field in form %}
+            <div class="form-field{% if field.errors %} has-error{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}
+                {{ field.errors }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            </div>
+            {% endfor %}
+            <p class="internship-form-note" role="note">در مدل فعلی فقط نوع درخواست، نام سازمان، تاریخ شروع و مدت به ساعت ذخیره می‌شود؛ اطلاعات استاد ناظر، تماس/نشانی و فایل نامهٔ پذیرش در این پایگاه داده قابل ثبت نیست.</p>
+        </div>
+        <div class="page-actions internship-page-actions">
+            <button class="button button--primary" type="submit">ارسال برای بررسی</button>
+        </div>
+    </form>
+    {% else %}
+    <p class="empty-state">فرم کارآموزی برای این پرونده در دسترس نیست.</p>
+    {% endif %}
+</section>
+
+{% for table in tables %}
+<section class="panel internship-status-panel">
+    <div class="panel-heading"><h2>{{ table.title }}</h2></div>
+    <div class="table-wrap">
+        <table class="data-table internship-history-table">
+            <thead><tr>{% for column in table.columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for row in table.rows %}
+                <tr>{% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}</tr>
+                {% empty %}<tr><td colspan="4" class="empty-state">درخواستی برای این پرونده ثبت نشده است.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endfor %}
+{% else %}
+<section class="panel"><p class="empty-state">برای ثبت یا پیگیری کارآموزی، پروندهٔ دانشجویی را انتخاب کنید.</p></section>
+{% endif %}

@@ -2,10 +2,10 @@
 
 - مالک/route: Shaghayegh؛ `/portal/add-drop/`; `shaghayegh/course_changes.html`, `shaghayegh.selectors.build`, `shaghayegh/static/shaghayegh/section.js`.
 - مرجع: PDF صفحهٔ ۵۳، حالت‌های داده صفحات ۶۸–۷۱، انتخاب درس ۷۹–۸۸ و تأیید حذف عادی ۸۹–۹۲.
-- هدف/کنترل: مشخصات پرونده/ترم، جدول enrollmentهای فعال و حذف با مودال؛ افزودن از لینک انتخاب واحد.
-- داده/API: Student, Enrollment, CourseOffering, Lesson, Term؛ GET page + offerings scheduling؛ حذف با `POST /api/enrollment/drop/<id>/`; افزودن از صفحهٔ انتخاب درس.
-- اعتبارسنجی/مجوز: session/student؛ مالکیت شناسه در backend؛ بازهٔ add/drop یا emergency؛ حذف غیرقابل تکرار امن.
-- خطا/نتیجه: خطاهای مالکیت/بازه/DB با status؛ PDF success resultهای ۵۶–۵۹/۶۸–۷۱ route جدا ندارند.
-- navigation: به enrollment برای افزودن؛ پس از موفقیت reload دادهٔ جاری.
-- آزمون/وابستگی: `apps/core/enrollment/test_services.py`, `apps/core/test_frontend.py`, `static/core/tests/portal_bindings.test.cjs`.
-- وضعیت: حذف واقعی؛ state تأیید موجود؛ result صفحه‌های مجزا و مجموعه‌داده‌های متنوع PDF باز؛ viewport تازه باز.
+- هدف/کنترل: مشخصات پرونده/ترم، جدول enrollmentهای فعال شامل زمان/امتحان/status، حذف با مودال و فهرست offeringها در همان route برای افزودن؛ این هم‌ترازی تفاوت اصلی صفحهٔ ۵۳ با وضعیت قبلی را رفع می‌کند.
+- داده/API: Student, Enrollment, CourseOffering, Lesson, Term؛ GET page و `GET /api/scheduling/offerings/?term=...`; افزودن با `POST /api/enrollment/register/<offering_id>/`; حذف با `POST /api/enrollment/drop/<id>/`.
+- اعتبارسنجی/مجوز: session/student؛ مالکیت شناسه در backend؛ ثبت: بدهی، وضعیت، ظرفیت، پیش‌نیاز، تداخل، سقف و window؛ حذف: مالکیت و window add/drop یا emergency. سرویس حداقل واحد را کنترل نمی‌کند و UI این gap را می‌گوید.
+- خطا/نتیجه: خطاهای مالکیت/بازه/DB با status؛ بعد از ثبت جدید Enrollment، query `registration_id` فقط رکورد فعال همان حساب/ترم را نشان می‌دهد. بعد از حذف موفق، `dropped_enrollment_id` فقط Enrollment حذف‌شدهٔ همان Student/Term را resolve می‌کند؛ این API بازپرداخت را محاسبه یا ثبت نمی‌کند.
+- navigation: افزودن و حذف در همین صفحه؛ POST ثبت `created` را همراه Enrollment برمی‌گرداند. ثبت تازه به `/portal/add-drop/?registration_id=<id>` می‌رود و نتیجه فقط Enrollment فعال همان حساب/نیمسال را نشان می‌دهد؛ retry تکراری ادعای موفقیت تازه نمی‌کند. حذف موفق با شناسهٔ scoped نتیجه را در همان صفحه نشان می‌دهد. modal تأیید می‌گوید API مبلغ بازپرداخت را محاسبه/ثبت نمی‌کند. اگر بدهی، modal واقعی با مقدار پرونده و لینک به secure-payment باز می‌شود؛ provider پرداخت ندارد. tariff breakdown هم در schema/داده نیست و ادعا نمی‌شود.
+- آزمون/وابستگی: `test_add_drop_page_exposes_real_add_and_drop_actions_together`, `test_add_drop_registration_result_is_scoped_to_an_owned_active_enrollment`, تست created-vs-repeat و regression scope نتیجهٔ حذف افزوده/تکمیل شدند؛ suite و `apps/core/enrollment/test_services.py`, `static/core/tests/portal_bindings.test.cjs` طبق درخواست اجرا نشده‌اند.
+- وضعیت: ردیف‌های ثبت‌شدهٔ صفحهٔ PDF ۶۸ اکنون status واقعی Enrollment را هم نشان می‌دهند؛ دادهٔ چهار state متفاوت PDF جعل نشده. regression status به آزمون add/drop افزوده شد ولی اجرا نشده؛ viewport جاری نداریم.

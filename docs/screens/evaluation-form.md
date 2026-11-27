@@ -1,11 +1,11 @@
 # فرم ارزشیابی استاد
 
-- مالک/route: Shahsavand؛ `/portal/evaluation-form/`; shared `core/live_content.html`; همان selector/form صفحهٔ evaluation.
-- مرجع: PDF صفحات ۱۷ و ۳۱؛ stateهای دوره‌های متفاوت ۳۲–۳۳ و crop مقیاس ۴۹.
-- هدف/کنترل: انتخاب enrollment و امتیاز کلی/کیفیت تدریس/رفتار (۱ تا ۵) و نظر متنی.
-- داده/API: TeacherSurvey و enrollmentهای همان Student و Term؛ GET + POST API صفحه.
-- اعتبارسنجی/مجوز: `ModelChoiceField` سمت سرور فقط enrollmentهای مالک؛ امتیازهای ۱–۵؛ duplicate در فرم و transaction دوباره بررسی می‌شود.
-- خطا: form invalid همراه HTML 400؛ اگر وضعیت submit همزمان duplicate شود، ValidationError ثبت را متوقف می‌کند.
-- navigation: مسیر فرعی از فهرست ارزشیابی؛ صفحهٔ مستقل چندتا انتخاب/گام برای stateهای PDF پیاده نشده.
-- آزمون/وابستگی: `apps/core/test_frontend.py`; `academic_services/forms.py`, `TeacherSurvey`.
-- وضعیت: persistence واقعی؛ تعداد stateهای PDF/حالت موفقیت بصری کامل نیست؛ viewport تازه باز.
+- مالک/route: Miri؛ `/portal/evaluation-form/`؛ قالب اختصاصی `miri/evaluation_form.html`؛ از ردیف درس در `/portal/evaluation/` باز می‌شود.
+- مرجع: [PDF صفحهٔ ۱۷](page-17-reference.png)؛ صفحات ۳۱ تا ۳۳ همین فرم را برای سه Enrollment متفاوت نشان می‌دهند و صفحهٔ ۴۹ crop مقیاس پاسخ است.
+- ظاهر/رفتار: اطلاعات واقعی درس، استاد و نیمسال؛ پنج معیار مستقل با گزینه‌های رادیویی ۱ تا ۵؛ نظر اختیاری؛ ثبت نهایی؛ پس از ثبت، فرم read-only است.
+- داده: `TeacherSurvey` و Enrollment فعال همان Student/Term. پنج rating جدید در migration `0006_teacher_survey_pdf_ratings`; فیلدهای legacy حفظ می‌شوند. `overall_rating` از میانگین پنج معیار، با گردکردن به نزدیک‌ترین عدد صحیح، محاسبه می‌شود؛ فیلدهای legacy `teaching_quality` و `behavior` بدون نگاشت حدسی حفظ شده‌اند.
+- API: `GET|POST /api/portal/pages/evaluation-form/`; body شامل `enrollment`, پنج فیلد `*_rating` و `comment` است. شناسهٔ enrollment باید به پرونده و نیمسال جاری تعلق داشته و فعال باشد؛ دسترسی به رکورد دیگران `404` می‌دهد؛ rating خارج از ۱ تا ۵ پذیرفته نیست؛ duplicate در فرم و تراکنش دوباره بررسی می‌شود.
+- stateها: اگر چند درس واجدشرایط باشد انتخاب درس نشان داده می‌شود؛ یک درس به‌طور خودکار باز می‌شود؛ پاسخ قبلی قابل ویرایش نیست. رکوردهای قدیمی که پنج معیار مستقل ندارند فقط با امتیاز کلی موجود نمایش داده می‌شوند.
+- محدودیت تطبیق: مدل `CourseOffering` کد گروه کلاس را نگه نمی‌دارد؛ کد گروه نمونهٔ PDF جعل نشده است. crop صفحهٔ ۴۹ پنج انتخاب متفاوت ۱،۲،۳،۴،۵ را نشان می‌دهد؛ پاسخ‌های مرجع به فرم خالی پیش‌فرض نشده‌اند. پنج rating مستقل از API ذخیره و در حالت نهایی نمایش داده می‌شوند؛ regression مقدارهای ۵،۴،۳،۲،۱ را ثبت و بعداً render می‌کند. داده‌های محلی ممکن است تعداد درس/استادهای نمونه را نداشته باشند.
+- ایمنی داده: migration ساخته شد ولی روی SQLite محلی اجرا نشده؛ هیچ رکوردی seed/ویرایش/حذف نشده است.
+- راستی‌آزمایی: regressionهای فرم/API به `apps/core/test_frontend.py` افزوده شده‌اند اما به درخواست کاربر اجرا نشده‌اند؛ capture جاری احرازشده موجود نیست. `manage.py check` و بارگذاری template پس از تغییر، مرحلهٔ بعدی verification است.

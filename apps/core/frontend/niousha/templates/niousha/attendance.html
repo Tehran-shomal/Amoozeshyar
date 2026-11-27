@@ -1,0 +1,78 @@
+{% if not current_student %}
+<section class="panel attendance-empty-panel">
+    <p class="empty-state">برای مشاهدهٔ حضور و غیاب، پروندهٔ دانشجویی را از سربرگ انتخاب کنید.</p>
+</section>
+{% else %}
+<section class="attendance-metrics" aria-label="خلاصه حضور و غیاب"
+    data-attendance-total="{{ attendance_session_count }}"
+    data-attendance-absences="{{ attendance_absence_count }}"
+    data-attendance-active-courses="{{ attendance_active_course_count }}">
+    <div class="attendance-metric">
+        <span>نیمسال تحصیلی</span>
+        <strong>{{ attendance_term }}</strong>
+    </div>
+    <div class="attendance-metric">
+        <span>درس فعال</span>
+        <strong>{{ attendance_active_course_count }} درس / {{ attendance_active_units }} واحد</strong>
+    </div>
+    <div class="attendance-metric">
+        <span>غیبت ثبت‌شده</span>
+        <strong>{{ attendance_absence_count }} جلسه</strong>
+    </div>
+    <div class="attendance-metric">
+        <span>حضور ثبت‌شده</span>
+        <strong>{{ attendance_present_count }} از {{ attendance_session_count }} جلسه</strong>
+    </div>
+</section>
+
+<section class="panel data-panel attendance-table-panel">
+    <div class="panel-heading"><h2>وضعیت حضور در درس‌ها</h2></div>
+    <div class="table-wrap">
+        <table class="data-table attendance-table">
+            <thead>
+                <tr>
+                    <th scope="col">نام درس / استاد</th>
+                    <th scope="col">جلسات ثبت‌شده</th>
+                    <th scope="col">حاضر</th>
+                    <th scope="col">غیبت</th>
+                    <th scope="col">وضعیت ثبت‌نام</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in attendance_rows %}
+                <tr data-enrollment-id="{{ row.enrollment_id }}">
+                    <td class="attendance-course-copy">
+                        <strong>{{ row.lesson }}</strong>
+                        <small>{{ row.teacher }}</small>
+                    </td>
+                    <td>{{ row.session_count }}</td>
+                    <td>
+                        {{ row.present_count }}
+                        {% if row.late_count or row.unclassified_count %}
+                        <small class="attendance-secondary-count">
+                            تأخیر {{ row.late_count }} · نامشخص {{ row.unclassified_count }}
+                        </small>
+                        {% endif %}
+                    </td>
+                    <td>{{ row.absent_count }}</td>
+                    <td>{{ row.enrollment_status }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="empty-state">برای این نیمسال درس فعال یا سابقهٔ حضوری ثبت نشده است.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<aside class="attendance-warning" role="note">
+    حد مجاز غیبت مطابق مقررات هر درس محاسبه می‌شود؛ این صفحه فقط سابقه‌های ثبت‌شده را نمایش می‌دهد. برای اصلاح سابقه با استاد درس ارتباط بگیرید.
+</aside>
+
+<footer class="attendance-footer">
+    <p class="attendance-update">
+        آخرین ثبت: {{ attendance_last_updated }} · تأخیر ثبت‌شده: {{ attendance_late_count }} · وضعیت نامشخص: {{ attendance_unclassified_count }}
+    </p>
+    <a class="button button--primary" href="{% url 'core:section' 'messages' %}{{ query_suffix }}">ارتباط با استاد</a>
+</footer>
+{% endif %}

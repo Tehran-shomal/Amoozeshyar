@@ -1,55 +1,54 @@
-# ارائهٔ یکپارچهٔ تیم آموزشیار
+# ارائهٔ یکپارچهٔ آموزشیار — نسخهٔ مالکیت هفت‌گانه
 
-## معرفی سامانه
+## وضعیت ارائه
 
-این checkout یک پورتال دانشجویی Django برای ورود، داشبورد، مشاهدهٔ داده‌های آموزشی و ثبت چند فرم واقعی است. PDF مرجع ۹۶ صفحه دارد. route یا تصویر مشابه به‌تنهایی به معنی workflow کامل یا تأیید قواعد دانشگاه نیست.
+این بسته، تفکیک هفت‌گانهٔ جدید را در کد و مستندات فعال می‌کند. تست و QA نهایی بنا به درخواست کاربر به فاز بعد موکول شده؛ پس این سند ادعای «آمادهٔ تحویل نهایی» ندارد. PDF مرجع ۹۶ صفحه‌ای در clone پیدا نشد؛ mapping صفحه‌ها موجود است، اما بازبینی تصویری باید پس از دسترسی به فایل انجام شود.
 
-## معماری و جریان داده
+## معماری
 
 ```text
-مرورگر RTL
-   │ same-origin session + CSRF
-   ├── GET /, /portal/<slug>/ ──> shell + page API ──> owner selector ──> ORM
-   └── POST page/API ──> Django Form/service ──> permission + validation
-                                             └── transaction/DB ──> response + refresh
+Browser / RTL
+  ├─ GET /, /portal/<slug>/ -> shell
+  ├─ GET /api/portal/pages/<slug>/ -> owner selector -> ORM -> page HTML JSON
+  ├─ POST same page API + CSRF -> Django form -> validation/ownership -> DB
+  └─ enrollment/scheduling/accounts APIs -> domain services
 ```
 
-مدل‌ها در `apps/core/models.py` و adminها در `apps/core/admin.py` متمرکزند؛ پنج گروه frontend در registry صفحه‌ها را مالک می‌شوند. endpoint عمومی `GET|POST /api/portal/pages/<slug>/` پاسخ HTML/فرم صفحه است، نه جایگزین API دامنه‌ای یا نقش‌های staff.
+مدل‌ها و admin همچنان مرکزی‌اند: `apps/core/models.py`, `apps/core/admin.py`. هفت manifest در `apps/core/frontend/registry.py` ثبت می‌شوند؛ مسیرهای URL عمومی تغییر نکرده‌اند. `NAV_GROUPS` دسته‌بندی کاربردی منوست و هیچ‌گاه به معنی مالک تیمی نیست.
 
-## تقسیم مسئولیت
+## تقسیم مسئولیت‌ها و مستندات جداگانه
 
-| ارائه | مسئولیت پیوست | مالکیت واقعی در repository |
-|---|---|---|
-| مبینا | ورود، dashboard و shell | login/dashboard/enrollment/selected-courses/curriculum؛ shell و term picker مشترک |
-| شقایق | ثبت‌نام و تغییر دروس | add-drop/emergency-drop/registration-status/grade-appeal؛ دو صفحهٔ انتخاب واحد در Mobina |
-| پارسا | امور مالی | payments/secure-payment/financial-aid/tuition |
-| امید | سوابق و خدمات آموزشی | activity/transcript/attendance/exam-card/requests/certificates/student-card/guide/support؛ curriculum و grade appeal مالک دیگری دارند |
-| نیوشا | زمان‌بندی و Frontend Lead | calendar/schedule/settings/notifications/internship/announcements در گروه مشترک Neyousha/Pouya؛ attendance/exam-card متعلق به Omid |
-| شاهسوند | درخواست‌های دانشجویی | evaluation/messages/guest-request/graduation در academic_services؛ چند درخواست پیوست در گروه‌های دیگر است |
-| میری | Shared Lead | مالک مستقل در manifest ندارد؛ صفحه‌ها بین Omid، شاهسوند و Neyousha/Pouya تقسیم‌اند |
+| عضو | دامنه و URLها | پوشهٔ کد | سند ارائه |
+|---|---|---|---|
+| Mobina | ورود `/login/`، داشبورد `/`، تنظیمات و کارت | `apps/core/frontend/mobina/` | [01_Mobina.md](01_Mobina.md) |
+| Shaghayegh | انتخاب/تغییر درس، وضعیت ثبت‌نام | `apps/core/frontend/shaghayegh/` | [02_Shaghayegh.md](02_Shaghayegh.md) |
+| Parsa | پرداخت، تسهیلات، شهریه | `apps/core/frontend/parsa/` | [03_Parsa.md](03_Parsa.md) |
+| Omid | فعالیت، کارنامه، چارت، اعتراض نمره | `apps/core/frontend/omid/` | [04_Omid.md](04_Omid.md) |
+| Niousha | برنامه، تقویم، حضور، کارت امتحان؛ Frontend Lead | `apps/core/frontend/niousha/` | [05_Niousha.md](05_Niousha.md) |
+| Shahsvand | کارآموزی، مهمانی، درخواست و گواهی | `apps/core/frontend/shahsvand/` | [06_Shahsvand.md](06_Shahsvand.md) |
+| Miri | استاد، پیام، اعلان، راهنما، پشتیبانی؛ Shared Lead | `apps/core/frontend/miri/` | [07_Miri.md](07_Miri.md) |
 
-این جدول اختلاف دو مرجع را آشکار نگه می‌دارد: تقسیم جدید پیوست برای ارائه و مالکیت واقعی registry برای کد. فایل‌های فردی در همین پوشه جزئیات route، PDF، API و caveat هر عضو را دارند.
+فهرست تمام ۳۲ route و endpointهایشان در [TEAM_OWNERSHIP.md](../TEAM_OWNERSHIP.md) و [SCREEN_API_MATRIX.md](../SCREEN_API_MATRIX.md) است. screen docs مستقل در [docs/screens](../screens/README.md) و قراردادهای دقیق در [API_CONTRACTS.md](../API_CONTRACTS.md) قرار دارند.
 
 ## سناریوی ارائهٔ تیمی
 
-1. ورود session-based و مشاهدهٔ داشبورد دانشجوی واردشده.
-2. تغییر نیمسال در dialog و مشاهدهٔ query به‌روزشده.
-3. ورود از انتخاب واحد به دروس انتخاب‌شده، مشاهدهٔ offering واقعی و اشاره به شناسهٔ دیتابیسی.
-4. نمایش حذف با modal تأیید و کد server-side مالکیت/بازه.
-5. بازکردن کارنامه و فعالیت آموزشی، سپس پرداخت‌ها و تسهیلات.
-6. نمایش یک فرم درخواست و توضیح اینکه owner/status از server تعیین می‌شود.
-7. خروج و نمایش بازگشت به login.
+۱. ورود و session؛ ۲. dashboard و انتخاب term؛ ۳. نمایش ارائه‌ها و workflow انتخاب واحد در محیط تست؛ ۴. مشاهدهٔ کارنامه/برنامه؛ ۵. مشاهدهٔ سوابق مالی بدون پرداخت جعلی؛ ۶. ثبت یک درخواست و پیگیری وضعیت ذخیره‌شده؛ ۷. پیام/اعلان و محدودیت provider؛ ۸. خروج.
 
-در browser seed فعلی، term فعال بیرون از registration window و term دیگر فاقد offering است؛ پس ثبت واقعی در demo بدون آماده‌سازی test DB با term/offer معتبر اجرا نمی‌شود. suite Python قواعد register/drop و persistence را با دادهٔ test کنترل‌شده بررسی می‌کند. دادهٔ واقعی یا seed اصلی دست‌کاری نشود.
+ثبت یا حذف درس در دیتابیس محلی فقط بعد از ساخت test DB و term/offering مجاز انجام شود. DB اصلی و دادهٔ کاربر برای demo نباید تغییر کنند.
 
-## وضعیت فنی و شواهد
+## محدودیت‌ها و فاز بعد
 
-- اجرای نهایی: ۱۰۱ تست Python، ۱۴ تست Node؛ همه پاس.
-- `manage.py check`: پاک؛ `makemigrations --check --dry-run`: بدون تغییر.
-- ۲۰ هشدار `RuntimeWarning` datetime naive در fixture/seed هنوز باقی است.
-- browser smoke شامل login/logout، dashboard، انتخاب نیمسال، route دروس، API ارائه و رد دسترسی به پروندهٔ دیگر است.
-- هفت viewport هدف بررسی شدند؛ document-level horizontal overflow دیده نشد. در 768px قاب دوتایی search رفع شد؛ جزئیات در [TEST_REPORT.md](../TEST_REPORT.md).
+- test suite، Django checks، browser run و viewportهای موبایل/دسکتاپ در فاز بعد اجرا می‌شوند.
+- قرارداد provider پرداخت، صدور رسمی کارت/گواهی و ارسال SMS/email در workspace موجود نیست؛ این عملیات unavailable هستند.
+- مرجع قوانین رسمی `نیازمندی_های_آموزشیار.md` و PDF در این clone نیستند؛ رفتار نامعلوم نباید حدس زده شود.
+- معیار complete هر صفحه شامل UI، API، persistence، permission، validation/error، refresh و test evidence است. هیچ صفحه‌ای تا ارائهٔ آن شواهد کامل خوانده نشود.
 
-## محدودیت‌هایی که باید در دفاع گفته شوند
+## محل مستندات
 
-درگاه پرداخت، صدور رسمی کارت/گواهی، APIهای مستقل ۱۴ namespace، ثبت حضور کارمند، تقویم رویداد مستقل، guide Q&A، lifecycle کامل Ticket/درخواست، result screenهای PDF و منبع رفتار رسمی (`نیازمندی_های_آموزشیار.md`) موجود نیستند. این موارد mock یا completed معرفی نشده‌اند.
+- مرجع تیم و URL هر عضو: `docs/TEAM_OWNERSHIP.md`
+- ماتریس تمام صفحه/API: `docs/SCREEN_API_MATRIX.md`
+- قرارداد endpointها: `docs/API_CONTRACTS.md`
+- mapping ۹۶ صفحه: `docs/PDF_PAGE_MAPPING.md`
+- screen-by-screen: `docs/screens/<slug>.md`
+- هفت ارائهٔ فردی: `docs/presentation/01_Mobina.md` تا `07_Miri.md`
+- وضعیت و ادامه: `docs/PROGRESS.md`, `docs/NEXT_STEPS.md`, `docs/FINAL_REPORT.md`

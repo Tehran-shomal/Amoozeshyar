@@ -16,10 +16,32 @@
         {% else %}
         <p>درخواست حذف طبق وضعیت نیمسال و پروندهٔ آموزشی در سامانه بررسی می‌شود.</p>
         {% endif %}
-        <small>سقف مجاز: {{ current_student.max_allowed_units }} واحد · قوانین بازه و حداقل واحد در API اجرا می‌شوند.</small>
+        <small>سقف مجاز: {{ maximum_allowed_units }} واحد · زمان مجاز از تنظیمات نیمسال خوانده می‌شود؛ حداقل واحد در API تعریف نشده است.</small>
     </div>
-    {% if active_slug == "add-drop" %}<a class="button button--primary" href="{% url 'core:section' 'enrollment' %}{{ query_suffix }}">افزودن درس</a>{% endif %}
+    {% if active_slug == "add-drop" %}
+    <button class="button button--primary" type="button" data-open-course-offerings
+        aria-controls="course-offerings-panel" aria-expanded="false">انتخاب درس‌ها</button>
+    {% endif %}
 </div>
+
+{% if active_slug == "add-drop" and course_registration_result %}
+<section class="panel course-registration-result" role="status" aria-live="polite">
+    <div class="panel-heading"><h2>نتیجهٔ ثبت درس</h2></div>
+    <p><strong>{{ course_registration_result.offering.lesson.title }}</strong> در برنامهٔ این نیمسال ثبت فعال دارد.</p>
+    <p>کد درس: {{ course_registration_result.offering.lesson.lesson_code }} · وضعیت: {{ course_registration_result.status|default:"ثبت‌شده" }}</p>
+    <a class="button button--soft" href="{% url 'core:section' active_slug %}{{ query_suffix }}">شروع دوباره سناریو</a>
+</section>
+{% endif %}
+
+{% if course_drop_result %}
+<section class="panel course-drop-result" role="status" aria-live="polite">
+    <div class="panel-heading"><h2>{% if active_slug == "emergency-drop" %}نتیجهٔ حذف اضطراری{% else %}نتیجهٔ حذف درس{% endif %}</h2></div>
+    <p><strong>{{ course_drop_result.offering.lesson.title }}</strong> ({{ course_drop_result.offering.lesson.lesson_code }}) حذف‌شده ثبت شد.</p>
+    <p>وضعیت: {{ course_drop_result.status }}{% if course_drop_result.drop_date %} · تاریخ حذف: {{ course_drop_result.drop_date|date:"Y/m/d" }}{% endif %}</p>
+    <p>برای این حذف بازپرداخت مالی ثبت نشده است؛ این API فقط وضعیت ثبت‌نام را تغییر می‌دهد.</p>
+    <a class="button button--soft" href="{% url 'core:section' active_slug %}{{ query_suffix }}">شروع دوباره سناریو</a>
+</section>
+{% endif %}
 
 <section class="panel data-panel course-change-table">
     <div class="panel-heading"><h2>{% if active_slug == "emergency-drop" %}دروس قابل حذف اضطراری{% else %}دروس ثبت‌شده{% endif %}</h2></div>
@@ -30,7 +52,7 @@
             <tr>
                 {% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}
                 <td><button class="table-action" type="button"
-                    data-enrollment-action="drop" data-record-id="{{ row.id }}"
+                    data-enrollment-action="{% if active_slug == 'emergency-drop' %}emergency-drop{% else %}drop{% endif %}" data-record-id="{{ row.id }}"
                     data-course-name="{{ row.course_name }}" data-course-code="{{ row.course_code }}"
                     data-course-units="{{ row.units }}">{{ row.action_label }}</button></td>
             </tr>
@@ -39,11 +61,25 @@
     </table></div>
 </section>
 
+{% if active_slug == "add-drop" %}
+<section id="course-offerings-panel" class="panel data-panel course-offerings-panel"
+    data-course-offerings-panel hidden aria-labelledby="course-offerings-title">
+    <div class="panel-heading"><h2 id="course-offerings-title">{{ course_offering_table.title }}</h2></div>
+    <div class="table-wrap"><table class="data-table" data-offerings-api-table>
+        <thead><tr>{% for column in course_offering_table.columns %}<th scope="col">{{ column }}</th>{% endfor %}<th scope="col">عملیات</th></tr></thead>
+        <tbody><tr><td colspan="7" class="empty-state">دروس نیمسال در حال دریافت است…</td></tr></tbody>
+    </table></div>
+</section>
+{% endif %}
+
 <section class="course-totals" aria-label="خلاصهٔ ثبت‌نام نیمسال">
     <div><span>مجموع واحدهای فعال</span><strong>{{ course_change_units }}</strong></div>
-    <div><span>سقف مجاز واحد</span><strong>{{ current_student.max_allowed_units }}</strong></div>
+    <div><span>سقف مجاز واحد</span><strong>{{ maximum_allowed_units }}</strong></div>
 </section>
-<p class="action-note">{% if active_slug == "emergency-drop" %}حذف اضطراری فقط در بازهٔ تعیین‌شده برای نیمسال پذیرفته می‌شود.{% else %}پس از پاسخ API، جدول با وضعیت ثبت‌نام به‌روز می‌شود.{% endif %}</p>
+<p class="action-note">{% if active_slug == "emergency-drop" %}حذف اضطراری فقط در بازهٔ تعیین‌شده برای نیمسال پذیرفته می‌شود و درخواست استرداد وجه ایجاد نمی‌کند.{% else %}پس از پاسخ API، جدول با وضعیت ثبت‌نام به‌روز می‌شود؛ قاعدهٔ حداقل واحد در سرویس ثبت‌نام وجود ندارد.{% endif %}</p>
+<p class="course-totals-note">تعرفهٔ شهریه برای این نیمسال در داده‌های سامانه ثبت نشده است؛ مبلغی حدس زده نمی‌شود.</p>
+
+{% if active_slug == "add-drop" %}{% include "shaghayegh/partials/tuition_debt_modal.html" %}{% endif %}
 
 <div class="modal-backdrop" data-drop-modal hidden>
     <section class="modal-dialog drop-confirm-dialog{% if active_slug == 'emergency-drop' %} drop-confirm-dialog--emergency{% endif %}"
@@ -51,7 +87,13 @@
         <header class="modal-heading"><h2 id="drop-dialog-title">{% if active_slug == "emergency-drop" %}تأیید حذف اضطراری{% else %}تأیید حذف درس{% endif %}</h2></header>
         <h3 data-drop-course-name></h3>
         <p class="course-modal-meta">کد درس: <span data-drop-course-code></span> · <span data-drop-course-units></span> واحد</p>
-        <p>برای ادامه، حذف این ثبت‌نام را در سامانه تأیید کنید.</p>
+        {% if active_slug == "emergency-drop" %}
+        <p>با تأیید، وضعیت ثبت‌نام این درس در نیمسال به «حذف‌شده» تغییر می‌کند.</p>
+        <p class="emergency-drop-warning">حذف اضطراری بازپرداخت ثبت نمی‌کند؛ API فعلی فقط وضعیت ثبت‌نام را تغییر می‌دهد.</p>
+        {% else %}
+        <p>با تأیید، وضعیت ثبت‌نام این درس در نیمسال به «حذف‌شده» تغییر می‌کند.</p>
+        <p>API فعلی مبلغ بازپرداخت را محاسبه یا ثبت نمی‌کند؛ تغییر شهریه از این صفحه تضمین نمی‌شود.</p>
+        {% endif %}
         <p class="selected-group-note" data-drop-api-status role="status" aria-live="polite" hidden></p>
         <div class="page-actions">
             <button class="button button--primary" type="button" data-confirm-drop>تأیید نهایی حذف</button>

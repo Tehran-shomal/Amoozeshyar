@@ -1,0 +1,39 @@
+{% if profile_notice %}
+<div class="inline-notice"><p>{{ profile_notice }}</p></div>
+{% else %}
+<div class="inline-notice evaluation-info">
+    <p>ارزشیابی نیمسال {{ evaluation_term_code }}؛ {{ evaluation_course_count }} درس ثبت‌شده و {{ evaluation_completed_count }} ارزشیابی تکمیل‌شده</p>
+    <p class="evaluation-privacy-note">{{ evaluation_notice }}</p>
+</div>
+
+<section class="panel evaluation-list-panel" aria-labelledby="evaluation-course-list-title">
+    <div class="panel-heading"><h2 id="evaluation-course-list-title">وضعیت ارزشیابی درس‌های ثبت‌شده</h2></div>
+    <div class="evaluation-course-list">
+        {% for entry in evaluation_course_entries %}
+        <article class="evaluation-course-row">
+            <div class="evaluation-course-copy">
+                <strong>{{ entry.enrollment.offering.lesson.title }}</strong>
+                <small>{{ entry.enrollment.offering.teacher.person.full_name }}</small>
+            </div>
+            <span class="evaluation-course-status">
+                {% if entry.survey %}ثبت‌شده{% else %}تکمیل‌نشده{% endif %}
+            </span>
+            {% if entry.survey %}
+            <span class="evaluation-complete-badge">ثبت‌شده</span>
+            {% else %}
+            {% url 'core:section' 'evaluation-form' as evaluation_form_url %}
+            <a class="button button--primary" href="{{ evaluation_form_url }}{{ query_suffix }}{% if query_suffix %}&amp;{% else %}?{% endif %}enrollment={{ entry.enrollment.pk }}">تکمیل فرم</a>
+            {% endif %}
+        </article>
+        {% empty %}
+        <p class="empty-state">برای نیمسال انتخاب‌شده درسی برای ارزشیابی ثبت نشده است.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<p class="evaluation-footer-notice">پس از ثبت نهایی، ویرایش پاسخ‌ها امکان‌پذیر نیست. تکمیل ارزشیابی ممکن است یکی از شرایط دریافت کارت امتحان باشد.</p>
+{% url 'core:section' 'exam-card' as exam_card_url %}
+<div class="page-actions evaluation-page-actions">
+    <a class="button button--soft" href="{{ exam_card_url }}{{ query_suffix }}">مشاهده شرایط کارت امتحان</a>
+</div>
+{% endif %}

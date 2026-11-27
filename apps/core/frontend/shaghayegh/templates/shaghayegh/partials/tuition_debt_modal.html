@@ -1,0 +1,17 @@
+<div class="tuition-debt-modal" data-tuition-debt-modal hidden>
+    <section class="tuition-debt-dialog" role="dialog" aria-modal="true"
+        aria-labelledby="tuition-debt-title" aria-describedby="tuition-debt-description">
+        <h2 id="tuition-debt-title">عملیات ثبت‌نام مجاز نیست</h2>
+        <p id="tuition-debt-description">بدهی شهریهٔ ثبت‌شده مانع ادامهٔ ثبت‌نام است. پس از تسویه، محدودیت‌های ثبت‌شدهٔ انتخاب واحد دوباره بررسی می‌شوند.</p>
+        <div class="tuition-debt-facts">
+            <div><span>حداقل واحد</span><strong>حداقل واحد در قوانین جاری سامانه تعریف نشده است</strong></div>
+            <div><span>حداکثر واحد مجاز</span><strong>{{ maximum_allowed_units }} واحد</strong></div>
+            <div><span>بدهی شهریه</span><strong>{{ current_student.tuition_debt|floatformat:"0" }}</strong></div>
+        </div>
+        <p class="tuition-debt-note">API فعلی بدهی و سقف حداکثر را کنترل می‌کند؛ قاعدهٔ حداقل واحد در مدل/سرویس تعریف نشده است.</p>
+        <div class="tuition-debt-actions">
+            <a class="button button--primary" href="{% url 'core:section' 'secure-payment' %}{{ query_suffix }}">پرداخت بدهی</a>
+            <button class="button button--soft" type="button" data-close-tuition-debt>بازگشت</button>
+        </div>
+    </section>
+</div>

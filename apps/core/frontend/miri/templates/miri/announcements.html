@@ -1,0 +1,24 @@
+{% if profile_notice %}<div class="inline-notice"><p>{{ profile_notice }}</p></div>{% else %}
+<section class="announcement-summary-strip" aria-label="خلاصهٔ اطلاعیه‌ها">
+    <div><span>اطلاعیه‌های دریافت‌شده</span><strong>{{ announcement_count }}</strong></div>
+    <div><span>خوانده‌نشده</span><strong>{{ announcement_unread_count }}</strong></div>
+    <div><span>نیمسال انتخاب‌شده</span><strong>{{ announcement_term_code }}</strong></div>
+</section>
+<p class="announcement-scope-note">{{ announcement_scope_note }}</p>
+
+<section class="announcement-list" aria-label="فهرست اطلاعیه‌های استادان">
+    {% for announcement in announcements %}
+    <article class="announcement-card{% if announcement.is_read %} is-read{% endif %}">
+        <header class="announcement-card-header">
+            <div class="announcement-card-title"><h2>{{ announcement.subject }}</h2><span>{{ announcement.sender.person.full_name }}</span></div>
+            <time datetime="{{ announcement.sent_at|date:'c' }}">{{ announcement.sent_at|date:"Y-m-d H:i" }}</time>
+        </header>
+        <p class="announcement-card-message">{{ announcement.message_body }}</p>
+        <footer class="announcement-card-actions">
+            {% if announcement.is_read %}<span class="announcement-read-label">خوانده‌شده</span>
+            {% else %}<form method="post" class="live-form">{% csrf_token %}<input type="hidden" name="communication_id" value="{{ announcement.communication_id }}"><button type="submit" class="button button--soft" aria-label="علامت‌گذاری اطلاعیهٔ {{ announcement.subject }} به‌عنوان خوانده‌شده">خواندم</button></form>{% endif %}
+        </footer>
+    </article>
+    {% empty %}<div class="panel announcement-empty-state">اطلاعیه‌ای برای حساب شما ثبت نشده است.</div>{% endfor %}
+</section>
+{% endif %}

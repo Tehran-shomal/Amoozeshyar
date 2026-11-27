@@ -1,10 +1,11 @@
 # راهنمای سامانه
 
-- مالک/route: Omid؛ `/portal/guide/`; `core/live_content.html`; selector فعلی به fallback notice می‌رسد.
+- مالک/route: Miri؛ `/portal/guide/`; template اختصاصی `miri/guide.html` و selector راهنما.
 - مرجع: PDF صفحهٔ ۲۸.
-- هدف/کنترل مرجع: کارت‌های سؤال‌وپاسخ راهنمایی؛ اما در کد فعلی راهنمای محتوایی، accordion یا navigation راهنما پیدا نشد.
-- داده/API: متن ثابت notice در selector؛ GET API صفحه؛ مدل یا فرم guide ندارد.
-- اعتبارسنجی/مجوز: session لازم؛ PortalView آن را برای حساب بدون Student نیز render می‌کند.
-- خطا/navigation: خطای API مشترک؛ sidebar و linkهای عمومی پرتال.
-- آزمون/وابستگی: `apps/core/test_frontend.py` smoke؛ Omid selector و shared live-content.
-- وضعیت: gap بازتولیدشدنی نسبت به PDF؛ متن رسمی راهنما/رویه‌ها در منابع موجود نیست، بنابراین محتوا حدس زده نشده و این صفحه کامل نیست.
+- هدف/ظاهر مرجع: چهار کارت پرسش‌وپاسخ، هر کدام با دکمهٔ «ورود به بخش»، و دکمهٔ «تماس با پشتیبانی» پایین صفحه. فاصله و اندازهٔ کارت‌ها برای دسکتاپ از مرجع پیروی می‌کند.
+- داده/API: چهار topic ثابت از selector Miri؛ `GET /api/portal/pages/guide/`; model یا POST ندارد. کارت‌ها به `/portal/enrollment/`, `/portal/registration-status/`, `/portal/emergency-drop/`, و `/portal/messages/` وصل‌اند. CTA پشتیبانی به `/portal/support/` می‌رود و `student_code` و `term` انتخاب‌شده را حفظ می‌کند.
+- اعتبارسنجی/مجوز: session لازم؛ PortalView آن را برای حساب بدون Student نیز render می‌کند؛ لینک‌ها با URL resolver تولید و query پرونده/ترم را نگه می‌دارند.
+- اختلافِ بررسی‌شده با API: PDF می‌گوید حذف نباید تعداد واحد را از حداقل مجاز پایین‌تر ببرد؛ `drop_enrollment` فعلی فقط مالکیت و بازهٔ حذف را کنترل می‌کند و حداقل واحد را نمی‌سنجد. کارت این gap را صریح نشان می‌دهد؛ قاعدهٔ جدیدی بدون منبع رسمی اضافه نشده است. صفحهٔ وضعیت ثبت‌نام نیز علت مسدودشدن را تشخیص نمی‌دهد و فقط داده‌های ثبت‌نام را می‌خواند.
+- مرز تحویل: صفحهٔ پیام استاد جدا از اعلان‌هاست؛ کارت به پیام‌ها می‌رود. اعلان‌های حساب از `/portal/notifications/` و اطلاعیه‌های دریافت‌شده از `/portal/announcements/` نیز قابل دسترسی‌اند.
+- آزمون/وابستگی: رگرسیون `test_guide_contains_actionable_instructions_and_real_page_links` به چهار کارت و پنج لینک واقعی به‌روزرسانی شد؛ اجرا طبق درخواست کاربر به فاز بعد موکول است.
+- وضعیت: ساختار/متن کارت‌ها با مرجع PDF هم‌راستا شد؛ تطبیق runtime صفحهٔ ۲۸ هنوز انجام نشده چون capture جاریِ مجاز در دسترس نیست.

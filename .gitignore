@@ -19,3 +19,8 @@ db.sqlite3.bak
 apps/core/migrations copy
 apps/core/admin copy.py
 apps/core/admin models copy.py
+
+# React tooling (compiled Django static assets are intentionally tracked)
+frontend-react/node_modules/
+frontend-react/.vite/
+frontend-react/dist/

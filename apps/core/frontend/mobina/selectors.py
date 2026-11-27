@@ -1,24 +1,27 @@
 """داده‌های واقعی داشبورد و انتخاب واحد؛ شناسهٔ ارائه مستقیم به API فرستاده می‌شود."""
 from apps.core import models as m
-from ..common import table, display, enrollments_table, active_enrollment_rows
+from ..common import display, active_enrollment_rows
+from .forms import SettingsForm
 
 
 def build(slug, student, term, request):
-    # Step one confirms the live student/term record before opening course selection.
-    if slug == "enrollment":
-        return {"enrollment_can_continue": bool(term)}
-    if slug == "curriculum":
-        return {"tables": [table("چارت انتخاب واحد", ["درس", "نوع", "ترم پیشنهادی", "واحد"],
-            ((x.lesson.title, x.requirement_type, x.recommended_term, x.calculated_units)
-             for x in m.Curriculum.objects.filter(field=student.field, is_active=True).select_related("lesson", "requirement_type")))]}
-    available = table("دروس ارائه‌شده", ["کد", "درس", "استاد", "واحد", "زمان", "ظرفیت باقی‌مانده"], [])
-    available["has_actions"] = True
-    # The scheduling API owns the available-offerings list; keep only the empty table shape here.
-    selected = active_enrollment_rows(student, term)
-    selected_units = sum(row.offering.lesson.theory_units + row.offering.lesson.practical_units
-                         for row in selected)
-    return {"tables": [enrollments_table(student, term, queryset=selected), available],
-            "selected_units": selected_units, "available_offerings": []}
+    if slug == "settings":
+        return {"form": SettingsForm(
+            request.POST if request.method == "POST" else None,
+            student=student,
+            person=request.user,
+            term=term,
+        ), "settings_save_result": (
+            request.method == "GET" and request.GET.get("settings_saved") == "1"
+        ), "notification_categories": [
+            "اطلاعیه‌های آموزشی",
+            "مهلت‌ها و پرداخت شهریه",
+            "پیام و اطلاعیه استاد",
+            "وضعیت درخواست‌ها",
+        ]}
+    if slug == "student-card":
+        return {"printable": True}
+    return {"notice": "از منوی سامانه بخش موردنظر را انتخاب کنید."}
 
 
 def dashboard(student, term, person):

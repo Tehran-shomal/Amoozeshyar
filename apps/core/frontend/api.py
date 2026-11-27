@@ -1,5 +1,7 @@
 """JSON boundary for database-backed student portal pages."""
 
+from urllib.parse import urlsplit, urlunsplit
+
 from django.core.exceptions import PermissionDenied
 from django.db import OperationalError
 from django.http import Http404, HttpResponseNotAllowed, JsonResponse, QueryDict
@@ -10,22 +12,22 @@ from django.views.decorators.http import require_http_methods
 
 from apps.core.api import APIError, error_response, read_json
 from .registry import PAGES
+from .react_forms import serialize_form
+from .react_payloads import serialize_page
 from .views import PortalView
+
+REACT_ACCEPT = "application/vnd.amoozeshyar.react+json"
 
 
 def _template_for(slug):
     return "mobina/home.html" if slug == "home" else "core/section.html"
 
 
-def _query_suffix(request):
-    query = request.GET.urlencode()
-    return f"?{query}" if query else ""
-
-
-def _page_path(slug):
-    if slug == "home":
-        return reverse("core:home")
-    return reverse("core:section", kwargs={"slug": slug})
+def _portal_redirect(slug, response_url):
+    """Return successful page submissions to the UI route, not the API route."""
+    query = urlsplit(response_url).query
+    page_path = reverse("core:section", kwargs={"slug": slug})
+    return urlunsplit(("", "", page_path, query, ""))
 
 
 def _page_payload(slug, context, request):
@@ -56,6 +58,41 @@ def _form_post_data(payload):
     return form_data
 
 
+def _private_response(response):
+    response["Cache-Control"] = "private, no-store"
+    return response
+
+
+@require_http_methods(["GET"])
+def portal_ui_page_api(request, slug):
+    """Return allowlisted JSON for React; never serialize a Django template."""
+    if not request.user.is_authenticated:
+        return _private_response(error_response(
+            "authentication_required", "Authentication is required.", 401
+        ))
+
+    page_slug = None if slug == "home" else slug
+    if slug != "home" and slug not in PAGES:
+        return _private_response(error_response(
+            "page_not_found", "Portal page not found.", 404
+        ))
+
+    try:
+        context = PortalView().context(request, page_slug)
+        return _private_response(JsonResponse(serialize_page(slug, context)))
+    except APIError as error:
+        response = error_response(error.code, error.message, error.status_code)
+    except PermissionDenied:
+        response = error_response("permission_denied", "Permission denied.", 403)
+    except Http404:
+        response = error_response(
+            "page_data_not_found", "The requested page data was not found.", 404
+        )
+    except OperationalError:
+        response = error_response("database_unavailable", "Database is unavailable.", 503)
+    return _private_response(response)
+
+
 @require_http_methods(["GET", "POST"])
 def portal_page_api(request, slug):
     """Read or submit an existing portal page using its owning templates/forms."""
@@ -81,13 +118,26 @@ def portal_page_api(request, slug):
                 405,
             )
 
-        request._post = _form_post_data(read_json(request))
-        request._files = MultiValueDict()
+        if request.content_type == "multipart/form-data":
+            request._post = request.POST
+            request._files = request.FILES
+        else:
+            request._post = _form_post_data(read_json(request))
+            request._files = MultiValueDict()
         response = view.post(request, slug=page_slug)
 
         if 300 <= response.status_code < 400:
-            return JsonResponse({"redirect": _page_path(slug) + _query_suffix(request)})
+            return JsonResponse({"redirect": _portal_redirect(slug, response.url)})
         if response.status_code == 400:
+            if REACT_ACCEPT in request.headers.get("Accept", ""):
+                error_context = view.context(request, page_slug)
+                return JsonResponse({
+                    "error": {
+                        "code": "validation_error",
+                        "message": "فرم را بررسی و خطاها را اصلاح کنید.",
+                    },
+                    "form": serialize_form(error_context.get("form")),
+                }, status=400)
             return JsonResponse({
                 "error": {
                     "code": "validation_error",

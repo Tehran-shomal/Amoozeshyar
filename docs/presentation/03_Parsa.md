@@ -1,61 +1,63 @@
-# ارائهٔ گروه پارسا — امور مالی
+# ارائهٔ ۰۳ — پارسا: امور مالی
 
 ### 1. معرفی بخش
 
-نمایش بدهی پرونده، خلاصهٔ نیمسال، سوابق پرداخت و درخواست تسهیلات با دادهٔ واقعی موجود. درگاه بانکی در checkout پیکربندی نشده است.
+نمایش بدهی ثبت‌شده، سوابق تراکنش، خلاصهٔ شهریه و درخواست تسهیلات. هدف، نمایش وضعیت واقعی بدون ایجاد تراکنش نمایشی است.
 
 ### 2. مسئولیت عضو
 
-گروه Parsa در manifest واقعی چهار صفحهٔ `payments`, `secure-payment`, `financial-aid`, `tuition` را دارد. PDF صفحهٔ ۳۰ را به state منع عملیات بدهی اختصاص می‌دهد؛ آن state route مستقل نیست. موفقیت پرداخت یا بازگشت از provider نباید جعل شود.
+مالک صفحه‌های مالی؛ در Master به صفحهٔ ۳۰ و صفحات ۶۴–۶۶ اشاره شده است. PDF در clone پیدا نشد؛ شماره‌ها نیازمند تطبیق بعدی‌اند.
 
-### 3. صفحات پیاده‌سازی‌شده
+### 3. صفحه‌ها و URLها
 
-| صفحه/حالت | PDF | URL | وضعیت |
-|---|---:|---|---|
-| منع عملیات به علت بدهی | 30 | state در گردش ثبت‌نام، نه route مالی | مستقل بازنمایی نشده؛ service ثبت‌نام بدهی را رد می‌کند |
-| سوابق پرداخت | 63 | `/portal/payments/` | خواندن تراکنش‌های پرونده/نیمسال |
-| پرداخت امن | 64 | `/portal/secure-payment/` | نبود gateway صریح است؛ mutation ندارد |
-| تسهیلات | 65 | `/portal/financial-aid/` | ثبت درخواست نوع/دلیل در مدل موجود؛ مبلغ و پیوست مدل نشده |
-| شهریه | 66 | `/portal/tuition/` | جمع‌زدن پرداخت‌های موفق؛ تفکیک line item شهریه موجود نیست |
+| صفحه | URL | API | وضعیت |
+|---|---|---|---|
+| سوابق پرداخت | `/portal/payments/` | GET صفحه | Payment متعلق به Student/Term، read-only |
+| پرداخت امن | `/portal/secure-payment/` | GET صفحه | درگاه متصل نیست؛ اقدام پرداخت disabled/unavailable |
+| تسهیلات | `/portal/financial-aid/` | GET/POST صفحه | ScholarshipApplication واقعی |
+| شهریه نیمسال‌ها | `/portal/tuition/` | GET صفحه | جمع پرداخت‌های successful و debt ذخیره‌شده |
 
-### 4. طراحی و عملکرد
+### 4. جریان UI
 
-خلاصه و جدول از selector مالی ساخته می‌شوند و به Student جاری و Term انتخابی محدودند. صفحات مالی از یک template fragment در section shell استفاده می‌کنند. باگ ارث‌بری shell تکراری در همین template با تست regression رفع شد؛ routeهای مالی اکنون تنها یک `portal-shell` دارند.
+صفحه مالی از API با context دانشجو و ترم بارگیری می‌شود. پرداخت امن فقط وضعیت عدم اتصال را توضیح می‌دهد؛ درخواست تسهیلات به فرم واقعی متصل است و پس از ثبت از همان پایگاه داده خوانده می‌شود.
 
-### 5. APIهای مرتبط
+### 5. API و داده
 
-| مسیر | روش | ورودی/خروجی |
-|---|---|---|
-| `/api/portal/pages/payments/` | GET | `page`, `profile`, `term`, HTML؛ فقط پروندهٔ مالک |
-| `/api/portal/pages/secure-payment/` | GET | پیام نبود gateway؛ تراکنش نمی‌سازد |
-| `/api/portal/pages/financial-aid/` | GET/POST | فیلدهای واقعی فرم `scholarship_type`, `scholarship_reason`؛ وضعیت از سرور |
-| `/api/portal/pages/tuition/` | GET | summary و تجمیع پرداخت‌های موفق |
+تمام routeها `GET /api/portal/pages/<slug>/` دارند؛ تسهیلات همچنین `POST /api/portal/pages/financial-aid/` دارد. selector روی `Payment.student` و `Payment.term` محدود است و پرداخت موفق را بر اساس status lookup موجود جمع می‌زند.
 
-نمونهٔ خواندن: `GET /api/portal/pages/payments/` با session؛ 200 و `{"page":"payments","html":"…","profile":{"student_code":"…"},"term":{"term_code":"…","display_label":"…"}}`. درخواست POST به صفحهٔ پرداخت امن وجود ندارد و success provider تولید نمی‌شود.
+نمونهٔ ثبت درخواست تسهیلات (مقادیر قراردادی):
 
-### 6. سناریوی عملکرد
+```http
+POST /api/portal/pages/financial-aid/?student_code=S10001&term=TERM-1
+Content-Type: application/json
+X-CSRFToken: <csrf-token>
 
-session → page API → Parsa selector → queryهای Payment/Student/Term → render → جدول/خلاصه. فرم تسهیلات از `OwnedModelForm` مالک و status را سروری تنظیم می‌کند؛ پرداخت واقعی خارج از مرز سامانه است و برای آن مسیر fake ساخته نشده.
+{"scholarship_type":"وام","scholarship_reason":"شرح نمونه"}
+```
 
-### 7. ارتباط با سایر بخش‌ها
+پاسخ موفق HTTP 200: `{"redirect":"/portal/financial-aid/?student_code=S10001&term=TERM-1"}`. پرداخت آنلاین این قرارداد را ندارد و عمداً هیچ response موفقی برای درگاه نمونه‌سازی نشده است. «گزارش مغایرت» فقط به تیکت عمومی پشتیبانی می‌رود و به tracking code یا چرخهٔ مستقل بازپرداخت متصل نیست.
 
-از Student و Term مشترک استفاده می‌کند؛ بدهی روی service enrollment اثر دارد. Paymentها با انتخاب نیمسال فیلتر می‌شوند. درگاه، حساب بانکی، ریزاقساط و workflow بررسی کارمند در مدل/API فعلی مشخص نیستند.
+### 6. اعتبارسنجی و مرز امنیت
 
-### 8. ساختار فنی
+فرم تسهیلات owner و status را از سرور می‌گیرد. API پرداخت واقعی، callback درگاه، برگشت وجه متصل یا ثبت تراکنش ندارد؛ بنابراین POST پرداخت ارائه نمی‌شود. هیچ شماره کارت، مبلغ موفق یا gateway response نمونه ساخته نمی‌شود.
 
-- `apps/core/frontend/parsa/pages.py`, `selectors.py`, `forms.py`
+### 7. فایل‌های فنی
+
+- `apps/core/frontend/parsa/{pages.py,selectors.py,forms.py}`
 - `apps/core/frontend/parsa/templates/parsa/finance.html`
-- `apps/core/models.py`: `Payment`, `Student`, `ScholarshipApplication`, `Term`, `Constant`
-- `apps/core/test_frontend.py`: تست shell واحد، privacy، و عدم جعل درگاه.
+- `apps/core/models.py`: Payment, ScholarshipApplication, Term, Student
+- [Screens](../screens/payments.md), [safe payment](../screens/secure-payment.md), [aid](../screens/financial-aid.md), [tuition](../screens/tuition.md)
 
-### 9. تست‌ها
+### 8. وابستگی‌ها
 
-تست focused `test_finance_pages_render_inside_one_portal_shell` برای سه route مالی اجرا و پاس شد. در آخرین اجرای کامل موجود: ۱۰۱ تست Python و ۱۴ تست Node پاس؛ `manage.py check` و migration check نیز پاک بودند. ۲۰ RuntimeWarning datetime naive از seed در [TEST_REPORT.md](../TEST_REPORT.md) ثبت شده است.
+خلاصه مالی داشبورد Mobina از همین رکوردهای ORM می‌خواند؛ term picker مشترک دامنهٔ Paymentهای قابل‌نمایش را تعیین می‌کند. سرویس درگاه dependency بیرونی محسوب می‌شود و هنوز credential/provider قراردادش در محیط نیست.
 
-### 10. راهنمای ارائه به استاد
+### 9. تست و QA
 
-1. `payments` و `tuition` را در نیمسال انتخابی باز کنید.
-2. در کد selector، فیلتر پرونده و تجمیع مبلغ را نشان دهید.
-3. `secure-payment` را باز کنید و پیام نبود gateway را نمایش دهید.
-4. مدل `ScholarshipApplication` را با فیلدهای واقعی مقایسه کنید.
-5. توضیح دهید چرا بدون قرارداد بانکی، پرداخت موفق ساختگی نمایش داده نمی‌شود.
+تست‌ها برای فاز بعد باقی مانده‌اند. آن فاز باید فقط با DB تست سناریوی empty, successful, failed, another-student access و تسهیلات را بررسی کند. درگاه تا ارائهٔ sandbox/contract همچنان unavailable ثبت شود.
+
+### 10. سناریوی ارائه
+
+۱) سوابق را باز کنید و نشان دهید هر ردیف از Payment آمده. ۲) ترم را تغییر دهید. ۳) صفحهٔ امن را باز و محدودیت درگاه را بخوانید. ۴) فرم تسهیلات را در DB تست ثبت و نتیجه را refresh کنید؛ آن را با پرداخت اشتباه نگیرید.
+
+آدرس‌ها: [TEAM_OWNERSHIP](../TEAM_OWNERSHIP.md)؛ API: [API_CONTRACTS](../API_CONTRACTS.md).

@@ -18,6 +18,7 @@
 | D-12 | تا زمان دستیابی به رفتار مستند برای requirementهای ناشناخته، وضعیت به‌صورت gap/unknown مستند شود و screen/API «کامل» برچسب نخورد. | معیار تکمیل شامل UI، navigation، API، persistence، validation، permission، error، test و documentation است؛ ظاهر به‌تنهایی کافی نیست. |
 | D-13 | `finance.html` قطعهٔ قابل include است و نباید `portal_base.html` را دوباره extend کند. | render دوبارهٔ shell در هر سه route مالی با regression test بازتولید شد؛ حذف inheritance از fragment باعث یک shell می‌شود. |
 | D-14 | border search table فقط روی wrapper باشد؛ input داخلی در responsive rule قاب دوم نسازد. | screenshot attendance در 768px و computed style قاب دوگانه را نشان داد؛ Node regression test RED/GREEN و capture پس از fix تأیید کرد. |
+| D-15 | گزینهٔ اعتراض نمره فقط از enrollment جاری دارای Grade با score غیرخالی ساخته شود؛ lookup نوع کارآموزی فقط Constant فعال باشد؛ enrollment دارای survey از انتخاب مجدد ارزشیابی کنار گذاشته شود. | این کنترل‌ها داده/عملیات موجود را منعکس می‌کنند؛ مهلت/تکرار اعتراض و شرط‌های رسمی کارآموزی همچنان unknown هستند و قاعدهٔ دانشگاهی تازه‌ای ساخته نشد. |
 
 ## تصمیم‌های نیازمند مالک محصول
 

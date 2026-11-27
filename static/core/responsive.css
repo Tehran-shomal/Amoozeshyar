@@ -37,7 +37,7 @@ html, body { width: 100%; min-height: 100%; margin: 0; overflow-x: hidden; }
     min-height: min(590px, calc(100dvh - clamp(24px, 6vw, 96px)));
 }
 .login-options .login-recovery { color: #2869d6; font-size: inherit; text-decoration: none; }
-.login-form .button--primary { color: #fff; background: linear-gradient(110deg, #102a5b, #2f6fe0); box-shadow: none; }
+.login-form .button--primary { color: #fff; background: linear-gradient(180deg, #102a59 0%, #286bd0 100%); box-shadow: none; }
 .login-support-link { display: block; margin-top: 3px; }
 @media (min-width: 681px) {
     .login-brand-copy { transform: translateY(-15px); }
@@ -87,4 +87,144 @@ button:disabled { opacity: .6; cursor: wait; }
     .portal-shell { display: block; }
     .portal-main .workspace { padding: 0; }
     .table-wrap { overflow: visible; }
+}
+
+/* PDF page 2 uses a centered dashboard column with matching header gutters. */
+.portal-body--home .portal-main .topbar { padding-inline: clamp(24px, 5.9vw, 88px); }
+.portal-body--home .portal-main .workspace { padding: 14px clamp(24px, 5.9vw, 88px) 30px; }
+.portal-body--home .dashboard-layout { grid-template-columns: minmax(285px, .88fr) minmax(0, 2fr); gap: 15px; }
+.portal-body--home .home-overview-grid { grid-template-columns: minmax(0, 1.07fr) minmax(0, 1fr); gap: 15px; }
+.portal-body--home .home-overview-grid > * { min-height: 271px; }
+.portal-body--home .dashboard-side-column > .student-summary-card { display: flex; min-height: 271px; flex-direction: column; }
+.portal-body--home .student-summary-head { align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 11px; }
+.portal-body--home .student-summary-head h2 { margin: 0; color: #fff; font-size: 14px; }
+.portal-body--home .student-summary-head .avatar { width: 56px; height: 56px; }
+.portal-body--home .student-summary-details { flex: 1; align-content: space-evenly; }
+.portal-body--home .home-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+    margin-top: 19px;
+    direction: rtl;
+}
+.portal-body--home .home-summary-grid > .home-academic-panel { grid-column: auto; }
+.portal-body--home .home-summary-grid .panel,
+.portal-body--home .home-financial-panel,
+.portal-body--home .home-academic-panel { min-height: 220px; }
+.portal-body--home .financial-summary-row { padding-block: 4px; }
+.portal-body--home .home-academic-panel .academic-summary-content { min-height: 120px; }
+.portal-body--home .home-academic-panel .summary-rows > div { min-height: 38px; padding-block: 4px; }
+.portal-body--home .home-academic-panel .average-ring { width: 92px; height: 92px; border-width: 7px; }
+.portal-body--home .dashboard-quick-links .quick-arrow { display: none; }
+.portal-body--home .academic-summary-content { direction: rtl; }
+
+@media (max-width: 1180px) {
+    .portal-body--home .dashboard-layout { grid-template-columns: minmax(0, 1fr); }
+    .portal-body--home .dashboard-side-column { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 900px) {
+    .portal-body--home .portal-main .topbar { padding: 16px; }
+    .portal-body--home .portal-main .workspace { padding: 16px; }
+    .portal-body--home .home-overview-grid,
+    .portal-body--home .home-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .portal-body--schedule .schedule-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+    .portal-body--home .portal-main .workspace { padding: 12px; }
+    .portal-body--home .home-overview-grid,
+    .portal-body--home .home-summary-grid { grid-template-columns: minmax(0, 1fr); }
+    .portal-body--schedule .schedule-summary { gap: 8px; }
+    .portal-body--schedule .schedule-summary-card { min-height: 70px; padding: 10px; }
+    .portal-body--schedule .schedule-summary-card strong { font-size: 13px; }
+    .portal-body--schedule .schedule-actions { flex-wrap: wrap; justify-content: flex-start; }
+}
+
+/* PDF page 9 uses the same centered 1076px content column as the reference. */
+@media (min-width: 1200px) {
+    body.portal-body--selected-courses .portal-shell { grid-template-columns: 260px minmax(0, 1fr); }
+    body.portal-body--selected-courses .sidebar { width: 260px; }
+    body.portal-body--selected-courses .portal-main > .topbar {
+        width: min(100%, 1076px);
+        margin-inline: auto;
+    }
+    body.portal-body--selected-courses .portal-main .workspace {
+        width: min(100%, 1076px);
+        max-width: 1076px;
+        margin-inline: auto;
+        padding-inline: 34px;
+        padding-bottom: 18px;
+    }
+    body.portal-body--selected-courses .section-page-heading { margin-top: 4px; }
+    body.portal-body--selected-courses .student-course-summary,
+    body.portal-body--selected-courses .course-current-panel,
+    body.portal-body--selected-courses .course-totals {
+        border-color: #dce7ff;
+        border-radius: 12px;
+        box-shadow: none;
+    }
+    body.portal-body--selected-courses .course-warning-panel { padding-inline-end: 0; }
+    body.portal-body--selected-courses .course-warning-panel .button {
+        width: 160px;
+        min-height: 40px;
+        border-radius: 8px;
+    }
+    body.portal-body--selected-courses .course-page-actions .button {
+        width: 180px;
+        min-height: 40px;
+        border-radius: 8px;
+    }
+    body.portal-body--selected-courses .course-totals { position: relative; }
+    body.portal-body--selected-courses .course-totals-note {
+        position: absolute;
+        left: 12px;
+        bottom: 3px;
+        max-width: 42%;
+        margin: 0;
+        font-size: 7px;
+        text-align: left;
+    }
+}
+body.portal-body--selected-courses .nav-group-reference { display: none !important; }
+body.portal-body--selected-courses .nav-group summary { width: 100%; }
+@media (max-width: 680px) {
+    body.portal-body--selected-courses .course-totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.portal-body--selected-courses .course-totals-note {
+        position: static;
+        grid-column: 1 / -1;
+        max-width: none;
+        margin: 0 12px 8px;
+        font-size: 8px;
+        text-align: right;
+    }
+}
+
+/* The attendance page uses the PDF's centered content column and scrolls only its table on small screens. */
+@media (min-width: 1200px) {
+    body.portal-body--attendance .portal-shell { grid-template-columns: 260px minmax(0, 1fr); }
+    body.portal-body--attendance .sidebar { width: 260px; }
+    body.portal-body--attendance .portal-main > .topbar {
+        width: min(100%, 1076px);
+        margin-inline: auto;
+    }
+    body.portal-body--attendance .portal-main .workspace {
+        width: min(100%, 1076px);
+        max-width: 1076px;
+        margin-inline: auto;
+        padding-inline: 34px;
+    }
+    body.portal-body--attendance .section-page-heading { margin-top: 4px; }
+}
+body.portal-body--attendance .nav-group-reference { display: none !important; }
+body.portal-body--attendance .nav-group summary { width: 100%; }
+@media (max-width: 900px) {
+    body.portal-body--attendance .attendance-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+    body.portal-body--attendance .attendance-metrics { gap: 8px; margin-top: 14px; }
+    body.portal-body--attendance .attendance-metric { min-height: 72px; padding: 10px 11px; }
+    body.portal-body--attendance .attendance-metric strong { font-size: 13px; }
+    body.portal-body--attendance .attendance-warning { margin-top: 20px; }
+    body.portal-body--attendance .attendance-footer { align-items: stretch; flex-direction: column; }
+    body.portal-body--attendance .attendance-footer .button { width: 100%; }
 }

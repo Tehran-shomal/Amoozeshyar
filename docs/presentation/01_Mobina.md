@@ -1,69 +1,64 @@
-# ارائهٔ گروه مبینا — ورود و چارچوب پرتال
-
-> این سند مسئولیت‌های ذکرشده در پیوست را با مالکیت واقعی `registry.py` تطبیق می‌دهد. صفحه‌ای که در PDF کنار این گروه آمده الزاماً در manifest فعلی کد متعلق به این گروه نیست.
+# ارائهٔ ۰۱ — مبینا: ورود و چارچوب مشترک
 
 ### 1. معرفی بخش
 
-ورود، داشبورد و مسیر ورود دانشجو به جریان انتخاب واحد. shell، header و sidebar بین همهٔ صفحات مشترک‌اند و به یک صفحهٔ Mobina محدود نیستند.
+ورود دانشجو، داشبورد و اجزای مشترک پنل در گروه مبینا هستند. shell، sidebar و header میان همهٔ صفحه‌ها مشترک‌اند؛ انتخاب نیمسال مؤلفهٔ مشترک است و توسط لید فرانت‌اند هماهنگ می‌شود.
 
 ### 2. مسئولیت عضو
 
-طبق پیوست: ورود و احراز هویت، داشبورد، کارت‌های دسترسی، اجزای مشترک، انتخاب نیمسال، تنظیمات و کارت دیجیتال. در کد فعلی Mobina مالک `login`, `dashboard`, `enrollment`, `selected-courses`, و `curriculum` است؛ `settings` در گروه مشترک Neyousha/Pouya و `student-card` در manifest امید ثبت شده‌اند. مالکیت واقعی نباید در ارائه جابه‌جا یا پنهان شود.
+ورود/احراز هویت، داشبورد، کارت‌های دسترسی، shell، تنظیمات حساب و کارت دانشجویی دیجیتال. اشارهٔ پرامپت: صفحات PDF ۱–۳، ۴–۸ و ۱۹–۲۰. فایل PDF در clone پیدا نشد؛ این شماره‌ها فعلاً تأیید بصری نشده‌اند.
 
-### 3. صفحات پیاده‌سازی‌شده
+### 3. صفحه‌ها و URLها
 
-| صفحه/حالت | PDF | URL | وضعیت مالکیت در کد |
-|---|---:|---|---|
-| ورود | 1 | `/login/` | Mobina؛ فرم HTML و API ورود |
-| داشبورد | 2 | `/` | Mobina؛ دادهٔ حساب جاری |
-| انتخاب نیمسال | 3 | در shell همهٔ صفحات | جزء مشترک Neyousha/Pouya؛ query در URL |
-| sidebar گروهی | 4–8 | shell همهٔ صفحات | navigation مشترک، نه route مستقل |
-| انتخاب واحد | 52 | `/portal/enrollment/` | Mobina |
-| دروس انتخاب‌شده و انتخاب گروه | 9–13 | `/portal/selected-courses/` | Mobina؛ بخشی از حالت‌های PDF غایب است |
-| چارت درسی | 23 | `/portal/curriculum/` | Mobina |
-| تنظیمات / کارت | 19 / 20 | `/portal/settings/` / `/portal/student-card/` | به‌ترتیب Neyousha/Pouya و Omid؛ در این گروه نیستند |
+| صفحه | URL | API | وضعیت فعلی |
+|---|---|---|---|
+| ورود | `/login/` | `POST /api/accounts/login/`; `GET /api/accounts/csrf/`, `/api/accounts/me/` | session واقعی و فرم HTML پشتیبان |
+| داشبورد | `/` | `GET /api/portal/pages/home/` | خلاصه از ORM، برای پروفایل انتخابی |
+| تنظیمات | `/portal/settings/` | GET/POST `/api/portal/pages/settings/` | قالب PDF صفحهٔ ۱۹؛ Person حساب واردشده؛ کانال پیامک/ایمیل و موبایل فاقد مدل/provider |
+| کارت دانشجویی | `/portal/student-card/` | `GET /api/portal/pages/student-card/` | preview از دادهٔ واقعی، نه کارت رسمی |
 
-### 4. طراحی و عملکرد
+### 4. طراحی و جریان
 
-فرم ورود نام کاربری و گذرواژه را می‌گیرد، CSRF را برای API هم‌مبدأ تأمین می‌کند و پس از ایجاد session به داشبورد می‌رود. داشبورد و صفحه‌های داخلی از API صفحه HTML داده‌محور می‌گیرند. انتخاب نیمسال در dialog انجام می‌شود و `student_code` و `term` را در query حفظ می‌کند. ثبت درس در صفحهٔ دروس انتخاب‌شده با شناسهٔ رکورد ارائه انجام می‌شود، نه با عنوان درس.
+فرم ورود داده را به Accounts API می‌فرستد، session ساخته می‌شود و کاربر به dashboard می‌رود. هر صفحهٔ داخلی اول shell را می‌گیرد و سپس HTML داده‌محور از API صفحه دریافت می‌کند. انتخاب نیمسال query `term` را نگه می‌دارد. تغییر تنظیمات با refresh/redirect از همان endpoint انجام می‌شود.
 
-### 5. APIهای مرتبط
+### 5. API و داده
 
-| مسیر | روش | ورودی/خروجی اصلی |
-|---|---|---|
-| `/api/accounts/csrf/` | GET | cookie و token برای درخواست نوشتنی |
-| `/api/accounts/login/` | POST | `{username,password,remember_me?}`؛ پاسخ 200 با `user`، خطای اعتبارسنجی/ورود با envelope `error` |
-| `/api/accounts/me/` | GET | هویت و نقش‌های session جاری |
-| `/api/portal/pages/home/` | GET | `page`, `html`, `profile`, `term` |
-| `/api/scheduling/offerings/?term=<code>` | GET | فهرست ارائه‌ها؛ بدون ارائه آرایهٔ خالی |
-| `/api/enrollment/register/<offering_id>/` | POST | body اختیاری `{student_code}`؛ 201 برای ثبت تازه |
+ورودی login شامل username/password و اختیاری remember_me است؛ CSRF از `/api/accounts/csrf/` bootstrap می‌شود. داشبورد از Student، Enrollment، Notification و Paymentهای موجود می‌خواند. تنظیمات Person جاری را update می‌کند؛ فرم اختصاصی فقط email/address/is_notification_enabled/preferred_language را می‌پذیرد و محدودیت کانال‌های بیرونی را اعلام می‌کند. کارت فقط Person/Student/Field/Term را نمایش می‌دهد.
 
-نمونهٔ قراردادی: `POST /api/accounts/login/` با JSON دارای `username` و `password` پس از `GET /api/accounts/csrf/`؛ پاسخ موفق `{"user":{"id":"…","username":"…","full_name":"…","roles":[]}}`. جزئیات status و CSRF در [قرارداد API](../API_CONTRACTS.md) است.
+نمونهٔ قراردادی (مقدارها ساختگی و صرفاً نمایشی‌اند):
 
-### 6. سناریوی عملکرد
+```http
+POST /api/portal/pages/settings/?student_code=S10001&term=TERM-1
+Content-Type: application/json
+X-CSRFToken: <csrf-token>
 
-مرورگر → CSRF/login → احراز هویت در `Person` و `UserAccount` → session → dashboard selector → دریافت نیمسال/دروس → بررسی مجوز و قواعد در service ثبت‌نام → نوشتن Enrollment در transaction → نمایش دوباره از API صفحه. آزمون‌های دامنه‌ای ثبت و حذف را با بازه‌های کنترل‌شده اجرا می‌کنند؛ seed مرورگر فعلی ارائهٔ قابل‌ثبت در بازهٔ باز ندارد.
+{"email":"student@example.test","address":"آدرس نمونه","is_notification_enabled":true,"preferred_language":"fa"}
+```
 
-### 7. ارتباط با سایر بخش‌ها
+پاسخ موفق: `{"redirect":"/portal/settings/?student_code=S10001&term=TERM-1"}` با HTTP 200؛ دادهٔ تازه پس از redirect از GET همان صفحه خوانده می‌شود. نمونهٔ login و خطاها در [قرارداد API](../API_CONTRACTS.md) است.
 
-shell و `term_picker` برای همه مشترک‌اند؛ انتخاب درس به service مشترک enrollment و زمان‌بندی وابسته است. پروفایل دانشجو از session resolve می‌شود و شناسهٔ دانشجوی دیگر مجوز محسوب نمی‌شود.
+### 6. مجوز و محدودیت
 
-### 8. ساختار فنی
+همهٔ APIها به session وابسته‌اند. `student_code` ورودی فقط وقتی پذیرفته می‌شود که Student متعلق به حساب باشد. تنظیمات بر اساس `request.user` است. کارت دیجیتال شماره سریال، اعتبارنامه یا صدور رسمی جعل نمی‌کند. reset password محلی و provider کارت موجود نیستند.
 
-- `apps/core/frontend/mobina/pages.py`, `selectors.py`, `views.py`
-- `apps/core/frontend/mobina/templates/mobina/login.html`, `home.html`, `enrollment.html`, `selected_courses.html`
-- `apps/core/frontend/mobina/static/mobina/section.js`
-- `apps/core/accounts/`, `apps/core/enrollment/`, `apps/core/scheduling/`
-- مدل‌ها: `Person`, `Student`, `Term`, `CourseOffering`, `Enrollment` در `apps/core/models.py`.
+### 7. فایل‌های فنی
 
-### 9. تست‌ها
+- `apps/core/frontend/mobina/pages.py`, `selectors.py`, `forms.py`
+- `apps/core/frontend/mobina/templates/mobina/{home.html,login.html,student_card.html}`
+- `apps/core/frontend/mobina/static/mobina/login.js`
+- پوسته: `apps/core/templates/core/portal_base.html`; API مرورگر: `static/core/portal_api.js`, `live_portal.js`
+- [Screen docs](../screens/login.md), [dashboard](../screens/dashboard.md), [settings](../screens/settings.md), [student-card](../screens/student-card.md)
 
-در اجرای کامل branch ممیزی: ۱۰۱ تست Python و ۱۴ تست Node پاس شدند؛ suite ورود/مالکیت در `apps/core/accounts/test_services.py` و render صفحه‌ها در `apps/core/test_frontend.py` است. سناریوی مرورگر محلی ورود، dashboard، تغییر نیمسال، رسیدن از «ادامه» به دروس و خروج را گذراند. وضعیت نهایی آزمون‌ها در [TEST_REPORT.md](../TEST_REPORT.md) نگهداری می‌شود.
+### 8. ارتباط بین بخش‌ها
 
-### 10. راهنمای ارائه به استاد
+پوسته برای تمام هفت گروه استفاده می‌شود. انتخاب نیمسال از Termهای موجود می‌آید و مقدار انتخاب‌شده برای enrollment، مالی، کارنامه و برنامه قابل استفاده است. logout از `/api/accounts/logout/` انجام می‌شود.
 
-1. فرم `/login/` را باز و با حساب تست محلی وارد شوید؛ هیچ رمز seed را در اسلاید یا مخزن منتشر نکنید.
-2. dashboard را نشان دهید و توضیح دهید محتوا از session و selector می‌آید.
-3. dialog نیمسال را باز کنید و تغییر query را نشان دهید.
-4. از «ادامه» وارد `/portal/selected-courses/` شوید؛ API ارائه‌ها و شناسهٔ ارائه را در کد دنبال کنید.
-5. به `portal_api.js`، `mobina/section.js` و service ثبت‌نام اشاره کنید؛ ثبت واقعی فقط وقتی داده و بازهٔ معتبر وجود دارد اجرا شود.
+### 9. تست و وضعیت QA
+
+تست و مرورگر بنا به درخواست صاحب پروژه برای فاز بعد نگه داشته شده؛ پس این ارائه نتیجهٔ اجرای آزمون جدید ادعا نمی‌کند. مسیرهای test مرتبط بعداً `apps/core/test_frontend.py`, `apps/core/accounts/test_services.py` و Node tests هستند. تطبیق PDF نیز تا قرارگرفتن فایل مرجع معلق است.
+
+### 10. سناریوی ارائه
+
+۱) `/login/` را باز کنید و session را بسازید. ۲) داشبورد و داده‌های خوانده‌شده را نشان دهید. ۳) انتخاب نیمسال را باز کنید. ۴) تنظیمات حساب و scope آن را مرور کنید. ۵) کارت دیجیتال را به‌عنوان پیش‌نمایش، نه سند رسمی، معرفی کنید.
+
+برای آدرس همهٔ routeها و محدودیت‌ها: [TEAM_OWNERSHIP](../TEAM_OWNERSHIP.md)؛ API: [قراردادها](../API_CONTRACTS.md).

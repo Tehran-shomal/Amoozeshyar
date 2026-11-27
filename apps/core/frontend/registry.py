@@ -1,18 +1,20 @@
 """Assemble each team's page manifest into the portal's safe route registry."""
 from django.core.exceptions import ImproperlyConfigured
 
-from . import academic_services, mobina, neyousha_pouya, parsa, shaghayegh
+from . import miri, mobina, niousha, omid, parsa, shahsvand, shaghayegh
 from .metadata import LOGIN_COPY, NAV_GROUPS, SIDEBAR_FOOTER
 
 GROUPS = {
     "mobina": ("مبینا", mobina),
     "shaghayegh": ("شقایق", shaghayegh),
-    "academic_services": ("خدمات آموزشی (شاهسوند و امید)", academic_services),
     "parsa": ("پارسا", parsa),
-    "neyousha_pouya": ("پویا و نیوشا (لید فرانت)", neyousha_pouya),
+    "omid": ("امید", omid),
+    "niousha": ("نیوشا (لید فرانت)", niousha),
+    "shahsvand": ("شاهسوند", shahsvand),
+    "miri": ("میری (هماهنگ‌کنندهٔ مشترک)", miri),
 }
 
-# These two pages are reached from their owning page, not from the five nav groups.
+# These pages are opened from their parent workflow rather than the main menu.
 HIDDEN_PAGE_SLUGS = frozenset({"selected-courses", "evaluation-form"})
 
 

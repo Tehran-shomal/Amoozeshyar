@@ -1,48 +1,67 @@
-"""Shared five-group navigation and common interface copy."""
+"""Shared product navigation and common interface copy; not team ownership."""
 
-NAV_GROUPS = [{'title': '', 'items': [{'label': 'داشبورد', 'slug': '', 'icon': '⌂', 'home': True}]},
- {'title': 'وضعیت تحصیلی و مالی',
-  'items': [{'label': 'فعالیت های آموزشی دانشجو', 'slug': 'academic-activities', 'icon': '▦'},
-            {'label': 'مشاهده کارنامه دانشجویی', 'slug': 'transcript', 'icon': '▤'},
-            {'label': 'مدیریت پرداخت ها', 'slug': 'payments', 'icon': 'ریال'},
-            {'label': 'مدیریت مالی نیمسال های تحصیلی دانشجو', 'slug': 'tuition', 'icon': '▤'},
-            {'label': 'خدمات پرداخت امن', 'slug': 'secure-payment', 'icon': '◇'},
-            {'label': 'درخواست یا پیگیری تسهیلات', 'slug': 'financial-aid', 'icon': '٪'}]},
- {'title': 'ثبت\u200cنام و انتخاب واحد',
-  'items': [{'label': 'انتخاب واحد', 'slug': 'enrollment', 'icon': '▣'},
-            {'label': 'حذف و اضافه', 'slug': 'add-drop', 'icon': '＋'},
-            {'label': 'حذف اضطراری', 'slug': 'emergency-drop', 'icon': '−'},
-            {'label': 'مشاهده آخرین وضعیت ثبتنام', 'slug': 'registration-status', 'icon': '✓'},
-            {'label': 'ارسال درخواست اعتراض به نمره', 'slug': 'grade-appeal', 'icon': '↗'},
-            {'label': 'چارت انتخاب واحد', 'slug': 'curriculum', 'icon': '⌘'}]},
- {'title': 'برنامه آموزشی و امتحانات',
-  'items': [{'label': 'کارآموزی', 'slug': 'internship', 'icon': '▱'},
-            {'label': 'حضور و غیاب درس\u200cها', 'slug': 'attendance', 'icon': '◷'},
-            {'label': 'تقویم آموزشی ترم', 'slug': 'calendar', 'icon': '▦'},
-            {'label': 'برنامه هفتگی کامل', 'slug': 'schedule', 'icon': '▧'},
-            {'label': 'کارت ورود به جلسه امتحان', 'slug': 'exam-card', 'icon': '▣'}]},
- {'title': 'درخواست\u200cها و مجوزها',
-  'items': [{'label': 'ارسال و پیگیری درخواست های دانشجو', 'slug': 'requests', 'icon': '☷'},
-            {'label': 'ارسال و پیگیری درخواست صدور مدرک آموزشی دانشجو',
-             'slug': 'education-certificate',
-             'icon': '▧'},
-            {'label': 'ارسال و پیگیری درخواست صدور مدرک دانش آموختگی',
-             'slug': 'graduation-certificate',
-             'icon': '✧'},
-            {'label': 'درخواست مهمانی', 'slug': 'guest-request', 'icon': '⇢'},
-            {'label': 'درخواست فارغ\u200cالتحصیلی', 'slug': 'graduation', 'icon': '✦'}]},
- {'title': 'ارتباط و خدمات دانشجویی',
-  'items': [{'label': 'ارزشیابی اساتید', 'slug': 'evaluation', 'icon': '★'},
-            {'label': 'ارتباط با اساتید', 'slug': 'messages', 'icon': '✉'},
-            {'label': 'اطلاعیه\u200cهای اساتید', 'slug': 'announcements', 'icon': '◉'},
-            {'label': 'کارت دانشجویی دیجیتال', 'slug': 'student-card', 'icon': '▰'},
-            {'label': 'مرکز اعلان\u200cها', 'slug': 'notifications', 'icon': '♢'},
-            {'label': 'تنظیمات زبان و اعلان\u200cها', 'slug': 'settings', 'icon': '⚙'},
-            {'label': 'راهنمای سامانه', 'slug': 'guide', 'icon': '؟'},
-            {'label': 'مرکز پشتیبانی', 'slug': 'support', 'icon': '◎'}]}]
+NAV_GROUPS = [
+    {"title": "", "items": [{"label": "داشبورد", "slug": "", "icon": "⌂", "home": True}]},
+    {
+        "title": "سیستم دروس دانشجو",
+        "items": [
+            {"label": "انتخاب واحد", "slug": "enrollment", "icon": "▣"},
+            {"label": "حذف و اضافه", "slug": "add-drop", "icon": "＋"},
+            {"label": "حذف اضطراری", "slug": "emergency-drop", "icon": "−"},
+            {"label": "مشاهده آخرین وضعیت ثبت نام", "slug": "registration-status", "icon": "✓"},
+            {"label": "ارسال درخواست اعتراض به نمره", "slug": "grade-appeal", "icon": "↗"},
+            {"label": "فعالیت های آموزشی دانشجو", "slug": "academic-activities", "icon": "▦"},
+            {"label": "مشاهده کارنامه دانشجو", "slug": "transcript", "icon": "▤"},
+            {"label": "چارت انتخاب واحد", "slug": "curriculum", "icon": "⌘"},
+            {"label": "کارآموزی", "slug": "internship", "icon": "▱"},
+            {"label": "حضور و غیاب دانشجو", "slug": "attendance", "icon": "◷"},
+            {"label": "تقویم آموزشی ترم", "slug": "calendar", "icon": "▦"},
+            {"label": "برنامه هفتگی کامل", "slug": "schedule", "icon": "▧"},
+            {"label": "کارت ورود به جلسه امتحان", "slug": "exam-card", "icon": "▣"},
+        ],
+    },
+    {
+        "title": "خدمات مالی",
+        "items": [
+            {"label": "مدیریت پرداخت ها", "slug": "payments", "icon": "ریال"},
+            {"label": "خدمات پرداخت امن", "slug": "secure-payment", "icon": "◇"},
+            {"label": "درخواست یا پیگیری تسهیلات", "slug": "financial-aid", "icon": "٪"},
+            {"label": "مدیریت مالی نیمسال های تحصیلی دانشجو", "slug": "tuition", "icon": "▤"},
+        ],
+    },
+    {
+        "title": "درخواست مجوز",
+        "items": [
+            {"label": "ارسال و پیگیری درخواست های دانشجو", "slug": "requests", "icon": "☷"},
+            {"label": "ارسال و پیگیری درخواست صدور مدرک آموزشی دانشجو", "slug": "education-certificate", "icon": "▧"},
+            {"label": "ارسال و پیگیری درخواست صدور مدرک دانش آموختگی", "slug": "graduation-certificate", "icon": "✧"},
+            {"label": "درخواست مهمانی", "slug": "guest-request", "icon": "⇢"},
+            {"label": "درخواست فارغ التحصیلی", "slug": "graduation", "icon": "✦"},
+        ],
+    },
+    {
+        "title": "خدمات دانشجویی",
+        "items": [
+            {"label": "کارت دانشجویی دیجیتال", "slug": "student-card", "icon": "▰"},
+            {"label": "مرکز اعلان ها", "slug": "notifications", "icon": "♢"},
+            {"label": "تنظیمات زبان و اعلان ها", "slug": "settings", "icon": "⚙"},
+            {"label": "راهنمای سامانه", "slug": "guide", "icon": "؟"},
+            {"label": "مرکز پشتیبانی", "slug": "support", "icon": "◎"},
+        ],
+    },
+    {
+        "title": "اساتید",
+        "items": [
+            {"label": "ارزشیابی اساتید", "slug": "evaluation", "icon": "★"},
+            {"label": "ارتباط با اساتید", "slug": "messages", "icon": "✉"},
+            {"label": "اطلاعیه های اساتید", "slug": "announcements", "icon": "◉"},
+        ],
+    },
+]
 
-SIDEBAR_FOOTER = [{'label': 'تنظیمات', 'slug': 'settings', 'icon': '⚙'},
- {'label': 'خروج از سامانه', 'slug': '', 'icon': '⇥', 'action': True}]
+SIDEBAR_FOOTER = [
+    {"label": "خروج از سامانه", "slug": "", "icon": "⇥", "action": True},
+]
 
 LOGIN_COPY = {'university': 'دانشگاه آزاد اسلامی',
  'brand_title': 'آموزشیار؛',

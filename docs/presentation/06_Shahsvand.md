@@ -1,60 +1,65 @@
-# ارائهٔ گروه شاهسوند — ارزشیابی و درخواست‌های بین‌دانشگاهی
+# ارائهٔ ۰۶ — شاهسوند: درخواست‌های دانشجویی
 
 ### 1. معرفی بخش
 
-ارتباط دانشجو با استاد، فرم ارزشیابی و چند درخواست موجود در مدل‌های دانشجویی.
+ثبت و پیگیری خدماتی که دانشجو برای پروندهٔ خود درخواست می‌کند؛ ثبت درخواست با پذیرش یا صدور نتیجهٔ رسمی فرق دارد.
 
 ### 2. مسئولیت عضو
 
-در manifest فعلی، شاهسوند (با spelling `Shahsavand`) مالک پنج route زیرمجموعهٔ `academic_services` است. پیوست مسئولیت‌های وسیع‌تری شامل کارآموزی، درخواست عمومی و گواهی را به این عضو نسبت می‌دهد؛ در کد فعلی این‌ها در Neyousha/Pouya یا Omid هستند. این اختلاف برای ارائه شفاف می‌ماند.
+کارآموزی، مهمانی، درخواست عمومی، فارغ‌التحصیلی و گواهی‌ها. صفحات اشاره‌شده در Master: ۲۴–۲۶، ۶۷ و ۷۲؛ منبع PDF در clone موجود نیست.
 
-### 3. صفحات پیاده‌سازی‌شده
+### 3. صفحه‌ها و URLها
 
-| صفحه | PDF | URL | وضعیت واقعی |
-|---|---:|---|---|
-| فرم ارزشیابی | 17, 31 | `/portal/evaluation-form/` | route و SurveyForm موجود؛ slug از منو پنهان |
-| فهرست ارزشیابی و stateها | 34–37, 49 | `/portal/evaluation/` | route موجود؛ چند crop PDF dataset مستقل ندارند |
-| ارتباط با استاد | 27 | `/portal/messages/` | CommunicationForm موجود؛ گیرنده محدود به استاد درس‌های خود |
-| درخواست مهمانی | 25 | `/portal/guest-request/` | TransferRequestForm موجود |
-| بررسی فراغت از تحصیل | 26 | `/portal/graduation/` | درخواست بررسی موجود؛ تأیید رسمی نیست |
-| کارآموزی/درخواست/مدرک | 24, 67, 72–73 | مسیرهای مربوطه | routeهای واقعی اما در manifest Neyousha/Pouya یا Omid هستند |
+| صفحه | URL | API | وضعیت |
+|---|---|---|---|
+| کارآموزی | `/portal/internship/` | GET/POST صفحه | ثبت Internship و فهرست وضعیت |
+| مهمانی | `/portal/guest-request/` | GET/POST صفحه | TransferRequest |
+| فارغ‌التحصیلی | `/portal/graduation/` | GET صفحه | GraduationAudit خواندنی؛ نوع درخواست معتبر موجود نیست |
+| درخواست عمومی | `/portal/requests/` | GET/POST صفحه | StudentServiceRequest |
+| گواهی آموزشی | `/portal/education-certificate/` | GET/POST صفحه | فقط با lookup `employment_certificate` فعال؛ صدور رسمی ندارد |
+| گواهی دانش‌آموختگی | `/portal/graduation-certificate/` | GET صفحه | unavailable؛ lookup و provider صدور موجود نیست |
 
-### 4. طراحی و عملکرد
+### 4. جریان UI
 
-فرم ارزشیابی به Enrollment متعلق متصل است و برای یک ثبت‌نام تکرار نمی‌شود. پیام به استاد از فهرست استادان ثبت‌نام‌های متعلق به دانشجو انتخاب می‌شود. درخواست مهمانی مقصد را ذخیره می‌کند؛ درخواست فراغت از مدل درخواست موجود استفاده می‌کند و پاسخ آن مدرک تأییدشده نیست.
+صفحه‌های دارای workflow تعریف‌شده رکوردها را می‌خوانند و فرم را با validation server ذخیره می‌کنند. برای graduation و graduation-certificate نوع درخواست مناسب در seed/lookup موجود نیست؛ نوع نامرتبط به‌جای آن استفاده نمی‌شود و POST غیرفعال است.
 
-### 5. APIهای مرتبط
+### 5. API و داده
 
-- `GET|POST /api/portal/pages/evaluation/` و `evaluation-form/`
-- `GET|POST /api/portal/pages/messages/`
-- `GET|POST /api/portal/pages/guest-request/`
-- `GET|POST /api/portal/pages/graduation/`
+API صفحه `GET|POST /api/portal/pages/<slug>/`، با session/CSRF. مدل‌ها: Internship، TransferRequest، StudentServiceRequest و GraduationAudit. payload فیلدهای فرم مطابق Django form metadata است؛ جزئیات در ماتریس/قرارداد API.
 
-نمونهٔ قراردادی: `POST /api/portal/pages/messages/`، session و CSRF لازم؛ JSON scalarهای فرم (`receiver`, `subject`, `message_body`)؛ موفقیت 200 با redirect صفحه، خطای فرم 400 و خطای مالکیت/دسترسی 403. پاسخ پیام به معنی ارسال بیرونی SMS/email نیست.
+نمونهٔ ثبت درخواست مهمانی (مقدارها نمایشی‌اند):
 
-### 6. سناریوی عملکرد
+```http
+POST /api/portal/pages/guest-request/?student_code=S10001&term=TERM-1
+Content-Type: application/json
+X-CSRFToken: <csrf-token>
 
-GET صفحه → selector/form متعلق → resolve Student از session → فرم validate → owner/status از server → save در ORM → redirect و refresh. برای survey، transaction و قفل Enrollment از duplicate submit جلوگیری می‌کند.
+{"destination_university":"دانشگاه مقصد نمونه"}
+```
 
-### 7. ارتباط با سایر بخش‌ها
+پاسخ موفق HTTP 200: `{"redirect":"/portal/guest-request/?student_code=S10001&term=TERM-1"}`؛ این پاسخ فقط ایجاد درخواست DB را تأیید می‌کند، نه تأیید اداری یا پذیرش مقصد.
 
-messages/evaluation به Enrollment و Teacher وابسته‌اند؛ guest request به Student و مقصد؛ graduation به مدل عمومی StudentServiceRequest و constantهای از پیش seedشده. Miri در پیوست shared lead است و نقش مالک داده را جایگزین شاهسوند نمی‌کند.
+### 6. مجوز و validation
 
-### 8. ساختار فنی
+owner و status اولیه از server تعیین می‌شوند؛ نوع کارآموزی از lookup فعال و duration باید مثبت باشد؛ rows با Student جاری فیلتر می‌شوند. وضعیت review نهایی فقط از رکورد DB می‌آید. write فارغ‌التحصیلی تا وجود lookup معتبر unavailable می‌ماند.
 
-- `apps/core/frontend/academic_services/pages.py`, `selectors.py`, `forms.py`
-- `apps/core/frontend/academic_services/README.md` و `MEMBER_PAGES`
-- `apps/core/frontend/common.py` برای `OwnedModelForm`
-- مدل‌های `TeacherSurvey`, `Communication`, `TransferRequest`, `StudentServiceRequest`, `Enrollment` در `apps/core/models.py`.
+### 7. فایل‌های فنی
 
-### 9. تست‌ها
+- `apps/core/frontend/shahsvand/{pages.py,selectors.py,forms.py}`
+- فرم‌ها: `InternshipForm`, `GuestRequestForm`, `ServiceRequestForm`, `CertificateForm`
+- `apps/core/models.py` مدل‌ها و lookupها؛ shared API: `apps/core/frontend/api.py`
+- [Screens](../screens/internship.md), [guest request](../screens/guest-request.md), [graduation](../screens/graduation.md), [requests](../screens/requests.md), [certificates](../screens/education-certificate.md)
 
-`apps/core/test_frontend.py` تست POST درخواست و تحمیل owner/status از سمت سرور را دارد؛ API/فرم‌های صفحه در render smoke بررسی می‌شوند. suite کامل آخرین بار ۱۰۱ Python و ۱۴ Node را بدون شکست گذراند؛ آزمون‌های دیگر در [TEST_REPORT.md](../TEST_REPORT.md) فهرست شده‌اند.
+### 8. وابستگی‌ها
 
-### 10. راهنمای ارائه به استاد
+Term و session در shell مشترک‌اند؛ وضعیت درخواست به lookup و رسیدگی staff موجود وابسته است. کارت دانشجویی مبینا مسیر درخواست اصلاح اطلاعات را لینک می‌کند؛ صدور گواهی external است.
 
-1. صفحهٔ evaluation را باز و ارتباط گزینه با enrollment متعلق را نشان دهید.
-2. از ارسال دوبارهٔ همان survey جلوگیری را توضیح دهید.
-3. فرم messages را باز و محدودیت receiver را در `MessageForm` نشان دهید.
-4. guest/graduation را به‌عنوان «درخواست ثبت‌شده» معرفی کنید، نه انتقال/فراغت تأییدشده.
-5. تفاوت مسئولیت‌های پیوست با manifest فعلی را صریح بیان کنید.
+### 9. تست و QA
+
+تست‌ها در فاز بعد اجرا می‌شوند. ownership، نوع lookup غیرفعال/ناموجود، submit دوباره و عدم افشای پروندهٔ دانشجوی دیگر باید آنجا پوشش داده شوند.
+
+### 10. سناریوی ارائه
+
+۱) کارآموزی را باز کنید و validation مدت را نشان دهید. ۲) درخواست مهمانی را ثبت کنید. ۳) صفحهٔ عمومی و گواهی را مقایسه کنید. ۴) مشخص کنید ثبت، فقط ایجاد درخواست است و به‌تنهایی تأیید یا صدور مدرک نیست.
+
+فهرست URLها: [TEAM_OWNERSHIP](../TEAM_OWNERSHIP.md)؛ قرارداد: [API_CONTRACTS](../API_CONTRACTS.md).

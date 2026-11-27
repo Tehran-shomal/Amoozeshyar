@@ -1,0 +1,57 @@
+{# The TransferRequest schema stores a destination and review state, not the other PDF fields. #}
+{% if current_student %}
+{% if submission_result %}
+<section class="panel guest-request-submission-result" role="status" aria-live="polite">
+    <div class="panel-heading"><h2>نتیجهٔ عملیات</h2></div>
+    <p>درخواست مهمانی با شناسهٔ {{ submission_result.transfer_id }} برای «{{ submission_result.destination_university }}» در سامانه ثبت شد.</p>
+    <p>وضعیت بررسی: {{ submission_result.review_status|default:"—" }} · تاریخ ثبت: {{ submission_result.created_at|date:"Y/m/d H:i" }}</p>
+    <p class="guest-request-note">این ثبت داخلی است؛ تأیید نهایی پس از بررسی انجام می‌شود و ارسال خودکار به دانشگاه مقصد صورت نگرفته است.</p>
+    <a class="button button--primary" href="{% url 'core:section' 'guest-request' %}{{ query_suffix }}">متوجه شدم</a>
+</section>
+{% endif %}
+<section class="panel guest-request-form-panel">
+    <div class="panel-heading">
+        <h2>درخواست جدید / نیمسال {{ term_display_code }}</h2>
+    </div>
+    {% if form %}
+    <form method="post" class="live-form guest-request-application-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="guest-request-form-grid">
+            {% for field in form %}
+            <div class="form-field{% if field.errors %} has-error{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}
+                {{ field.errors }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="page-actions guest-request-actions">
+            <p class="guest-request-note" role="note">فرم فعلی فقط دانشگاه مقصد را ذخیره می‌کند؛ مبدأ، نوع مهمانی، تماس، دلیل و فایل مدرک در مدل موجود نیست.</p>
+            <button class="button button--primary" type="submit">ثبت درخواست مهمانی</button>
+        </div>
+    </form>
+    {% else %}
+    <p class="empty-state">فرم درخواست برای این پرونده در دسترس نیست.</p>
+    {% endif %}
+</section>
+
+{% for table in tables %}
+<section class="panel guest-request-history-panel">
+    <div class="panel-heading"><h2>{{ table.title }}</h2></div>
+    <div class="table-wrap">
+        <table class="data-table guest-request-history-table">
+            <thead><tr>{% for column in table.columns %}<th scope="col">{{ column }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for row in table.rows %}
+                <tr>{% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}</tr>
+                {% empty %}<tr><td colspan="4" class="empty-state">درخواستی برای این پرونده ثبت نشده است.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endfor %}
+{% else %}
+<section class="panel"><p class="empty-state">برای ثبت یا پیگیری درخواست مهمانی، پروندهٔ دانشجویی را انتخاب کنید.</p></section>
+{% endif %}

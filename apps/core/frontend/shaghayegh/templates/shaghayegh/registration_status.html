@@ -1,0 +1,35 @@
+{% if current_student %}
+<div class="registration-status-page">
+    <div class="activity-summary-strip" aria-label="خلاصهٔ وضعیت نیمسال">
+        <span>نیمسال {{ term_display_code }} · {{ current_student.person.full_name }}</span>
+        <span>مقطع: {{ current_student.educational_level|default:"—" }}</span>
+        <span>{{ registration_status_count }} درس ثبت‌شده · {{ registration_status_units }} واحد</span>
+    </div>
+
+    <section class="panel registration-status-panel" aria-labelledby="registration-status-title">
+        <div class="panel-heading"><h2 id="registration-status-title">مراحل و وضعیت ثبت‌نام</h2></div>
+        <div class="table-wrap">
+            <table class="data-table registration-status-table">
+                <thead><tr><th scope="col">مرحله</th><th scope="col">آخرین وضعیت</th><th scope="col">توضیح</th></tr></thead>
+                <tbody>
+                    {% for item in registration_status_stages %}
+                    <tr><td>{{ item.stage }}</td><td>{{ item.status }}</td><td>{{ item.description }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <p class="action-note registration-status-rules">
+        سقف مجاز {{ registration_status_max_units }} واحد از پرونده و قواعد موجود خوانده شده است؛ حداقل واحد در سرویس ثبت‌نام تعریف نشده است. این صفحه تأیید نهایی یا تسویه را حدس نمی‌زند.
+    </p>
+
+    <nav class="page-actions registration-status-actions" aria-label="صفحه‌های مرتبط با ثبت‌نام">
+        <a class="button button--primary" href="{% url 'core:section' 'secure-payment' %}{{ query_suffix }}">مشاهدهٔ وضعیت بدهی</a>
+        <a class="button button--soft" href="{% url 'core:section' 'selected-courses' %}{{ query_suffix }}">دروس ثبت‌شده</a>
+        <a class="button button--soft" href="{% url 'core:section' 'schedule' %}{{ query_suffix }}">برنامهٔ هفتگی</a>
+    </nav>
+</div>
+{% else %}
+<section class="panel"><p class="empty-state">برای نمایش وضعیت ثبت‌نام، ابتدا پروندهٔ دانشجویی را انتخاب کنید.</p></section>
+{% endif %}

@@ -1,0 +1,66 @@
+{# Progress and course state are computed only from this student's active curriculum, enrollments, and passing grades. #}
+{% if current_student %}
+<section class="curriculum-summary" aria-label="خلاصهٔ چارت درسی"
+         data-curriculum-total="{{ curriculum_summary.total }}"
+         data-curriculum-passed="{{ curriculum_summary.passed }}"
+         data-curriculum-current="{{ curriculum_summary.current }}"
+         data-curriculum-remaining="{{ curriculum_summary.remaining }}">
+    <article class="curriculum-summary-card">
+        <span>واحد مصوب رشته</span>
+        <strong>{{ curriculum_summary.total }} واحد</strong>
+    </article>
+    <article class="curriculum-summary-card">
+        <span>گذرانده</span>
+        <strong>{{ curriculum_summary.passed }} واحد</strong>
+    </article>
+    <article class="curriculum-summary-card">
+        <span>جاری در نیمسال {{ term_display_code }}</span>
+        <strong>{{ curriculum_summary.current }} واحد</strong>
+    </article>
+    <article class="curriculum-summary-card">
+        <span>باقی‌مانده</span>
+        <strong>{{ curriculum_summary.remaining }} واحد</strong>
+    </article>
+</section>
+
+<section class="panel curriculum-panel">
+    <div class="panel-heading"><h2>مسیر دروس {{ current_student.field.field_name }}</h2></div>
+    <div class="curriculum-table-wrap">
+        <table class="curriculum-table" aria-label="چارت درسی رشتهٔ دانشجو">
+            <thead>
+                <tr>
+                    <th scope="col">درس</th>
+                    <th scope="col">واحد</th>
+                    <th scope="col">پیش‌نیاز</th>
+                    <th scope="col">وضعیت</th>
+                    <th scope="col">گروه</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in curriculum_rows %}
+                <tr>
+                    <th scope="row">{{ row.lesson }}</th>
+                    <td>{{ row.units }}</td>
+                    <td>{% for prerequisite in row.prerequisites %}{{ prerequisite }}{% if not forloop.last %}، {% endif %}{% empty %}—{% endfor %}</td>
+                    <td><span class="curriculum-status curriculum-status--{{ row.status_code }}">{{ row.status }}</span></td>
+                    <td>{{ row.group }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="empty-state">برای رشتهٔ این پرونده چارت فعالی ثبت نشده است.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div class="inline-notice curriculum-notice" role="note">
+    <p>وضعیت درس‌ها از انتخاب‌واحد همین پرونده و نمره‌های ثبت‌شده محاسبه می‌شود. گروه و پیش‌نیاز فقط وقتی نمایش داده می‌شود که در اطلاعات چارت تعریف شده باشد.</p>
+</div>
+
+<div class="page-actions curriculum-actions">
+    <a class="button button--primary" href="{% url 'core:section' 'enrollment' %}{{ query_suffix }}">انتخاب واحد</a>
+    <a class="button button--soft" href="{% url 'core:section' 'internship' %}{{ query_suffix }}">کارآموزی</a>
+</div>
+{% else %}
+<section class="panel"><p class="empty-state">برای مشاهدهٔ چارت درسی، پروندهٔ دانشجویی را انتخاب کنید.</p></section>
+{% endif %}

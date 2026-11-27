@@ -1,0 +1,78 @@
+{% if current_student %}
+<section class="schedule-summary" aria-label="خلاصهٔ برنامهٔ هفتگی"
+         data-schedule-units="{{ schedule_summary.units }}"
+         data-schedule-sessions="{{ schedule_summary.sessions }}"
+         data-schedule-conflicts="{{ schedule_summary.has_conflicts|yesno:'true,false' }}">
+    <article class="schedule-summary-card">
+        <span>نیمسال</span>
+        <strong>{{ schedule_summary.term }}</strong>
+    </article>
+    <article class="schedule-summary-card">
+        <span>واحد ثبت‌شده</span>
+        <strong>{{ schedule_summary.units }} واحد</strong>
+    </article>
+    <article class="schedule-summary-card">
+        <span>جلسات هفتگی</span>
+        <strong>{{ schedule_summary.sessions }} جلسه</strong>
+    </article>
+    <article class="schedule-summary-card{% if schedule_summary.has_conflicts %} schedule-summary-card--warning{% endif %}">
+        <span>تداخل زمانی</span>
+        <strong>{{ schedule_summary.conflict_label }}</strong>
+    </article>
+</section>
+
+{% if schedule_unassigned %}
+<div class="inline-notice schedule-unassigned" role="status">
+    <p>روز این درس‌ها در اطلاعات ثبت‌شده مشخص نشده است:
+        {% for item in schedule_unassigned %}
+        {{ item.lesson }} ({{ item.start_time|time:"H:i" }}–{{ item.end_time|time:"H:i" }}){% if not forloop.last %}، {% endif %}
+        {% endfor %}
+    </p>
+</div>
+{% endif %}
+
+<section class="panel schedule-panel">
+    <div class="schedule-wrap weekly-schedule-grid">
+        <table class="schedule-table" aria-label="برنامهٔ هفتگی بر اساس روز و ساعت">
+            <thead>
+                <tr>
+                    <th scope="col">روز / ساعت</th>
+                    {% for day in schedule_days %}<th scope="col">{{ day.label }}</th>{% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in schedule_slots %}
+                <tr>
+                    <th scope="row">{{ slot.start_time|time:"H:i" }}–{{ slot.end_time|time:"H:i" }}</th>
+                    {% for cell in slot.cells %}
+                    <td>
+                        {% for course in cell.courses %}
+                        <div class="schedule-class">
+                            <strong>{{ course.lesson }}</strong>
+                            <small>{{ course.teacher }}</small>
+                            <small>{{ course.room }}</small>
+                        </div>
+                        {% empty %}<span class="schedule-empty-cell" aria-label="بدون کلاس">—</span>{% endfor %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% empty %}
+                <tr><td colspan="{{ schedule_column_count }}" class="empty-state">برای این نیمسال برنامهٔ ثبت‌شده‌ای وجود ندارد.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div class="inline-notice schedule-notice" role="note">
+    <p>این برنامه از ثبت‌نام‌های فعال و زمان‌های ثبت‌شدهٔ درس‌ها ساخته شده است؛ فقط اطلاعات موجود در پرونده نمایش داده می‌شود.</p>
+</div>
+
+<div class="page-actions schedule-actions">
+    <a class="button button--primary" href="{% url 'core:section' 'selected-courses' %}{{ query_suffix }}">مشاهده دروس انتخاب‌شده</a>
+    <a class="button button--soft" href="{% url 'core:section' 'calendar' %}{{ query_suffix }}">تقویم آموزشی</a>
+    <button class="button button--soft" type="button" data-print>چاپ / ذخیره PDF</button>
+</div>
+{% else %}
+<section class="panel"><p class="empty-state">برای مشاهدهٔ برنامهٔ هفتگی، پروندهٔ دانشجویی را انتخاب کنید.</p></section>
+{% endif %}

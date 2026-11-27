@@ -235,6 +235,19 @@
                     payload,
                 });
             },
+            emergencyDrop: (enrollmentId, payload = {}) => {
+                const id = Number(enrollmentId);
+                if (!Number.isInteger(id) || id <= 0) {
+                    const error = new Error("A valid enrollment ID is required.");
+                    error.code = "invalid_enrollment_id";
+                    error.status = 400;
+                    return Promise.reject(error);
+                }
+                return request(`/api/enrollment/emergency-drop/${id}/`, {
+                    method: "POST",
+                    payload,
+                });
+            },
         };
     }
 

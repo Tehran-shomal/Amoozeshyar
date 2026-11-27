@@ -1,11 +1,11 @@
 # مرکز پشتیبانی
 
-- مالک/route: Omid؛ `/portal/support/`; shared `core/live_content.html`; `SupportForm`.
+- مالک/route: Miri؛ `/portal/support/`; قالب اختصاصی `miri/support.html`; فرم `miri.forms.SupportForm`.
 - مرجع: PDF صفحهٔ ۲۹.
-- هدف/کنترل: ساخت تیکت و نمایش تیکت‌های اخیر حساب جاری.
-- داده/API: Ticket, TicketCategory, Person, Constant؛ GET/POST API صفحه؛ query تیکت‌ها بر اساس `creator=request.user`.
-- اعتبارسنجی/مجوز: category فعال؛ creator از session، نه request؛ فیلدهای category/subject/content مطابق model.
-- خطا/محدودیت: category نامعتبر form error؛ assignment، پاسخ agent، SLA و status lifecycle در این فرم/API ارائه نشده‌اند.
-- navigation: گروه ارتباط و خدمات؛ پیگیری با لیست تیکت‌های خود حساب.
-- آزمون/وابستگی: `apps/core/test_frontend.py`; SupportForm، Ticket/TicketCategory.
-- وضعیت: ثبت و خواندن ticket model موجود؛ چرخهٔ کامل پشتیبانی/مجوز agent ناقص؛ screenshot تازه باز.
+- هدف/کنترل: فرم دو ستونهٔ دسته/موضوع، شرح، ارسال تیکت؛ سپس جدول تیکت‌های اخیر با کد، موضوع، آخرین پاسخ و وضعیت؛ هشدار حریم خصوصی زیر جدول.
+- داده/API: GET `/api/portal/pages/support/`؛ POST همان route با JSON برای `category`, `subject`, `content`. تیکت‌ها فقط از حساب جاری و rootها (`parent IS NULL`) می‌آیند؛ آخرین پاسخ از reply واقعی Ticket خوانده می‌شود. POST موفق `request_id` همان Ticket را در redirect قرار می‌دهد؛ نتیجهٔ ثبت هم فقط root-ticket متعلق به همان حساب را نشان می‌دهد.
+- اعتبارسنجی/مجوز: category فعال؛ creator از session، نه payload؛ status اولیه از Constant فعال `ticket_status/open` می‌آید و اگر lookup موجود نباشد null می‌ماند. متن حداکثر ۱۰۰۰ نویسه طبق مدل است.
+- محدودیت با PDF: مدل Ticket فیلد پیوست ندارد؛ client فرم فایل را به JSON تبدیل نمی‌کند و API فایل را حذف می‌کند. بنابراین کنترل بارگذاری جعل نشده و UI صریحاً می‌گوید پیوست در این نسخه فعال نیست. اطلاعات کارت بانکی/گذرواژه نباید ارسال شود.
+- lifecycle: پاسخ زنجیره‌ای در مدل و inline ادمین موجود است؛ پاسخ/تغییر وضعیت از این صفحه/API ارائه نشده، SLA و مجوز agent در این UI پیاده نیستند. نتیجه فقط ثبت محلی را تأیید می‌کند، نه تحویل یا پاسخ پشتیبانی.
+- آزمون/وابستگی: regression scope تیکت/reply/status اولیه و نتیجهٔ ثبت/جلوگیری از افشای تیکت حساب دیگر نوشته شد؛ اجرا طبق درخواست کاربر به فاز بعد موکول است.
+- وضعیت: صفحهٔ ۲۹ فرم/فهرست و صفحهٔ ۴۶ نتیجهٔ ثبت با API موجود هم‌راستا هستند؛ PDF پیوست دارد اما schema ندارد. تطبیق runtime هنوز ممکن نیست چون capture جاری مجاز نداریم.

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+{% block body_class %}portal-body portal-body--{{ active_slug }}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'core/react-build/style.css' %}">{% endblock %}
+
+{% block content %}
+    {{ portal_bootstrap|json_script:"portal-bootstrap-data" }}
+    <form id="portal-csrf-token" hidden aria-hidden="true">{% csrf_token %}</form>
+    <div id="portal-react-root" data-page="{{ active_slug }}" aria-live="polite"></div>
+    <noscript><main class="portal-page-loading" role="alert"><p>برای نمایش نسخهٔ React جاوااسکریپت را فعال کنید، یا نسخهٔ سازگار را باز کنید.</p><a href="{{ request.path }}?legacy=1{% if request.GET.urlencode %}&amp;{{ request.GET.urlencode }}{% endif %}">بازکردن نسخهٔ سازگار</a></main></noscript>
+{% endblock %}
+
+{% block portal_scripts %}
+    <script type="module" src="{% static 'core/react-build/app.js' %}"></script>
+{% endblock %}

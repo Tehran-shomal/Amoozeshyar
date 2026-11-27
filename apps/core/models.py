@@ -1372,6 +1372,11 @@ class TeacherSurvey(models.Model):
     overall_rating = models.PositiveSmallIntegerField(verbose_name="امتیاز کلی")
     teaching_quality = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="کیفیت تدریس")
     behavior = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="رفتار استاد")
+    content_mastery_rating = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="تسلط استاد بر محتوای درس")
+    explanation_clarity_rating = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="بیان روشن و قابل فهم مطالب")
+    class_organization_rating = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="نظم در برگزاری کلاس‌ها")
+    student_interaction_rating = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="پاسخ‌گویی و تعامل با دانشجو")
+    assessment_alignment_rating = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="تناسب تکالیف و شیوه ارزشیابی")
     submitted_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ثبت نظرسنجی")
     comment = models.TextField(blank=True, verbose_name="نظر دانشجو")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ایجاد رکورد")
@@ -1388,6 +1393,26 @@ class TeacherSurvey(models.Model):
             models.CheckConstraint(
                 condition=(models.Q(behavior__isnull=True) | models.Q(behavior__gte=1, behavior__lte=5)),
                 name="ts_behavior_1_5",
+            ),
+            models.CheckConstraint(
+                condition=(models.Q(content_mastery_rating__isnull=True) | models.Q(content_mastery_rating__gte=1, content_mastery_rating__lte=5)),
+                name="ts_mastery_1_5",
+            ),
+            models.CheckConstraint(
+                condition=(models.Q(explanation_clarity_rating__isnull=True) | models.Q(explanation_clarity_rating__gte=1, explanation_clarity_rating__lte=5)),
+                name="ts_clarity_1_5",
+            ),
+            models.CheckConstraint(
+                condition=(models.Q(class_organization_rating__isnull=True) | models.Q(class_organization_rating__gte=1, class_organization_rating__lte=5)),
+                name="ts_organization_1_5",
+            ),
+            models.CheckConstraint(
+                condition=(models.Q(student_interaction_rating__isnull=True) | models.Q(student_interaction_rating__gte=1, student_interaction_rating__lte=5)),
+                name="ts_interaction_1_5",
+            ),
+            models.CheckConstraint(
+                condition=(models.Q(assessment_alignment_rating__isnull=True) | models.Q(assessment_alignment_rating__gte=1, assessment_alignment_rating__lte=5)),
+                name="ts_assessment_1_5",
             ),
         ]
 

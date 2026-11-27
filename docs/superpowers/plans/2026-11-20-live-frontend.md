@@ -4,7 +4,7 @@ User authorized direct implementation without questions, six owner modules, and 
 
 Architecture: Django templates and authenticated ORM selectors; existing session APIs for login and enrollment; validated, ownership-scoped ModelForms for models without submission APIs. No schema migration or seed execution. Database records are authoritative, including subsequent user submissions; no artificial seed provenance registry.
 
-- [x] Create six modules (mobina, shaghayegh, shahsavan, parsa, neyousha_pouya, omid), shared shell and explicit route registry.
+- [x] Historical baseline only. Current active ownership is seven modules; see `2076-05-07-seven-team-full-pages-plan.md` and `docs/TEAM_OWNERSHIP.md`.
 - [x] Replace fixture-backed views with current-student selectors and empty states; support profile/term selection.
 - [x] Connect enrollment IDs to existing APIs; implement validated submission forms with server-assigned ownership and statuses.
 - [x] Move login/dashboard and module templates/assets into owner folders, retain shared visual theme; fix full viewport responsiveness.

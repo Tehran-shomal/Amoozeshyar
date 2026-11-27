@@ -391,6 +391,8 @@ class EnrollmentServiceTests(EnrollmentFixtures):
 
         self.assertEqual(first.status_code, 201)
         self.assertEqual(repeated.status_code, 200)
+        self.assertTrue(first.json()["created"])
+        self.assertFalse(repeated.json()["created"])
 
     def test_registration_requires_a_passing_prerequisite_grade(self):
         offering = self.create_offering()
@@ -552,6 +554,33 @@ class EnrollmentServiceTests(EnrollmentFixtures):
 
         self.assertEqual(dropped.status.code, "dropped")
 
+    def test_window_specific_drop_modes_reject_the_other_window(self):
+        offering = self.create_offering()
+        enrollment = self.make_enrollment(self.student, offering)
+        self.term.add_drop_start = self.now - timedelta(hours=1)
+        self.term.add_drop_end = self.now + timedelta(hours=1)
+        self.term.emergency_drop_start = self.now - timedelta(days=2)
+        self.term.emergency_drop_end = self.now - timedelta(days=1)
+        self.term.save()
+        service = self.enrollment_service()
+
+        with self.assertRaises(api.APIError) as emergency_closed:
+            service.drop_enrollment(
+                self.student, enrollment.pk, now=self.now, window="emergency-drop"
+            )
+        self.assertEqual(emergency_closed.exception.code, "emergency_drop_window_closed")
+
+        self.term.add_drop_start = self.now - timedelta(days=2)
+        self.term.add_drop_end = self.now - timedelta(days=1)
+        self.term.emergency_drop_start = self.now - timedelta(hours=1)
+        self.term.emergency_drop_end = self.now + timedelta(hours=1)
+        self.term.save()
+        with self.assertRaises(api.APIError) as regular_closed:
+            service.drop_enrollment(
+                self.student, enrollment.pk, now=self.now, window="add-drop"
+            )
+        self.assertEqual(regular_closed.exception.code, "drop_window_closed")
+
     def test_drop_rejects_closed_windows_and_other_students_enrollments(self):
         offering = self.create_offering()
         enrollment = self.make_enrollment(self.student, offering)
@@ -626,6 +655,30 @@ class EnrollmentAPITests(EnrollmentFixtures):
 
         self.assertEqual(dropped.status_code, 200)
         self.assertEqual(dropped.json()["enrollment"]["status"], "dropped")
+
+    def test_emergency_drop_api_requires_the_emergency_window(self):
+        offering = self.create_offering()
+        enrollment = self.make_enrollment(self.student, offering)
+        self.assertTrue(self.client.login(username=self.person.username, password="Person@Password1"))
+        now = timezone.now()
+        self.term.add_drop_start = now - timedelta(hours=1)
+        self.term.add_drop_end = now + timedelta(hours=1)
+        self.term.emergency_drop_start = now - timedelta(days=2)
+        self.term.emergency_drop_end = now - timedelta(days=1)
+        self.term.save()
+
+        closed = self.client.post(f"/api/enrollment/emergency-drop/{enrollment.pk}/")
+
+        self.assertEqual(closed.json()["error"]["code"], "emergency_drop_window_closed")
+        enrollment.refresh_from_db()
+        self.assertNotEqual(enrollment.status.code, "dropped")
+
+        self.term.emergency_drop_start = now - timedelta(hours=1)
+        self.term.emergency_drop_end = now + timedelta(hours=1)
+        self.term.save(update_fields=["emergency_drop_start", "emergency_drop_end"])
+        opened = self.client.post(f"/api/enrollment/emergency-drop/{enrollment.pk}/")
+        self.assertEqual(opened.status_code, 200)
+        self.assertEqual(opened.json()["enrollment"]["status"], "dropped")
 
     def test_non_student_role_cannot_use_student_enrollment_api(self):
         person = Person.objects.create_user(

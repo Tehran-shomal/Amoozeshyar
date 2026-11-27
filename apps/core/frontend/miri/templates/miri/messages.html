@@ -1,0 +1,87 @@
+{# Teacher choices are scoped to active enrollments in the selected term; stored messages are account-scoped. #}
+{% if current_student %}
+{% if message_submission_result %}
+<section class="panel message-submission-result" role="status" aria-live="polite">
+    <div class="panel-heading"><h2>نتیجهٔ عملیات</h2></div>
+    <p>پیام «{{ message_submission_result.subject }}» برای {{ message_submission_result.receiver.person.full_name }} در سوابق مکاتبات حساب شما ثبت شد.</p>
+    <p class="message-storage-note">این محیط به حساب واقعی استاد متصل نیست؛ ثبت پیام در این سامانه، تحویل بیرونی را تأیید نمی‌کند.</p>
+    <a class="button button--primary" href="{% url 'core:section' 'messages' %}{{ query_suffix }}">متوجه شدم</a>
+</section>
+{% endif %}
+<div class="content-columns messages-layout">
+    <section class="panel message-list-panel" aria-label="استادان نیمسال انتخاب‌شده">
+        <div class="panel-heading"><h2>استادان نیمسال {{ term_display_code }}</h2></div>
+        <div class="demo-card-list">
+            {% for entry in message_teachers %}
+            <article class="demo-card">
+                <div class="demo-card-copy">
+                    <strong>{{ entry.teacher.person.full_name }}</strong>
+                    {% for lesson in entry.lessons %}
+                    <small>{{ lesson.title }} / {{ lesson.day }} / {{ lesson.start|time:"H:i" }}–{{ lesson.end|time:"H:i" }}</small>
+                    <small>{{ lesson.classroom }}</small>
+                    {% endfor %}
+                </div>
+            </article>
+            {% empty %}
+            <p class="empty-state">برای این پرونده در نیمسال انتخاب‌شده استاد فعالی ثبت نشده است.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel form-panel message-form-panel">
+        <div class="panel-heading"><h2>ارسال پیام آموزشی</h2></div>
+        {% if form %}
+        <form method="post" class="live-form message-composer">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+            <div class="form-field{% if field.errors %} has-error{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}
+                {{ field.errors }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            </div>
+            {% endfor %}
+            {% if message_can_send %}
+            <button class="button button--primary" type="submit">ارسال پیام</button>
+            {% else %}
+            <p class="inline-notice" role="status">استاد دریافت‌کنندهٔ فعال برای این نیمسال در دسترس نیست.</p>
+            <button class="button button--disabled" type="button" disabled>ارسال پیام در دسترس نیست</button>
+            {% endif %}
+        </form>
+        {% endif %}
+    </section>
+</div>
+
+<div class="page-actions messages-page-actions">
+    <a class="button button--soft" href="{% url 'core:section' 'announcements' %}{{ query_suffix }}">اطلاعیه‌های اساتید</a>
+</div>
+
+<section class="panel latest-message">
+    <div class="panel-heading"><h2>آخرین مکاتبات · {{ message_count }}</h2></div>
+    <div class="message-history-list">
+        {% for message in message_history %}
+        <article class="message-history-item">
+            <header>
+                <strong>{{ message.subject }}</strong>
+                <time datetime="{{ message.sent_at|date:'c' }}">{{ message.sent_at|date:"Y-m-d H:i" }}</time>
+            </header>
+            <small>
+                {% if message.sender.person_id == request.user.pk %}
+                شما → {{ message.receiver.person.full_name }}
+                {% else %}
+                {{ message.sender.person.full_name }} → شما
+                {% endif %}
+            </small>
+            <p>{{ message.message_body }}</p>
+            <span class="message-storage-note">ثبت‌شده در سامانه؛ تحویل بیرونی از این داده قابل تأیید نیست.</span>
+        </article>
+        {% empty %}
+        <p class="empty-state">مکاتبه‌ای برای حساب شما ثبت نشده است.</p>
+        {% endfor %}
+    </div>
+    <p class="message-scope-note">{{ message_scope_note }}</p>
+</section>
+{% else %}
+<section class="panel"><p class="empty-state">برای ارتباط با استادان، پروندهٔ دانشجویی را انتخاب کنید.</p></section>
+{% endif %}

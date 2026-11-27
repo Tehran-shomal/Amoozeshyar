@@ -17,8 +17,33 @@ def build(slug, student, term, request):
         rows = m.ScholarshipApplication.objects.filter(
             scholarship_applicant=student
         ).select_related("scholarship_status")
+        raw_request_id = request.GET.get("request_id", "")
+        try:
+            request_id = int(raw_request_id)
+        except (TypeError, ValueError):
+            request_id = None
+        application = (
+            rows.filter(pk=request_id).first()
+            if request_id and 0 < request_id <= 9_223_372_036_854_775_807
+            else None
+        )
+        operation_result = None
+        if application:
+            operation_result = {
+                "heading": "درخواست تسهیلات ثبت شد",
+                "message": f"درخواست «{application.scholarship_type}» با شناسهٔ {application.pk} برای این پرونده ثبت شد.",
+                "status": display(application.scholarship_status),
+                "created_at": display(application.scholarship_submitted_at),
+                "note": "این ثبت درخواست به معنی تخصیص یا تأیید نهایی وام نیست؛ تصمیم نهایی به بررسی مدارک و منابع موجود وابسته است.",
+            }
         return {
             "form": form_for(ScholarshipForm, request, student, term),
+            "notice": (
+                "این فرم فقط نوع تسهیلات و دلیل را در پروندهٔ محلی ثبت می‌کند؛ "
+                "مبلغ درخواستی، شمارهٔ شبا و پیوست در مدل/API فعلی پشتیبانی نمی‌شوند. "
+                "ثبت درخواست به معنی تأیید یا پرداخت نیست."
+            ),
+            "operation_result": operation_result,
             "tables": [table(
                 "پیگیری تسهیلات",
                 ["نوع", "دلیل", "تاریخ", "وضعیت"],
@@ -40,6 +65,7 @@ def build(slug, student, term, request):
             {"label": "پرداخت موفق", "value": _money(paid_total)},
             {"label": "بدهی ثبت‌شده در پرونده", "value": _money(student.tuition_debt)},
         ],
+        "finance_debt_display": _money(student.tuition_debt),
         "finance_term_label": term_code_display(term) if term else "همهٔ نیمسال‌ها",
     }
 
@@ -57,10 +83,6 @@ def build(slug, student, term, request):
             "درگاه پرداخت به سامانه متصل نیست؛ امکان پرداخت آنلاین وجود ندارد. "
             "هیچ مبلغی کسر یا تراکنش پرداختی ثبت نمی‌شود."
         )
-        data["finance_actions"] = [
-            {"slug": "payments", "label": "مشاهده سوابق پرداخت"},
-            {"slug": "financial-aid", "label": "درخواست تسهیلات"},
-        ]
     elif slug == "tuition":
         totals = m.Term.objects.filter(
             payments__student=student, payments__status__code="successful"
@@ -75,6 +97,14 @@ def build(slug, student, term, request):
                 "total": _money(item.total),
             }
             for item in totals
+        ]
+        data["notice"] = (
+            "تعرفه و ریزبدهی ثابت/متغیر در داده‌های فعلی موجود نیست؛ "
+            "این صفحه فقط بدهی پرونده و جمع پرداخت‌های موفق ثبت‌شده را نشان می‌دهد."
+        )
+        data["finance_actions"] = [
+            {"slug": "secure-payment", "label": "پرداخت بدهی"},
+            {"slug": "payments", "label": "سوابق تراکنش‌ها"},
         ]
 
     return data

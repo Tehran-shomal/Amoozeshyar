@@ -2,7 +2,7 @@
 
 ## Intent
 
-The student portal must obtain every database-backed page value through same-origin HTTP APIs. The user-facing reason is to make the frontend consume backend contracts consistently instead of reading models directly while rendering the page. Preserve the existing Persian PDF layouts and the five owner modules.
+The student portal must obtain every database-backed page value through same-origin HTTP APIs. The user-facing reason is to make the frontend consume backend contracts consistently instead of reading models directly while rendering the page. Preserve the existing Persian page layouts and use the current seven-owner assignment in `docs/TEAM_OWNERSHIP.md`. The referenced PDF is not present in this checkout, so pixel-level parity is not verified.
 
 ## Current state
 

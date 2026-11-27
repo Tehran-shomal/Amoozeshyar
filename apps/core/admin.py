@@ -481,8 +481,15 @@ class ThesisProgressReportAdmin(admin.ModelAdmin):
 
 @admin.register(TeacherSurvey)
 class TeacherSurveyAdmin(admin.ModelAdmin):
-    list_display = ('id', 'enrollment', 'overall_rating', 'teaching_quality', 'behavior', 'submitted_at')
-    list_filter = ('overall_rating', 'teaching_quality', 'behavior')
+    list_display = (
+        'id', 'enrollment', 'overall_rating', 'content_mastery_rating',
+        'explanation_clarity_rating', 'class_organization_rating',
+        'student_interaction_rating', 'assessment_alignment_rating', 'submitted_at',
+    )
+    list_filter = (
+        'overall_rating', 'content_mastery_rating', 'explanation_clarity_rating',
+        'class_organization_rating', 'student_interaction_rating', 'assessment_alignment_rating',
+    )
 
 
 @admin.register(Internship)
